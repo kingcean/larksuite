@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Tools\Common.props" />
+
+  <PropertyGroup>
+    <RootNamespace>LarkSuite</RootNamespace>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+	<AssemblyName>Lark.OapiClient</AssemblyName>
+    <AssemblyTitle>Lark SDK via OpenAPI</AssemblyTitle>
+  </PropertyGroup>
+
+  <Import Project="..\Tools\Build.props" />
+
+  <ItemGroup>
+    <PackageReference Include="Trivial.Console" />
+  </ItemGroup>
+
+</Project>
