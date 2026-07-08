@@ -11,73 +11,6 @@ using Trivial.Text;
 
 namespace LarkSuite.OapiModels;
 
-public class LarkWikiNodesRequestOptions : BaseQueryRequestInfo
-{
-    /// <summary>
-    /// Gets or sets the space ID.
-    /// </summary>
-    public string SpaceId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the identifier of top node doc if limit searching in such scope.
-    /// </summary>
-    public string? ParentNodeToken { get; set; }
-
-    /// <inheritdoc />
-    protected override void OnQueryDataFill(QueryData q)
-    {
-        q.SetIfNotEmpty("parent_node_token", ParentNodeToken);
-    }
-}
-
-public class LarkWikiSearchOptions : LarkPageTokenInfo, IJsonObjectHost
-{
-    /// <summary>
-    /// The query string (keyword) to search.
-    /// </summary>
-    [JsonPropertyName("query")]
-    public string Query { get; set; }
-
-    /// <summary>
-    /// Gets or sets the identifier of wiki space if limit searching in such scope.
-    /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("space_id")]
-    public string? SpaceId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the identifier of top node doc if limit searching in such scope.
-    /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonPropertyName("node_id")]
-    public string? ParentNodeId { get; set; }
-
-    /// <inheritdoc />
-    public JsonObjectNode ToJson()
-    {
-        var json = new JsonObjectNode
-        {
-            { "query", Query }
-        };
-        json.SetValueIfNotEmpty("space_id", SpaceId);
-        json.SetValueIfNotEmpty("node_id", ParentNodeId);
-        return json;
-    }
-}
-
-public class LarkWikiDocMarkdownOptions : LarkResourceRequestOptions
-{
-    public string Id { get; set; }
-
-    protected override void OnQueryDataFill(QueryData q)
-    {
-        base.OnQueryDataFill(q);
-        q["doc_token"] = Id;
-        q["doc_type"] = "docx";
-        q["content_type"] = "markdown";
-    }
-}
-
 public class LarkWikiSpaceInfo
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -211,40 +144,4 @@ public class LarkDocsDocDisplaySettings
 
     [JsonPropertyName("show_uv")]
     public bool UV { get; set; }
-}
-
-public class LarkDocsBaseTableInfo
-{
-    [JsonPropertyName("app_token")]
-    public string Token { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-
-    [JsonPropertyName("revision")]
-    public int Revision { get; set; }
-
-    [JsonPropertyName("is_advanced")]
-    public bool HasAdvancedPermission { get; set; }
-
-    [JsonPropertyName("time_zone")]
-    public string TimeZone { get; set; }
-
-    [JsonPropertyName("formula_type")]
-    public int FormulaType { get; set; }
-
-    [JsonPropertyName("advance_version")]
-    public string AdvanceVersion { get; set; }
-}
-
-public class LarkDocsBaseTableTableInfo
-{
-    [JsonPropertyName("table_id")]
-    public string Id { get; set; }
-
-    [JsonPropertyName("revision")]
-    public int Revision { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
 }

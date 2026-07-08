@@ -153,17 +153,37 @@ public class LarkResourceRequestOptions : BaseQueryRequestInfo
     }
 }
 
+public class LarkDocsSortItem : IJsonObjectHost
+{
+    [JsonPropertyName("field_name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("desc")]
+    public bool IsDesc { get; set; }
+
+    /// <inheritdoc />
+    public JsonObjectNode? ToJson()
+    {
+        if (string.IsNullOrWhiteSpace(Name)) return null;
+        return new()
+        {
+            { "field_name", Name },
+            { "desc", IsDesc },
+        };
+    }
+}
+
 /// <summary>
 /// The filter of Lark Base table.
 /// </summary>
-public class LarkBaseFilter : List<LarkBaseFilterCondition>
+public class LarkDocsFilter : List<LarkDocsFilterCondition>, IJsonObjectHost
 {
     /// <summary>
-    /// Initializes a new instance of the LarkBaseFilter class.
+    /// Initializes a new instance of the LarkDocsFilter class.
     /// </summary>
     /// <param name="conjunction"></param>
     /// <param name="conditions"></param>
-    public LarkBaseFilter(CriteriaBooleanOperator conjunction, params IEnumerable<LarkBaseFilterCondition> conditions)
+    public LarkDocsFilter(CriteriaBooleanOperator conjunction, params IEnumerable<LarkDocsFilterCondition> conditions)
     {
         Conjunction = conjunction;
         if (conditions is not null) AddRange(conditions);
@@ -173,38 +193,56 @@ public class LarkBaseFilter : List<LarkBaseFilterCondition>
     /// Gets or sets the conjunction operator to combine the filter conditions.
     /// </summary>
     public CriteriaBooleanOperator Conjunction { get; set; }
+
+    /// <inheritdoc />
+    public JsonObjectNode? ToJson()
+    {
+        var arr = new JsonArrayNode();
+        foreach (var item in this)
+        {
+            var json = item?.ToJson();
+            if (json is null) continue;
+            arr.Add(json);
+        }
+
+        return arr.Count > 0 ? new()
+        {
+            { "conjunction", Conjunction.ToString().ToLowerInvariant() },
+            { "conditions", arr },
+        } : null;
+    }
 }
 
 /// <summary>
 /// The filter condition of Lark Base table.
 /// </summary>
-public class LarkBaseFilterCondition
+public class LarkDocsFilterCondition: IJsonObjectHost
 {
     /// <summary>
-    /// Initializes a new instance of the LarkBaseFilterCondition class.
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
     /// </summary>
-    public LarkBaseFilterCondition()
+    public LarkDocsFilterCondition()
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the LarkBaseFilterCondition class.
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
     /// </summary>
     /// <param name="name">The name of field.</param>
     /// <param name="op">The operation.</param>
     /// <param name="value">The value of field.</param>
-    public LarkBaseFilterCondition(string name, string op, string value)
+    public LarkDocsFilterCondition(string name, string op, string value)
         : this(name, op, [value])
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the LarkBaseFilterCondition class.
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
     /// </summary>
     /// <param name="name">The name of field.</param>
     /// <param name="op">The operation.</param>
     /// <param name="value">The value of field.</param>
-    public LarkBaseFilterCondition(string name, string op, List<string> value)
+    public LarkDocsFilterCondition(string name, string op, List<string> value)
     {
         Name = name;
         Operation = op;
@@ -228,6 +266,18 @@ public class LarkBaseFilterCondition
     /// </summary>
     [JsonPropertyName("value")]
     public List<string> Value { get; set; }
+
+    /// <inheritdoc />
+    public JsonObjectNode? ToJson()
+    {
+        if (string.IsNullOrWhiteSpace(Name)) return null;
+        return new()
+        {
+            { "field_name", Name },
+            { "operator", Operation },
+            { "value", Value },
+        };
+    }
 }
 
 /// <summary>

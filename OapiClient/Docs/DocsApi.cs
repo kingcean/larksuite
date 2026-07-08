@@ -125,6 +125,14 @@ public partial class LarkApi
     public Task<LarkResponsePagingBody<LarkDocsBaseTableTableInfo>> ListBaseTableTablesAsync(string baseId, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkDocsBaseTableTableInfo>(LarkUrls.ToUrl(LarkUrls.ListBaseTableTables, LarkUrls.GetId(baseId)), new LarkResourceIdRequest(LarkUrls.GetId(baseId)), paging, cancellationToken);
 
+    public Task<LarkResponseBody<LarkDocsBaseTableRecordsInfo>> GetBaseTableRecordsAsync(string baseId, string tableId, IEnumerable<string> recordIds, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
+        => PostAsync<LarkDocsBaseTableRecordsInfo>(LarkUrls.ToUrl(LarkUrls.GetBaseTableRecords, LarkUrls.GetId(baseId), tableId), new JsonObjectNode()
+        {
+            { "record_ids", recordIds },
+            { "automatic_fields", true },
+            { "with_shared_url", true }
+        }, cancellationToken);
+
     public Task<LarkResponseBody> RenameBaseTableAsync(string baseId, string tableId, string title, CancellationToken cancellationToken = default)
         => PostAsync(LarkUrls.ToUrl(LarkUrls.RenameBaseTable, baseId, tableId), new JsonObjectNode
         {
@@ -132,31 +140,83 @@ public partial class LarkApi
         }, cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(string baseId, string tableId, CancellationToken cancellationToken = default)
-        => ReadBaseTableAsync(baseId, tableId, null, cancellationToken);
+        => ReadBaseTableAsync(new LarkDocsBaseTableFilter(baseId, tableId), null, cancellationToken);
 
-    public async Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(string baseId, string tableId, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
+    public async Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(LarkDocsBaseTableFilter options, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(baseId) || string.IsNullOrWhiteSpace(tableId)) return new(true);
-        baseId = LarkUrls.GetId(baseId)!;
+        if (string.IsNullOrWhiteSpace(options?.BaseId) || string.IsNullOrWhiteSpace(options.TableId)) return new(true);
         var http = CreateJsonHttpClient();
-        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.ReadBaseTable, paging, baseId, tableId), new JsonObjectNode
-        {
-            { "automatic_fields", true },
-        }, cancellationToken);
-        return new(new LarkResourceIdRequest(baseId, tableId), resp, json => new(json)); 
+        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.ReadBaseTable, paging, options.BaseId, options.TableId), options.ToJson(), cancellationToken);
+        return new(options, resp, json => new(json));
     }
+
+    public Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(string baseId, string tableId, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
+        => ReadBaseTableAsync(new LarkDocsBaseTableFilter(baseId, tableId), paging, cancellationToken);
 
     public async Task<IReadOnlyList<LarkDocsBaseTableRecord>> ReadBaseTableAsync(LarkResponsePagingBody<LarkDocsBaseTableRecord> response, int? pageSize = null, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
-        var query = response.Query as LarkResourceIdRequest;
-        if (string.IsNullOrWhiteSpace(query.Id)) return [];
-        var paging = response.NextPageInfo();
+        var query = response.Query as LarkDocsBaseTableFilter;
+        if (string.IsNullOrWhiteSpace(query?.BaseId) || string.IsNullOrWhiteSpace(query.TableId)) return [];
+        var paging = response.NextPageInfo(pageSize);
         if (paging is null) return [];
-        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.ReadBaseTable, paging, query.Id, query.Text), new JsonObjectNode
-        {
-            { "automatic_fields", true },
-        }, cancellationToken);
+        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.ReadBaseTable, paging, query.BaseId, query.TableId), query.ToJson(), cancellationToken);
         return response.AddRange(resp);
     }
+
+    public async Task<LarkResponseBody<string>> UploadDocsFile(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add("file_name", name);
+        content.Add("parent_type", "wiki");
+        content.Add("parent_node", LarkUrls.GetId(parentToken));
+        content.Add("size", file.Length);
+        content.Add("file", file, name, mime);
+        var resp = await HttpClient.PostAsync(LarkUrls.UploadFile, content, cancellationToken);
+        var json = await HttpClientExtensions.DeserializeJsonAsync<JsonObjectNode>(resp.Content, cancellationToken);
+        return new(json, json =>
+        {
+            return json.TryGetStringTrimmedValue("file_token");
+        });
+    }
+
+    public async Task<LarkResponseBody<string>> UploadDocsFile(string token, string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    {
+        using var content = new MultipartFormDataContent();
+        content.Add("file_token", token);
+        content.Add("file_name", name);
+        content.Add("parent_type", "wiki");
+        content.Add("parent_node", LarkUrls.GetId(parentToken));
+        content.Add("size", file.Length);
+        content.Add("file", file, name, mime);
+        var resp = await HttpClient.PostAsync(LarkUrls.UploadFile, content, cancellationToken);
+        var json = await HttpClientExtensions.DeserializeJsonAsync<JsonObjectNode>(resp.Content, cancellationToken);
+        return new(json, json =>
+        {
+            return json.TryGetStringTrimmedValue("file_token");
+        });
+    }
+
+    public Task<LarkResponseBody<string>> ConvertDocsFileFormat(string token, string ext, string docType, string parentToken, string? name = null, CancellationToken cancellationToken = default)
+    {
+        var json = new JsonObjectNode()
+        {
+            { "file_extension", ext },
+            { "file_token", token },
+            { "type", docType },
+            { "point", new JsonObjectNode
+            {
+                { "mount_type", 1 },
+                { "mount_key", parentToken },
+            } }
+        };
+        json.SetValueIfNotEmpty("file_name", name);
+        return PostAsync(LarkUrls.ConvertDocsFileFormat, json, data =>
+        {
+            return data.TryGetStringValue("ticket");
+        }, cancellationToken);
+    }
+
+    public Task<LarkResponseBody> ConvertDocsFileFormatState(string ticket, CancellationToken cancellationToken = default)
+        => GetAsync(string.Concat(LarkUrls.ConvertDocsFileFormatState, ticket), cancellationToken);
 }
