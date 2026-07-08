@@ -250,8 +250,84 @@ public class LarkContentDocInfo
     public string Url { get; set; }
 
     [JsonPropertyName("title")]
-    public string? Title { get; set; }
+    public string? Name { get; set; }
 
     [JsonPropertyName("text_element_style")]
     public LarkContentTextElementStyle Style { get; set; }
+}
+
+public class LarkDocsAccessUserInfo
+{
+    public LarkDocsAccessUserInfo()
+    {
+    }
+
+    public LarkDocsAccessUserInfo(JsonObjectNode json)
+    {
+        if (json is null) return;
+        Id = json.TryGetStringTrimmedValue("id");
+        Name = json.TryGetStringTrimmedValue("name");
+        EnglishName = json.TryGetStringTrimmedValue("en_name");
+        Email = json.TryGetStringTrimmedValue("email");
+        AvatarUrl = json.TryGetStringTrimmedValue("avatar_url");
+    }
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("en_name")]
+    public string? EnglishName { get; set; }
+
+    [JsonPropertyName("email")]
+    public string? Email { get; set; }
+
+    [JsonPropertyName("avatar_url")]
+    public string? AvatarUrl { get; set; }
+}
+
+public class LarkDocsBaseTableRecord
+{
+    public LarkDocsBaseTableRecord()
+    {
+    }
+
+    public LarkDocsBaseTableRecord(JsonObjectNode json)
+    {
+        if (json is null) return;
+        Fields = json.TryGetObjectValue("fields");
+        Id = json.TryGetStringTrimmedValue("record_id");
+        Creator = new(json.TryGetObjectValue("created_by"));
+        CreateDate = json.TryGetDateTimeValue("created_time") ?? DateTime.Now;
+        LastModifier = new(json.TryGetObjectValue("last_modified_by"));
+        LastModificationDate = json.TryGetDateTimeValue("last_modified_time") ?? DateTime.Now;
+        SharedUrl = json.TryGetStringTrimmedValue("shared_url");
+        RecordUrl = json.TryGetStringTrimmedValue("record_url");
+    }
+
+    [JsonPropertyName("fields")]
+    public JsonObjectNode Fields { get; set; } = new();
+
+    [JsonPropertyName("record_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("created_by")]
+    public LarkDocsAccessUserInfo Creator { get; set; }
+
+    [JsonPropertyName("created_time")]
+    public DateTime CreateDate { get; set; }
+
+    [JsonPropertyName("last_modified_by")]
+    public LarkDocsAccessUserInfo LastModifier { get; set; }
+
+    [JsonPropertyName("last_modified_time")]
+    public DateTime LastModificationDate { get; set; }
+
+    [JsonPropertyName("shared_url")]
+    public string SharedUrl { get; set; }
+
+    [JsonPropertyName("record_url")]
+    public string RecordUrl { get; set; }
 }

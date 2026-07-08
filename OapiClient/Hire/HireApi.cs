@@ -41,4 +41,16 @@ public partial class LarkApi
 
     public Task<LarkResponseBody> GetHireTalent(string id, CancellationToken cancellationToken = default)
         => GetAsync(string.Concat(LarkUrls.HireTalent, id), cancellationToken);
+
+    public Task<LarkResponseBody> GetHireApplicationInfo(string id, CancellationToken cancellationToken = default)
+        => GetAsync(string.Concat(LarkUrls.Applications, id), cancellationToken);
+
+    public Task<LarkResponseBody> GetHireApplicationDetails(string id, CancellationToken cancellationToken = default)
+        => GetAsync(LarkUrls.ToUrl(LarkUrls.ApplicationDetails, id), cancellationToken);
+
+    public Task<LarkResponsePagingBody> GetHireApplications(LarkHireApplicationOptions options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.Applications, options, paging, cancellationToken);
+
+    public Task<IReadOnlyList<JsonObjectNode>> GetHireApplications(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.Applications, response, pageSize, cancellationToken);
 }

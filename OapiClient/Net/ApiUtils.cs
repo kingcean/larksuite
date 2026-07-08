@@ -15,7 +15,7 @@ namespace LarkSuite.OapiModels;
 /// </summary>
 public static partial class LarkApiUtils
 {
-    internal static string? GetName(JsonObjectNode? json)
+    public static string? GetName(JsonObjectNode? json)
     {
         if (json is null) return null;
         return json.TryGetStringTrimmedValue("zh_cn", true) ?? json.TryGetStringTrimmedValue("en_us", true);

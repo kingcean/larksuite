@@ -14,6 +14,11 @@ namespace LarkSuite.OapiModels;
 public class LarkWikiNodesRequestOptions : BaseQueryRequestInfo
 {
     /// <summary>
+    /// Gets or sets the space ID.
+    /// </summary>
+    public string SpaceId { get; set; }
+
+    /// <summary>
     /// Gets or sets the identifier of top node doc if limit searching in such scope.
     /// </summary>
     public string? ParentNodeToken { get; set; }
@@ -107,7 +112,7 @@ public class LarkDocsNodeInfo
 {
     [JsonPropertyName("title")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public string Title { get; set; }
+    public string Name { get; set; }
 
     [JsonPropertyName("url")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -167,4 +172,79 @@ public class LarkDocsNodeInfo
     [JsonPropertyName("parent_node_token")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string ParentNodeToken { get; set; }
+}
+
+public class LarkDocsDocInfo
+{
+    [JsonPropertyName("display_settings")]
+    public LarkDocsDocDisplaySettings? DisplaySettings { get; set; }
+
+    [JsonPropertyName("title")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("document_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("revision_id")]
+    public int Revision { get; set; }
+}
+
+public class LarkDocsDocDisplaySettings
+{
+    [JsonPropertyName("show_authors")]
+    public bool Authors { get; set; }
+
+    [JsonPropertyName("show_comment_count")]
+    public bool CommentCount { get; set; }
+
+    [JsonPropertyName("show_create_time")]
+    public bool CreateTime { get; set; }
+
+    [JsonPropertyName("show_like_count")]
+    public bool LikeCount { get; set; }
+
+    [JsonPropertyName("show_pv")]
+    public bool PV { get; set; }
+
+    [JsonPropertyName("show_related_matters")]
+    public bool RelatedMatters { get; set; }
+
+    [JsonPropertyName("show_uv")]
+    public bool UV { get; set; }
+}
+
+public class LarkDocsBaseTableInfo
+{
+    [JsonPropertyName("app_token")]
+    public string Token { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("revision")]
+    public int Revision { get; set; }
+
+    [JsonPropertyName("is_advanced")]
+    public bool HasAdvancedPermission { get; set; }
+
+    [JsonPropertyName("time_zone")]
+    public string TimeZone { get; set; }
+
+    [JsonPropertyName("formula_type")]
+    public int FormulaType { get; set; }
+
+    [JsonPropertyName("advance_version")]
+    public string AdvanceVersion { get; set; }
+}
+
+public class LarkDocsBaseTableTableInfo
+{
+    [JsonPropertyName("table_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("revision")]
+    public int Revision { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
 }

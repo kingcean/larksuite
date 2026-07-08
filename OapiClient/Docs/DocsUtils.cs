@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Collection;
 using Trivial.Text;
 
 namespace LarkSuite.OapiModels;
@@ -104,7 +105,7 @@ public static partial class LarkApiUtils
                     content.Information = new LarkContentBlockLinkReference
                     {
                         Url = element.DocMentioned.Url,
-                        Title = element.DocMentioned.Title,
+                        Title = element.DocMentioned.Name,
                     };
                 else if (!string.IsNullOrWhiteSpace(element.UserMentioned?.Id))
                     content.Information = new LarkContentBlockUserReference
@@ -141,5 +142,32 @@ public static partial class LarkApiUtils
         }
 
         return tree;
+    }
+
+    public static IEnumerable<SelectionItem<string>> ToSelectionStringItems(this IEnumerable<LarkWikiSpaceInfo> col)
+    {
+        if (col is null) yield break;
+        foreach (var space in col)
+        {
+            yield return new(space.Name, space.Id);
+        }
+    }
+
+    public static IEnumerable<SelectionItem<string>> ToSelectionStringItems(this IEnumerable<LarkDocsNodeInfo> col)
+    {
+        if (col is null) yield break;
+        foreach (var space in col)
+        {
+            yield return new(space.Name, space.NodeToken);
+        }
+    }
+
+    public static IEnumerable<SelectionItem<string>> ToSelectionStringItems(this IEnumerable<LarkDocsBaseTableTableInfo> col)
+    {
+        if (col is null) yield break;
+        foreach (var table in col)
+        {
+            yield return new(table.Name, table.Id);
+        }
     }
 }

@@ -274,3 +274,20 @@ public class LarkUserIdTypeRequestOptions : BaseQueryRequestInfo
         }
     }
 }
+
+internal class LarkResourceIdRequest : BaseQueryRequestInfo
+{
+    public LarkResourceIdRequest(string id, string? text = null)
+    {
+        Id = id;
+        Text = text;
+    }
+
+    public string Id { get; set; }
+
+    public string? Text { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+    }
+}

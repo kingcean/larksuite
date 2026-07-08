@@ -1,12 +1,15 @@
 ﻿using LarkSuite.OapiModels;
+using LarkSuite.Text;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Collection;
 using Trivial.Net;
 using Trivial.Text;
+using Trivial.Web;
 
 namespace LarkSuite;
 
@@ -90,5 +93,38 @@ public class LarkInterviewMinuteInfo
             _ => LarkInterviewRole.Unknown,
         };
         return item;
+    }
+}
+
+public class LarkHireApplicationOptions : BaseQueryRequestInfo
+{
+    public string? ProcessId { get; set; }
+
+    public string? StageId { get; set; }
+
+    public string? TalentId { get; set; }
+
+    public int? ActiveStatus { get; set; }
+
+    public string? JobId { get; set; }
+
+    //public List<int>? LockStatus { get; set; }
+
+    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    public DateTime? UpdateStartDate { get; set; }
+
+    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    public DateTime? UpdateEndDate { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        q.SetIfNotEmpty("process_id", ProcessId);
+        q.SetIfNotEmpty("stage_id", StageId);
+        q.SetIfNotEmpty("talent_id", TalentId);
+        if (ActiveStatus.HasValue) q.Add("active_status", ActiveStatus.Value);
+        q.SetIfNotEmpty("job_id", JobId);
+        //q.Set("lock_status", LockStatus);
+        q.Set("update_start_time", WebFormat.ParseDate(UpdateStartDate)?.ToString("G"));
+        q.Set("update_end_time", WebFormat.ParseDate(UpdateEndDate)?.ToString("G"));
     }
 }

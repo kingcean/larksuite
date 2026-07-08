@@ -19,6 +19,28 @@ public class LarkUsersCommandVerb : BaseCommandVerb
 
     protected override async Task OnProcessAsync(CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask;
+        await GetUserInfoAsync();
+    }
+
+    public async Task<JsonObjectNode> GetUserInfoAsync()
+    {
+        var q = LarkCliUtils.ReadLine(CurrentConsole, "User");
+        if (string.IsNullOrEmpty(q)) return [];
+        var col = await LarkApi.DefaultInstance.GetUserIdAsync(new LarkUserIdRequestOptions
+        {
+            Emails = [q],
+            Phones = [q],
+        });
+        var users = col.Data.TryGetObjectListValue("user_list");
+        var i = 0;
+        foreach (var user in users)
+        {
+            if (user is null) continue;
+            i++;
+            DefaultConsole.WriteLine(user);
+        }
+
+        if (i < 1) DefaultConsole.WriteLine(ConsoleColor.Red, "Empty");
+        return col.Data;
     }
 }

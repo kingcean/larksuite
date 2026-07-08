@@ -2,6 +2,7 @@
 using LarkSuite.Docs;
 using LarkSuite.OapiModels;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -18,7 +19,7 @@ using Trivial.Web;
 
 namespace LarkSuite.CommandLine;
 
-internal class LarkDocsCommandVerb : BaseCommandVerb
+public class LarkDocsCommandVerb : BaseCommandVerb
 {
     public static string Description => "Access Lark Docs and Base tables";
 
@@ -46,11 +47,11 @@ internal class LarkDocsCommandVerb : BaseCommandVerb
             {
                 case "space":
                 case "1":
-                    await GetWikiSpaceNodesAsync(cancellationToken);
+                    await ShowSpaceAsync(cancellationToken);
                     break;
                 case "doc":
                 case "2":
-                    await ResolveDocAsync(cancellationToken);
+                    await ShowDocAsync(cancellationToken);
                     break;
                 case "search":
                 case "3":
@@ -64,6 +65,181 @@ internal class LarkDocsCommandVerb : BaseCommandVerb
 
             s = null;
         }
+    }
+
+    public Task ShowDocAsync(CancellationToken cancellationToken = default)
+    {
+        var console = CurrentConsole;
+        var id = LarkCliUtils.ReadLine(console, "Docs\\Doc");
+        cancellationToken.ThrowIfCancellationRequested();
+        return ShowDocAsync(id, cancellationToken);
+    }
+
+    public async Task ShowDocAsync(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return;
+        var console = CurrentConsole;
+        var lark = LarkApi.DefaultInstance;
+        var node = await lark.GetWikiNodeAsync(token, cancellationToken);
+        if (string.IsNullOrWhiteSpace(node?.Data?.NodeToken))
+        {
+            await ResolveDocAsync(token, cancellationToken);
+            return;
+        }
+
+        console.WriteLine(node.Data);
+        console.WriteLine();
+        await ShowDocAsync(node.Data);
+        var space = string.IsNullOrWhiteSpace(node.Data.SpaceId) ? null : await lark.GetWikiSpaceInfoAsync(node.Data.SpaceId, cancellationToken);
+        await ShowSpaceAsync([node.Data], space?.Data, cancellationToken);
+    }
+
+    public Task ShowSpaceAsync(CancellationToken cancellationToken = default)
+        => ShowSpaceAsync(null, null, cancellationToken);
+
+    public async Task ShowSpaceAsync(List<LarkDocsNodeInfo>? path, LarkWikiSpaceInfo? space, CancellationToken cancellationToken = default)
+    {
+        path ??= new();
+        var console = CurrentConsole;
+        var lark = LarkApi.DefaultInstance;
+        while (true)
+        {
+            if (string.IsNullOrWhiteSpace(space?.Id))
+            {
+                var spaces = await lark.GetWikiSpacesAsync(cancellationToken);
+                if (LarkCliUtils.WriteEmpty(console, spaces)) return;
+                path.Clear();
+                var list = spaces.Data.ToSelectionStringItems().ToList();
+                LarkCliUtils.WriteOrderedLine(console, list);
+                console.WriteLine();
+                console.WriteLine("Please type the index or the space ID.");
+                var spaceId = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
+                if (LarkCliUtils.IsToExit(spaceId)) return;
+                cancellationToken.ThrowIfCancellationRequested();
+                var info = await lark.GetWikiSpaceInfoAsync(spaceId, cancellationToken);
+                if (string.IsNullOrWhiteSpace(info?.Data?.Id))
+                {
+                    console.WriteLine(ConsoleColor.Red, "Not found.");
+                    spaceId = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
+                    if (LarkCliUtils.IsToExit(spaceId)) return;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    info = await lark.GetWikiSpaceInfoAsync(spaceId, cancellationToken);
+                    if (info?.Data is null)
+                    {
+                        console.WriteLine(ConsoleColor.Red, "Not found.");
+                        continue;
+                    }
+                }
+
+                space = info.Data;
+            }
+            else
+            {
+                var node = path.LastOrDefault();
+                LarkResponsePagingBody<LarkDocsNodeInfo> nodes;
+                string prefix;
+                if (string.IsNullOrWhiteSpace(node?.NodeToken))
+                {
+                    console.WriteLine(space);
+                    nodes = await lark.GetWikiSpaceNodesAsync(space.Id, cancellationToken);
+                    prefix = string.IsNullOrWhiteSpace(space.Name) ? "Docs\\Doc" : LarkCliUtils.ToPrefix("Docs\\Space\\", space.Name);
+                }
+                else
+                {
+                    console.WriteLine(node);
+                    prefix = LarkCliUtils.ToPrefix("Docs\\Doc\\", node.Name);
+                    nodes = await lark.GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions()
+                    {
+                        SpaceId = space?.Id ?? node.SpaceId,
+                        ParentNodeToken = node.NodeToken,
+                    }, null, cancellationToken);
+                }
+
+                console.WriteLine();
+                var items = nodes.Data.ToSelectionStringItems().ToList();
+                if (items.Count < 1)
+                {
+                    console.WriteLine("No child node");
+                }
+                else
+                {
+                    console.WriteLine(LarkCliUtils.ItalicText(), "Child nodes");
+                    LarkCliUtils.WriteOrderedLine(console, items, true);
+                    console.WriteLine();
+                    console.WriteLine("Please type the index or node token to get the child details;");
+                    if (path.Count > 0)
+                    {
+                        console.Write("Or, type: ");
+                        console.Write(ConsoleColor.Yellow, ".");
+                        console.Write(" to read content; ");
+                        console.Write(ConsoleColor.Yellow, "..");
+                        console.WriteLine(" to turn back parent node.");
+                    }
+                }
+
+                var sub = LarkCliUtils.ReadId(console, prefix, items);
+                if (LarkCliUtils.IsToExit(sub)) return;
+                cancellationToken.ThrowIfCancellationRequested();
+                switch (sub)
+                {
+                    case ".":
+                        await ShowDocAsync(node, cancellationToken);
+                        break;
+                    case "..":
+                        if (node is null) break;
+                        path.Remove(node);
+                        if (path.Count > 0 || string.IsNullOrWhiteSpace(node.ParentNodeToken) || node.ParentNodeToken == node.DocToken) break;
+                        var parent = await lark.GetWikiNodeAsync(node.ParentNodeToken, cancellationToken);
+                        if (!string.IsNullOrWhiteSpace(parent?.Data?.NodeToken)) path.Add(parent.Data);
+                        break;
+                    default:
+                        var select = await lark.GetWikiNodeAsync(sub!, cancellationToken);
+                        if (string.IsNullOrWhiteSpace(select?.Data?.NodeToken))
+                        {
+                            console.WriteLine(ConsoleColor.Red, "Not found");
+                            break;
+                        }
+
+                        path.Add(select.Data);
+                        break;
+                }
+            }
+
+            console.WriteLine();
+        }
+    }
+
+    public async Task ShowDocAsync(LarkDocsNodeInfo node, CancellationToken cancellationToken = default)
+    {
+        var console = CurrentConsole;
+        if (string.IsNullOrWhiteSpace(node?.DocToken))
+        {
+            console.Write(ConsoleColor.Red, "Error");
+            console.WriteLine(node is null ? " \tNo node given." : "Unknown type.");
+            return;
+        }
+
+        var pressKey = true;
+        switch (node.DocType)
+        {
+            case "doc":
+            case "docs":
+            case "docx":
+                await ResolveDocAsync(node.DocToken, cancellationToken);
+                break;
+            case "bitable":
+                await ResolveBaseTable(node.DocToken, cancellationToken);
+                break;
+            default:
+                pressKey = false;
+                LarkCliUtils.WritePropertyLine(console, "Doc Type", node.DocType);
+                break;
+        }
+
+        if (!pressKey) return;
+        console.Write(ConsoleColor.DarkGray, "--- * THE END * ---");
+        console.Write("  (Press any key to continue...)  ");
+        console.ReadKey(true);
     }
 
     public Task<JsonObjectNode?> SearchWikiAsync(CancellationToken cancellationToken = default)
@@ -83,148 +259,10 @@ internal class LarkDocsCommandVerb : BaseCommandVerb
         return json.Data;
     }
 
-    public async Task<IReadOnlyList<LarkDocsNodeInfo>?> GetWikiSpaceNodesAsync(CancellationToken cancellationToken = default)
-    {
-        var console = CurrentConsole;
-        var spaces = await LarkApi.DefaultInstance.GetWikiSpacesAsync(cancellationToken);
-        if (LarkCliUtils.WriteEmpty(console, spaces)) return null;
-        var list = new List<SelectionItem<string>>();
-        foreach (var space in spaces.Data)
-        {
-            if (string.IsNullOrWhiteSpace(space?.Id)) continue;
-            list.Add(new(space.Name, space.Id));
-        }
-
-        LarkCliUtils.WriteOrderedLine(console, list, true);
-        console.WriteLine();
-        console.WriteLine("Please type the index or the space ID.");
-        var id = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
-        console.WriteLine();
-        return await GetWikiSpaceNodesAsync(id);
-    }
-
-    public async Task<IReadOnlyList<LarkDocsNodeInfo>?> GetWikiSpaceNodesAsync(string id, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(id)) return null;
-        var info = await LarkApi.DefaultInstance.GetWikiSpaceInfoAsync(id, cancellationToken);
-        var console = CurrentConsole;
-        if (info?.Data is null)
-        {
-            LarkCliUtils.WriteEmpty(console);
-            return null;
-        }
-
-        console.WriteLine(info.Data);
-        var nodes = await LarkApi.DefaultInstance.GetWikiSpaceNodesAsync(id, cancellationToken);
-        console.WriteLine();
-        await GetWikiSpaceNodesAsync(id, nodes, async sub =>
-        {
-            switch (sub)
-            {
-                case ".":
-                    return true;
-                case "..":
-                    console.WriteLine();
-                    await GetWikiSpaceNodesAsync(cancellationToken);
-                    return true;
-                default:
-                    return false;
-            }
-        }, cancellationToken);
-        return nodes.Data;
-    }
-
-    public async Task<IReadOnlyList<LarkDocsNodeInfo>?> GetWikiSpaceNodesAsync(string id, string token, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(id)) return null;
-        var info = await LarkApi.DefaultInstance.GetWikiNodeAsync(token, cancellationToken);
-        var console = CurrentConsole;
-        if (info?.Data is null)
-        {
-            LarkCliUtils.WriteEmpty(console);
-            return null;
-        }
-
-        console.WriteLine(info.Data);
-        var nodes = await LarkApi.DefaultInstance.GetWikiSpaceNodesAsync(id, new LarkWikiNodesRequestOptions()
-        {
-            ParentNodeToken = token,
-        }, null, cancellationToken);
-        console.WriteLine();
-        await GetWikiSpaceNodesAsync(id, nodes, async sub =>
-        {
-            switch (sub)
-            {
-                case ".":
-                    console.WriteLine();
-                    await ResolveDocAsync(token, cancellationToken);
-                    console.Write(ConsoleColor.DarkGray, "--- * THE END * ---");
-                    console.Write("  (Press any key to continue...)  ");
-                    console.ReadKey();
-                    console.WriteLine();
-                    return true;
-                case "..":
-                    console.WriteLine();
-                    if (string.IsNullOrWhiteSpace(info.Data.ParentNodeToken) || sub == info.Data.ParentNodeToken)
-                    {
-                        console.WriteLine("Current node is the top one.");
-                        return false;
-                    }
-
-                    await GetWikiSpaceNodesAsync(info.Data.ParentNodeToken, cancellationToken);
-                    return true;
-                default:
-                    return false;
-            }
-        }, cancellationToken);
-        return nodes.Data;
-    }
-
-    public async Task<string?> GetWikiSpaceNodesAsync(string id, LarkResponsePagingBody<LarkDocsNodeInfo> nodes, Func<string, Task<bool>>? command = null, CancellationToken cancellationToken = default)
-    {
-        var console = CurrentConsole;
-        console.WriteLine(LarkCliUtils.ItalicText(), "Contents");
-        var items = new List<SelectionItem<string>>();
-        foreach (var node in nodes.Data)
-        {
-            if (node is null) continue;
-            items.Add(new(node.Title, node.NodeToken));
-        }
-
-        if (items.Count < 1)
-        {
-            LarkCliUtils.WriteEmpty(console);
-            return null;
-        }
-
-        LarkCliUtils.WriteOrderedLine(console, items, true);
-        console.WriteLine();
-        console.WriteLine("Please type the index or node token to get the child details; or press ENTER to turn back.");
-        var sub = LarkCliUtils.ReadId(console, "Docs\\Doc", items);
-        if (!string.IsNullOrWhiteSpace(sub))
-        {
-            if (command is null || !await command(sub))
-                await GetWikiSpaceNodesAsync(id, sub, cancellationToken);
-            return sub;
-        }
-
-        return null;
-    }
-
-    public Task<LarkResponsePagingBody<LarkContentBlock>?> ResolveDocAsync(CancellationToken cancellationToken = default)
-    {
-        var console = CurrentConsole;
-        var id = LarkCliUtils.ReadLine(console, "Docs\\Doc");
-        cancellationToken.ThrowIfCancellationRequested();
-        return ResolveDocAsync(id, cancellationToken);
-    }
-
     public async Task<LarkResponsePagingBody<LarkContentBlock>?> ResolveDocAsync(string token, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(token)) return null;
         var console = CurrentConsole;
-        var info = await LarkApi.DefaultInstance.GetDocsInfoAsync(token, cancellationToken);
-        console.WriteLine(info.Data);
         console.WriteLine();
         var task = LarkApi.DefaultInstance.GetDocsBlocksAsync(token, cancellationToken);
         var writer = new InternalLarkDocsContentCliWriter();
@@ -238,6 +276,29 @@ internal class LarkDocsCommandVerb : BaseCommandVerb
             cancellationToken);
         console.WriteLine();
         return blocks;
+    }
+
+    public async Task<IReadOnlyList<LarkDocsBaseTableTableInfo>?> ResolveBaseTable(string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(token)) return null;
+        var console = CurrentConsole;
+        var lark = LarkApi.DefaultInstance;
+        var t = await lark.GetBaseTableAsync(token, cancellationToken);
+        console.WriteLine(t.Data.Name);
+        console.WriteLine(ConsoleColor.Yellow, t.Data.Token);
+        console.WriteLine();
+        console.WriteLine(LarkCliUtils.ItalicText(), "Tables");
+        var tables = await lark.ListBaseTableTablesAsync(token, new(50), cancellationToken);
+        if (LarkCliUtils.WriteEmpty(console, tables)) return null;
+        var col = tables.Data.ToSelectionStringItems().ToList();
+        if (col.Count < 1)
+        {
+            LarkCliUtils.WriteEmpty(console);
+            return tables.Data;
+        }
+
+        LarkCliUtils.WriteOrderedLine(console, col);
+        return tables.Data;
     }
 }
 
@@ -300,8 +361,8 @@ public static partial class LarkCliUtils
     {
         if (node is null) return;
         console ??= StyleConsole.Default;
-        if (!string.IsNullOrWhiteSpace(node.Title))
-            console.WriteLine(BoldText(), node.Title);
+        if (!string.IsNullOrWhiteSpace(node.Name))
+            console.WriteLine(BoldText(), node.Name);
         if (!string.IsNullOrWhiteSpace(node.Url))
             console.WriteLine(node.Url);
         console.WriteLine();
@@ -309,7 +370,6 @@ public static partial class LarkCliUtils
         console.WriteLine(ConsoleColor.Yellow, node.NodeToken);
         WritePropertyLine(console, "Type", node.NodeType);
         WritePropertyLine(console, "Creation", node.NodeCreationTime.ToString("D"));
-        console.WriteLine(node.HasChild ? "Has child nodes" : "Leaf node");
         console.WriteLine();
         console.WriteLine(ItalicText(), "Doc information");
         console.WriteLine(ConsoleColor.Yellow, node.DocToken);

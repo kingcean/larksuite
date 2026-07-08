@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
+using System.Xml.Linq;
 using Trivial.Collection;
 using Trivial.CommandLine;
 using Trivial.Net;
@@ -87,6 +88,7 @@ public static partial class LarkCliUtils
             }
 
             var items = await restPages(resp, restPageSize, cancellationToken);
+            if (items.Count < 1) break;
             writeLine(console, items);
         }
 
@@ -105,14 +107,14 @@ public static partial class LarkCliUtils
     public static Task<LarkResponsePagingBody<TItem>> WritePagesAsync<TItem>(
         StyleConsole console,
         Func<string, CancellationToken, Task<LarkResponsePagingBody<TItem>>> firstPage,
-        Func<string, LarkResponsePagingBody<TItem>, int?, CancellationToken, Task<IReadOnlyList<TItem>>> restPages,
+        Func<LarkResponsePagingBody<TItem>, int?, CancellationToken, Task<IReadOnlyList<TItem>>> restPages,
         string arg,
         Action<StyleConsole, IReadOnlyList<TItem>>? writeLine = null,
         int? restPageSize = null,
         CancellationToken cancellationToken = default)
         => WritePagesAsync(console, firstPage(arg, cancellationToken), (response, pageSize, cancellationToken) =>
         {
-            return restPages(arg, response, restPageSize, cancellationToken);
+            return restPages(response, restPageSize, cancellationToken);
         }, writeLine, restPageSize, cancellationToken);
 
     public static Task<LarkResponsePagingBody<TItem>> WritePagesAsync<TRequestOptions, TItem>(
@@ -128,6 +130,13 @@ public static partial class LarkCliUtils
     {
         var resp = firstPage(options, firstPageSize.HasValue ? new(firstPageSize.Value) : null, cancellationToken);
         return WritePagesAsync(console, resp, restPages, writeLine, restPageSize, cancellationToken);
+    }
+
+    internal static bool IsToExit(string? command)
+    {
+        command = command?.Trim()?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(command)) return false;
+        return command == "exit" || command == "quit" || command == "close" || command == "esc" || command == "bye" || command == "goodbye" || command == "tuichu" || command == "退出" || command == "关闭" || command == "再见" || command == "结束";
     }
 
     internal static string? GetName(JsonObjectNode? json)
@@ -182,7 +191,7 @@ public static partial class LarkCliUtils
         if (ids.Contains(id)) return id;
         if (int.TryParse(id, out var index) && index > 0 && index <= ids.Count)
             return ids[index - 1];
-        return null;
+        return id;
     }
 
     internal static string? ReadId(StyleConsole console, string prefix, IList<SelectionItem<string>> ids)
@@ -279,4 +288,11 @@ public static partial class LarkCliUtils
             ForegroundRgbColor = Color.FromArgb(r, g, b),
             Bold = true,
         };
+
+    internal static string ToPrefix(string parent, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return parent;
+        if (name.Length < 21) return string.Concat(parent, name);
+        return string.Concat(parent, name[0..19], "…");
+    }
 }

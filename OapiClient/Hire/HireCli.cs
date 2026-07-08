@@ -11,7 +11,7 @@ using Trivial.Web;
 
 namespace LarkSuite.CommandLine;
 
-internal class LarkHireCommandVerb : BaseCommandVerb
+public class LarkHireCommandVerb : BaseCommandVerb
 {
     public static string Description => "Get details of interview and candidate.";
 

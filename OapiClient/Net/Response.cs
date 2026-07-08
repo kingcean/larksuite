@@ -188,11 +188,36 @@ public class LarkResponseBody<T> : LarkResponseBody
 }
 
 /// <summary>
+/// The status and additional information for each paging request.
+/// </summary>
+/// <param name="response">The response date time.</param>
+/// <param name="message">The message.</param>
+/// <param name="count">The item count.</param>
+public class LarkResponsePagingStatusInfo(DateTime response, string? message, int count)
+{
+    /// <summary>
+    /// Gets the request receiving date time.
+    /// </summary>
+    public DateTime ResponseTime { get; } = response;
+
+    /// <summary>
+    /// Gets the message.
+    /// </summary>
+    public string? Message { get; } = message;
+
+    /// <summary>
+    /// Gets the count of item.
+    /// </summary>
+    public int Count { get; } = count;
+}
+
+/// <summary>
 /// The response body with paging from Lark API.
 /// </summary>
 public class LarkResponsePagingBody : LarkResponseBody
 {
     private readonly List<JsonObjectNode> col;
+    private readonly List<LarkResponsePagingStatusInfo> records = new();
 
     /// <summary>
     /// Initializes a new instance of the LarkResponsePagingBody class.
@@ -201,6 +226,8 @@ public class LarkResponsePagingBody : LarkResponseBody
         : base()
     {
         col = [];
+        TotalCount = 0;
+        PagingRecords = records.AsReadOnly();
         Data = col.AsReadOnly();
     }
 
@@ -212,6 +239,8 @@ public class LarkResponsePagingBody : LarkResponseBody
         : base(isError)
     {
         col = [];
+        TotalCount = 0;
+        PagingRecords = records.AsReadOnly();
         Data = col.AsReadOnly();
     }
 
@@ -225,14 +254,17 @@ public class LarkResponsePagingBody : LarkResponseBody
         : base(raw)
     {
         Query = query;
+        PagingRecords = records.AsReadOnly();
         var data = raw?.TryGetObjectValue("data");
         if (data is null)
         {
             col = [];
             Data = col.AsReadOnly();
+            TotalCount = 0;
             return;
         }
 
+        TotalCount = raw?.TryGetInt32Value("total");
         col = data.TryGetObjectListValue(string.IsNullOrWhiteSpace(key) ? "items" : key, true) ?? [];
         Data = col.AsReadOnly();
         PageToken = data.TryGetStringValue("page_token");
@@ -249,14 +281,17 @@ public class LarkResponsePagingBody : LarkResponseBody
         : base(raw)
     {
         Query = query;
+        PagingRecords = records.AsReadOnly();
         var data = raw?.TryGetObjectValue("data");
         if (data is null)
         {
             col = [];
             Data = col.AsReadOnly();
+            TotalCount = 0;
             return;
         }
 
+        TotalCount = raw?.TryGetInt32Value("total");
         col = (items is null ? data.TryGetObjectListValue("items") : items(data)) ?? [];
         Data = col.AsReadOnly();
         PageToken = data.TryGetStringValue("page_token");
@@ -284,16 +319,26 @@ public class LarkResponsePagingBody : LarkResponseBody
     public bool HasNextPage { get; private set; }
 
     /// <summary>
+    /// Gets the total count; or null, if not provided.
+    /// </summary>
+    public int? TotalCount { get; private set; }
+
+    /// <summary>
     /// Gets the count of items.
     /// </summary>
     public virtual int Count => Data.Count;
+
+    /// <summary>
+    /// Gets the action records of paging.
+    /// </summary>
+    public IReadOnlyList<LarkResponsePagingStatusInfo> PagingRecords { get; }
 
     /// <summary>
     /// Gets the next page token bag.
     /// </summary>
     /// <param name="size">The page size.</param>
     /// <returns>A page token info instance for next page.</returns>
-    public LarkPageTokenInfo? NextPageInfo(int size)
+    public LarkPageTokenInfo? NextPageInfo(int? size = null)
         => HasNextPage && !string.IsNullOrWhiteSpace(PageToken) ? new()
         {
             Token = PageToken,
@@ -351,15 +396,16 @@ public class LarkResponsePagingBody : LarkResponseBody
         objectResult = [];
         var data = raw?.TryGetObjectValue("data");
         if (data is null) return false;
-        PageToken = data.TryGetStringValue("page_token");
-        HasNextPage = data.TryGetBooleanValue("has_more") ?? false;
         var list = data.TryGetObjectListValue(string.IsNullOrWhiteSpace(key) ? "items" : key, true);
+        AddRangeInternal(raw!, list.Count);
         if (list is null) return false;
         foreach (var item in list)
         {
             AddItem(item, jsonResult, objectResult);
         }
 
+        var total = raw.TryGetInt32Value("total");
+        if (total.HasValue) TotalCount = total;
         return true;
     }
 
@@ -380,14 +426,15 @@ public class LarkResponsePagingBody : LarkResponseBody
         objectResult = [];
         var data = raw?.TryGetObjectValue("data");
         if (data is null) return false;
-        PageToken = data.TryGetStringValue("page_token");
-        HasNextPage = data.TryGetBooleanValue("has_more") ?? false;
         var list = (items is null ? data.TryGetObjectListValue("items") : items(data)) ?? [];
+        AddRangeInternal(raw!, list.Count);
         foreach (var item in list)
         {
             AddItem(item, jsonResult, objectResult);
         }
 
+        var total = raw.TryGetInt32Value("total");
+        if (total.HasValue) TotalCount = total;
         return true;
     }
 
@@ -411,6 +458,13 @@ public class LarkResponsePagingBody : LarkResponseBody
         jsonResult.Add(item);
         objectResult.Add(r);
         return true;
+    }
+
+    private void AddRangeInternal(JsonObjectNode raw, int count)
+    {
+        PageToken = raw.TryGetStringValue("page_token");
+        HasNextPage = raw.TryGetBooleanValue("has_more") ?? false;
+        var record = new LarkResponsePagingStatusInfo(DateTime.Now, raw.TryGetStringValue("msg"), count);
     }
 }
 

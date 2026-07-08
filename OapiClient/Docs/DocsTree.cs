@@ -85,7 +85,7 @@ public class LarkContentBlockTreeContent
 [JsonDerivedType(typeof(LarkContentBlockLinkReference), "link")]
 public abstract class BaseLarkContentBlockTreeContentReference
 {
-    [JsonPropertyName("type")]
+    [JsonIgnore]
     public virtual string ReferenceType { get; }
 
     [JsonIgnore]
@@ -94,7 +94,7 @@ public abstract class BaseLarkContentBlockTreeContentReference
 
 public class LarkContentBlockUserReference : BaseLarkContentBlockTreeContentReference
 {
-    [JsonPropertyName("type")]
+    [JsonIgnore]
     public override string ReferenceType => "user";
 
     [JsonPropertyName("id")]
@@ -106,7 +106,7 @@ public class LarkContentBlockUserReference : BaseLarkContentBlockTreeContentRefe
 
 public class LarkContentBlockLinkReference : BaseLarkContentBlockTreeContentReference
 {
-    [JsonPropertyName("type")]
+    [JsonIgnore]
     public override string ReferenceType => "link";
 
     [JsonPropertyName("url")]
