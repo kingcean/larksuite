@@ -140,12 +140,14 @@ public class LarkDocsBaseTableRecord
     [JsonPropertyName("created_by")]
     public LarkDocsAccessUserInfo Creator { get; set; }
 
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
     [JsonPropertyName("created_time")]
     public DateTime CreateDate { get; set; }
 
     [JsonPropertyName("last_modified_by")]
     public LarkDocsAccessUserInfo LastModifier { get; set; }
 
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
     [JsonPropertyName("last_modified_time")]
     public DateTime LastModificationDate { get; set; }
 
@@ -276,4 +278,13 @@ public class LarkDocsBaseTableRecordsInfo
 
         return null;
     }
+}
+
+public class LarkDocsBaseTableRecordDeletionInfo
+{
+    [JsonPropertyName("deleted")]
+    public bool HasDeleted { get; set; }
+
+    [JsonPropertyName("record_id")]
+    public string Id { get; set; }
 }

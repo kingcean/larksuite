@@ -7,6 +7,32 @@ using Trivial.Text;
 namespace LarkSuite.OapiModels;
 
 /// <summary>
+/// Gender.
+/// </summary>
+public enum LarkGender : byte
+{
+    /// <summary>
+    /// Unknown.
+    /// </summary>
+    Unknown = 0,
+
+    /// <summary>
+    /// Male.
+    /// </summary>
+    Male = 1,
+
+    /// <summary>
+    /// Female.
+    /// </summary>
+    Female = 2,
+
+    /// <summary>
+    /// Other kind of gender.
+    /// </summary>
+    Others = 3,
+}
+
+/// <summary>
 /// The request options of user identifer.
 /// </summary>
 public class LarkUserIdRequestOptions : LarkUserIdTypeRequestOptions, IJsonObjectHost

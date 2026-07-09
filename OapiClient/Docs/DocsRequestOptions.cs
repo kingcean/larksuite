@@ -77,3 +77,14 @@ public class LarkWikiDocMarkdownOptions : LarkResourceRequestOptions
         q["content_type"] = "markdown";
     }
 }
+
+public class LarkDocsBaseTableRecordOptions : LarkUserIdTypeRequestOptions
+{
+    public bool? IgnoreConsistencyCheck { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        if (IgnoreConsistencyCheck.HasValue) q["ignore_consistency_check"] = IgnoreConsistencyCheck.Value ? JsonBooleanNode.TrueString : JsonBooleanNode.FalseString;
+    }
+}

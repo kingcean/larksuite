@@ -39,14 +39,23 @@ public partial class LarkApi
             return obj.TryGetObjectValue("minutes")?.TryGetObjectListValue("sentences");
         }, pageSize, cancellationToken);
 
-    public Task<LarkResponseBody> GetHireTalent(string id, CancellationToken cancellationToken = default)
-        => GetAsync(string.Concat(LarkUrls.HireTalent, id), cancellationToken);
+    public Task<LarkResponseBody<LarkHireTalentInfo>> GetHireTalent(string id, CancellationToken cancellationToken = default)
+        => GetAsync<LarkHireTalentInfo>(string.Concat(LarkUrls.HireTalent, id), cancellationToken);
+
+    public Task<LarkResponsePagingBody<LarkHireTalentInfo>> SearchHireTalents(string keyword, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+        => GetItemsAsync<LarkHireTalentInfo>(LarkUrls.HireTalents, new LarkTalentSearchOptions(keyword), paging, cancellationToken);
+
+    public Task<LarkResponsePagingBody<LarkHireTalentInfo>> SearchHireTalents(LarkTalentSearchOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+        => GetItemsAsync<LarkHireTalentInfo>(LarkUrls.HireTalents, options, paging, cancellationToken);
+
+    public Task<IReadOnlyList<LarkHireTalentInfo>> SearchHireTalents(LarkResponsePagingBody<LarkHireTalentInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.HireTalents, response, pageSize, cancellationToken);
 
     public Task<LarkResponseBody> GetHireApplicationInfo(string id, CancellationToken cancellationToken = default)
         => GetAsync(string.Concat(LarkUrls.Applications, id), cancellationToken);
 
-    public Task<LarkResponseBody> GetHireApplicationDetails(string id, CancellationToken cancellationToken = default)
-        => GetAsync(LarkUrls.ToUrl(LarkUrls.ApplicationDetails, id), cancellationToken);
+    public Task<LarkResponseBody<LarkHireTalentInfo>> GetHireApplicationDetails(string id, CancellationToken cancellationToken = default)
+        => GetAsync<LarkHireTalentInfo>(LarkUrls.ToUrl(LarkUrls.ApplicationDetails, id), cancellationToken);
 
     public Task<LarkResponsePagingBody> GetHireApplications(LarkHireApplicationOptions options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Applications, options, paging, cancellationToken);

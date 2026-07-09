@@ -125,7 +125,7 @@ public partial class LarkApi
     public Task<LarkResponsePagingBody<LarkDocsBaseTableTableInfo>> ListBaseTableTablesAsync(string baseId, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkDocsBaseTableTableInfo>(LarkUrls.ToUrl(LarkUrls.ListBaseTableTables, LarkUrls.GetId(baseId)), new LarkResourceIdRequest(LarkUrls.GetId(baseId)), paging, cancellationToken);
 
-    public Task<LarkResponseBody<LarkDocsBaseTableRecordsInfo>> GetBaseTableRecordsAsync(string baseId, string tableId, IEnumerable<string> recordIds, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody<LarkDocsBaseTableRecordsInfo>> GetBaseTableRecordsAsync(string baseId, string tableId, IEnumerable<string> recordIds, CancellationToken cancellationToken = default)
         => PostAsync<LarkDocsBaseTableRecordsInfo>(LarkUrls.ToUrl(LarkUrls.GetBaseTableRecords, LarkUrls.GetId(baseId), tableId), new JsonObjectNode()
         {
             { "record_ids", recordIds },
@@ -162,6 +162,56 @@ public partial class LarkApi
         if (paging is null) return [];
         var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.ReadBaseTable, paging, query.BaseId, query.TableId), query.ToJson(), cancellationToken);
         return response.AddRange(resp);
+    }
+
+    public async Task<LarkResponseBody<LarkDocsBaseTableRecord>> InsertBaseTableRecordAsync(string baseId, string tableId, JsonObjectNode fields, LarkDocsBaseTableRecordOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.InsertBaseTableRecord, options, baseId, tableId), new JsonObjectNode()
+        {
+            { "fields", fields }
+        }, cancellationToken);
+        return new(resp, "record");
+    }
+
+    public async Task<LarkResponseBody<List<LarkDocsBaseTableRecord>>> InsertBaseTableRecordAsync(string baseId, string tableId, IEnumerable<JsonObjectNode> fields, LarkDocsBaseTableRecordOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.InsertBaseTableRecords, options, baseId, tableId), new JsonObjectNode()
+        {
+            { "records", fields.Select(ele => new JsonObjectNode
+            {
+            { "fields", fields },
+            }) },
+        }, cancellationToken);
+        return new(resp, "records");
+    }
+
+    public async Task<LarkResponseBody<LarkDocsBaseTableRecord>> UpdateBaseTableRecordAsync(string baseId, string tableId, string recordId, JsonObjectNode fields, LarkDocsBaseTableRecordOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.PutAsync(LarkUrls.ToUrl(LarkUrls.UpdateBaseTableRecord, options, baseId, tableId, recordId), new JsonObjectNode()
+        {
+            { "fields", fields }
+        }, cancellationToken);
+        return new(resp, "record");
+    }
+
+    public async Task<LarkResponseBody<LarkDocsBaseTableRecordDeletionInfo>> DeleteBaseTableRecordAsync(string baseId, string tableId, string recordId, LarkDocsBaseTableRecordOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.SendAsync(HttpMethod.Delete, LarkUrls.ToUrl(LarkUrls.UpdateBaseTableRecord, options, baseId, tableId, recordId), cancellationToken);
+        return new(resp);
+    }
+
+    public async Task<LarkResponseBody<List<LarkDocsBaseTableRecordDeletionInfo>>> DeleteBaseTableRecordAsync(string baseId, string tableId, IEnumerable<string> recordId, LarkDocsBaseTableRecordOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.DeleteBaseTableRecords, options, baseId, tableId), new JsonObjectNode
+        {
+            { "records", recordId },
+        }, cancellationToken);
+        return new(resp, "records");
     }
 
     public async Task<LarkResponseBody<string>> UploadDocsFile(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)

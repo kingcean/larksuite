@@ -109,11 +109,11 @@ public partial class LarkApi : TokenContainer
     /// <param name="uri">The URI the request is sent to.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result deserialized.</returns>
-    public async Task<T> GetAsync<T>(Uri uri, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<T>> GetAsync<T>(Uri uri, CancellationToken cancellationToken = default)
     {
-        var http = CreateJsonHttpClient<T>();
+        var http = CreateJsonHttpClient();
         var resp = await http.GetAsync(uri, cancellationToken);
-        return resp;
+        return new(resp);
     }
 
     /// <summary>
@@ -123,7 +123,7 @@ public partial class LarkApi : TokenContainer
     /// <param name="url">The URL the request is sent to.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result deserialized.</returns>
-    public Task<T> GetAsync<T>(string url, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody<T>> GetAsync<T>(string url, CancellationToken cancellationToken = default)
         => GetAsync<T>(new Uri(url), cancellationToken);
 
     /// <summary>

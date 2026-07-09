@@ -43,7 +43,7 @@ public enum LarkDepartmentIdType
     /// <summary>
     /// The default value, which is the same as OpenId.
     /// </summary>
-    Defaut = 0,
+    Default = 0,
 
     /// <summary>
     /// The ID of department in app scope. For the same department, this is different for the different app.

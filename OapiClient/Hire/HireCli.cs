@@ -8,6 +8,7 @@ using Trivial.CommandLine;
 using Trivial.Text;
 using System.ComponentModel.DataAnnotations;
 using Trivial.Web;
+using Trivial.Collection;
 
 namespace LarkSuite.CommandLine;
 
@@ -18,7 +19,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
     protected override async Task OnProcessAsync(CancellationToken cancellationToken = default)
     {
         var console = CurrentConsole;
-        console.Write("Search [L]atest, on specific [D]ay, or by [T]alent ID?  ");
+        console.Write("Search [L]atest, on specific [D]ay, or by specific [T]alent?  ");
         var c = console.ReadKey();
         console.WriteLine();
         switch (c.Key)
@@ -79,6 +80,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
         console.WriteLine();
         console.WriteLine("Please type the index of interview ID to get interview minutes.");
         var id = ReadInterviewId(ids);
+        if (LarkCliUtils.IsToExit(id)) return resp.Data;
         WriteInterviewResultLine(id, resp.Data);
         await GetInterviewMinutesAsync(id);
         return resp.Data;
@@ -88,39 +90,57 @@ public class LarkHireCommandVerb : BaseCommandVerb
     {
         var larkApi = LarkApi.DefaultInstance;
         var console = CurrentConsole;
-        console.WriteLine("Please type the talent ID.");
-        var id = LarkCliUtils.ReadLine(console, "Hire\\Talent")!;
-        if (string.IsNullOrEmpty(id)) return [];
+        console.WriteLine("Search a talent. Please type the ID, name or keyword.");
+        var keyword = LarkCliUtils.ReadLine(console, "Hire\\Talent")!;
+        if (string.IsNullOrEmpty(keyword)) return [];
+        var info = await larkApi.GetHireTalent(keyword, cancellationToken);
+        var talent = info?.Data;
+        var basic = talent?.BasicInfo;
+        if (basic is null)
+        {
+            var talents = await larkApi.SearchHireTalents(keyword);
+            if (LarkCliUtils.WriteEmpty(console, talents)) return [];
+            var selection = new List<SelectionItem<string>>();
+            var dict = new Dictionary<string, LarkHireTalentInfo>();
+            foreach (var talentInfo in talents.Data)
+            {
+                var talentId = talentInfo.Id;
+                var talentName = talentInfo?.BasicInfo?.Name;
+                if (talentId == null || talentName == null) continue;
+                dict[talentId] = talentInfo!;
+                selection.Add(new(talentName, talentId));
+            }
+
+            LarkCliUtils.WriteOrderedLine(console, selection);
+            console.WriteLine("Please type the index.");
+            var id2 = LarkCliUtils.ReadLine(console, "Hire\\Talent");
+            if (LarkCliUtils.IsToExit(id2)) return [];
+            if (string.IsNullOrWhiteSpace(id2) || !dict.TryGetValue(id2, out talent)) return [];
+            basic = talent.BasicInfo;
+        }
+
         var task = larkApi.GetInterviews(new LarkInterviewByTelentOptions
         {
-            Id = id
+            Id = keyword
         }, cancellationToken);
-        var info = await larkApi.GetHireTalent(id, cancellationToken);
         console.WriteLine();
-        var basic = info?.Data?.TryGetObjectValue("basic_info");
         if (basic is not null)
         {
-            console.WriteLine(LarkCliUtils.BoldText(), basic.TryGetStringValue("name"));
-            console.WriteLine(ConsoleColor.Yellow, info.Data.TryGetStringValue("talent_id"));
+            console.WriteLine(LarkCliUtils.BoldText(), basic.Name);
+            console.WriteLine(ConsoleColor.Yellow, talent.Id);
             console.WriteLine();
-            var phone = basic.TryGetStringTrimmedValue("mobile_number", true);
+            var phone = basic.PhoneNumber;
             if (phone is not null)
             {
-                var phoneRegion = basic.TryGetStringTrimmedValue("mobile_code", true);
+                var phoneRegion = basic.PhoneNumberRegionCode;
                 LarkCliUtils.WritePropertyLine(console, "Phone", phoneRegion is null ? phone : $"+{phoneRegion} {phone}");
             }
 
-            LarkCliUtils.WritePropertyLine(console, "Email", basic.TryGetStringValue("email"));
-            LarkCliUtils.WritePropertyLine(console, "Gender", (basic.TryGetInt32Value("gender") ?? 0) switch
-            {
-                1 => "Male",
-                2 => "Female",
-                3 => "Other",
-                _ => "Unknown",
-            });
-            var birthday = basic.TryGetDateTimeValue("birthday");
+            LarkCliUtils.WritePropertyLine(console, "Email", basic.Email);
+            LarkCliUtils.WritePropertyLine(console, "Gender", basic.Gender.ToString());
+            var birthday = basic.Birthday;
             if (birthday.HasValue) LarkCliUtils.WritePropertyLine(console, "Birthday", birthday.Value.Date.ToShortDateString());
-            var career = info.Data.TryGetObjectListValue("career_list", true);
+            var career = talent.WorkingInfo;
             if (career is not null && career.Count > 0)
             {
                 console.WriteLine();
@@ -128,15 +148,15 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 foreach (var xp in career)
                 {
                     console.Write(ConsoleColor.Blue, "· ");
-                    console.WriteLine($"{xp.TryGetStringTrimmedValue("start_time") ?? "?"} → {xp.TryGetStringTrimmedValue("end_time") ?? "?"}");
+                    console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
                     console.Write(ConsoleColor.Blue, "  ");
-                    console.Write(xp.TryGetStringTrimmedValue("company_name", true) ?? "?");
+                    console.Write(xp.Name ?? "?");
                     console.Write(" \t ");
-                    console.WriteLine(xp.TryGetStringTrimmedValue("title", true));
+                    console.WriteLine(xp.Title);
                 }
             }
 
-            var edu = info.Data.TryGetObjectListValue("education_list");
+            var edu = talent.EducationInfo;
             if (edu is not null && edu.Count > 0)
             {
                 console.WriteLine();
@@ -144,11 +164,11 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 foreach (var xp in edu)
                 {
                     console.Write(ConsoleColor.Blue, "· ");
-                    console.WriteLine($"{xp.TryGetStringTrimmedValue("start_time") ?? "?"} → {xp.TryGetStringTrimmedValue("end_time") ?? "?"}");
+                    console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
                     console.Write(ConsoleColor.Blue, "  ");
-                    console.Write(xp.TryGetStringTrimmedValue("school_name", true) ?? "?");
+                    console.Write(xp.Name ?? "?");
                     console.Write(" \t ");
-                    console.WriteLine(xp.TryGetStringTrimmedValue("major", true));
+                    console.WriteLine(xp.Major);
                 }
             }
 
@@ -167,7 +187,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
         var ids = WriteLine(interviews);
         console.WriteLine();
-        id = ReadInterviewId(ids);
+        var id = ReadInterviewId(ids);
         WriteInterviewResultLine(id, interviews);
         return await GetInterviewMinutesAsync(id);
     }

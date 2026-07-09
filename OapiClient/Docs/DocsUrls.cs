@@ -23,6 +23,10 @@ internal static partial class LarkUrls
     public const string GetBaseTableRecords = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/batch_get";
     public const string RenameBaseTable = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}";
     public const string ReadBaseTable = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/search";
+    public const string InsertBaseTableRecord = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records";
+    public const string InsertBaseTableRecords = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/batch_create";
+    public const string UpdateBaseTableRecord = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/{2}";
+    public const string DeleteBaseTableRecords = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/batch_delete";
     public const string UploadFile = "https://open.feishu.cn/open-apis/drive/v1/files/upload_all";
     public const string ConvertDocsFileFormat = "https://open.feishu.cn/open-apis/drive/v1/import_tasks";
     public const string ConvertDocsFileFormatState = "https://open.feishu.cn/open-apis/drive/v1/import_tasks/";
