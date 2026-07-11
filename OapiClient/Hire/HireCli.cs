@@ -9,6 +9,7 @@ using Trivial.Text;
 using System.ComponentModel.DataAnnotations;
 using Trivial.Web;
 using Trivial.Collection;
+using System.Xml.Linq;
 
 namespace LarkSuite.CommandLine;
 
@@ -90,91 +91,15 @@ public class LarkHireCommandVerb : BaseCommandVerb
     {
         var larkApi = LarkApi.DefaultInstance;
         var console = CurrentConsole;
-        console.WriteLine("Search a talent. Please type the ID, name or keyword.");
-        var keyword = LarkCliUtils.ReadLine(console, "Hire\\Talent")!;
-        if (string.IsNullOrEmpty(keyword)) return [];
-        var info = await larkApi.GetHireTalent(keyword, cancellationToken);
-        var talent = info?.Data;
+        var talent = await GetTalentInfoAsync(CurrentConsole, larkApi, cancellationToken);
         var basic = talent?.BasicInfo;
-        if (basic is null)
-        {
-            var talents = await larkApi.SearchHireTalents(keyword);
-            if (LarkCliUtils.WriteEmpty(console, talents)) return [];
-            var selection = new List<SelectionItem<string>>();
-            var dict = new Dictionary<string, LarkHireTalentInfo>();
-            foreach (var talentInfo in talents.Data)
-            {
-                var talentId = talentInfo.Id;
-                var talentName = talentInfo?.BasicInfo?.Name;
-                if (talentId == null || talentName == null) continue;
-                dict[talentId] = talentInfo!;
-                selection.Add(new(talentName, talentId));
-            }
-
-            LarkCliUtils.WriteOrderedLine(console, selection);
-            console.WriteLine("Please type the index.");
-            var id2 = LarkCliUtils.ReadLine(console, "Hire\\Talent");
-            if (LarkCliUtils.IsToExit(id2)) return [];
-            if (string.IsNullOrWhiteSpace(id2) || !dict.TryGetValue(id2, out talent)) return [];
-            basic = talent.BasicInfo;
-        }
-
+        if (basic is null) return [];
         var task = larkApi.GetInterviews(new LarkInterviewByTelentOptions
         {
-            Id = keyword
+            Id = talent!.Id
         }, cancellationToken);
         console.WriteLine();
-        if (basic is not null)
-        {
-            console.WriteLine(LarkCliUtils.BoldText(), basic.Name);
-            console.WriteLine(ConsoleColor.Yellow, talent.Id);
-            console.WriteLine();
-            var phone = basic.PhoneNumber;
-            if (phone is not null)
-            {
-                var phoneRegion = basic.PhoneNumberRegionCode;
-                LarkCliUtils.WritePropertyLine(console, "Phone", phoneRegion is null ? phone : $"+{phoneRegion} {phone}");
-            }
-
-            LarkCliUtils.WritePropertyLine(console, "Email", basic.Email);
-            LarkCliUtils.WritePropertyLine(console, "Gender", basic.Gender.ToString());
-            var birthday = basic.Birthday;
-            if (birthday.HasValue) LarkCliUtils.WritePropertyLine(console, "Birthday", birthday.Value.Date.ToShortDateString());
-            var career = talent.WorkingInfo;
-            if (career is not null && career.Count > 0)
-            {
-                console.WriteLine();
-                console.WriteLine(LarkCliUtils.ItalicText(), "Companies");
-                foreach (var xp in career)
-                {
-                    console.Write(ConsoleColor.Blue, "· ");
-                    console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
-                    console.Write(ConsoleColor.Blue, "  ");
-                    console.Write(xp.Name ?? "?");
-                    console.Write(" \t ");
-                    console.WriteLine(xp.Title);
-                }
-            }
-
-            var edu = talent.EducationInfo;
-            if (edu is not null && edu.Count > 0)
-            {
-                console.WriteLine();
-                console.WriteLine(LarkCliUtils.ItalicText(), "Education");
-                foreach (var xp in edu)
-                {
-                    console.Write(ConsoleColor.Blue, "· ");
-                    console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
-                    console.Write(ConsoleColor.Blue, "  ");
-                    console.Write(xp.Name ?? "?");
-                    console.Write(" \t ");
-                    console.WriteLine(xp.Major);
-                }
-            }
-
-            console.WriteLine();
-        }
-
+        if (basic is not null) console.WriteLine(talent);
         console.WriteLine(LarkCliUtils.ItalicText(), "Interviews");
         var arr = await task;
         if (LarkCliUtils.WriteEmpty(console, arr)) return [];
@@ -187,7 +112,9 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
         var ids = WriteLine(interviews);
         console.WriteLine();
+        console.WriteLine("Please type the index or ID of interview to show minutes.");
         var id = ReadInterviewId(ids);
+        if (LarkCliUtils.IsToExit(id)) return [];
         WriteInterviewResultLine(id, interviews);
         return await GetInterviewMinutesAsync(id);
     }
@@ -326,6 +253,37 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
         return ids;
     }
+
+    public static async Task<LarkHireTalentInfo?> GetTalentInfoAsync(StyleConsole? console, LarkApi? larkApi, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        console ??= StyleConsole.Default;
+        console.WriteLine("Search a talent. Please type the ID, name or keyword.");
+        var keyword = LarkCliUtils.ReadLine(console, "Hire\\Talent")!;
+        if (string.IsNullOrEmpty(keyword)) return null;
+        var info = await larkApi.GetHireTalent(keyword, cancellationToken);
+        var talent = info?.Data;
+        if (talent?.BasicInfo is not null) return talent;
+        var talents = await larkApi.SearchHireTalents(keyword);
+        if (LarkCliUtils.WriteEmpty(console, talents)) return null;
+        var selection = new List<SelectionItem<string>>();
+        var dict = new Dictionary<string, LarkHireTalentInfo>();
+        foreach (var talentInfo in talents.Data)
+        {
+            var talentId = talentInfo.Id ?? talentInfo.IdInOldVersion;
+            var talentName = talentInfo?.BasicInfo?.Name;
+            if (talentId == null || talentName == null) continue;
+            dict[talentId] = talentInfo!;
+            selection.Add(new(talentName, talentId));
+        }
+
+        LarkCliUtils.WriteOrderedLine(console, selection);
+        console.WriteLine("Please type the index.");
+        var id2 = LarkCliUtils.ReadLine(console, "Hire\\Talent");
+        if (LarkCliUtils.IsToExit(id2) || string.IsNullOrWhiteSpace(id2) || !dict.TryGetValue(id2, out talent)) return null;
+        info = await larkApi.GetHireTalent(talent.Id ?? talent.IdInOldVersion, cancellationToken);
+        return info?.Data?.BasicInfo is not null ? info.Data : talent;
+    }
 }
 
 public static partial class LarkCliUtils
@@ -345,6 +303,99 @@ public static partial class LarkCliUtils
             console.WriteLine(ConsoleColor.Green, record.Time.ToString("f"));
             console.WriteLine(record.Message);
             console.WriteLine();
+        }
+    }
+
+    public static void WriteLine(this StyleConsole console, LarkHireTalentInfo talent)
+    {
+        console ??= StyleConsole.Default;
+        if (talent is null) return;
+        var basic = talent.BasicInfo;
+        if (basic is not null)
+        {
+            console.WriteLine(BoldText(), basic.Name);
+            console.WriteLine(ConsoleColor.Yellow, talent.Id);
+            console.WriteLine();
+            var phone = basic.PhoneNumber;
+            if (phone is not null)
+            {
+                var phoneRegion = basic.PhoneNumberRegionCode;
+                WritePropertyLine(console, "Phone", phoneRegion is null ? phone : $"+{phoneRegion} {phone}");
+            }
+
+            WritePropertyLine(console, "Email", basic.Email);
+            WritePropertyLine(console, "Gender", basic.Gender.ToString());
+            var birthday = basic.Birthday;
+            if (birthday.HasValue) WritePropertyLine(console, "Birthday", birthday.Value.Date.ToShortDateString());
+            console.WriteLine();
+        }
+
+        var career = talent.WorkingInfo;
+        if (career is not null && career.Count > 0)
+        {
+            console.WriteLine(ItalicText(), "Working Experience");
+            foreach (var xp in career)
+            {
+                WriteLine(console, xp, true);
+            }
+
+            console.WriteLine();
+        }
+
+        career = talent.InternInfo;
+        if (career is not null && career.Count > 0)
+        {
+            console.WriteLine(ItalicText(), "Intern Experience");
+            foreach (var xp in career)
+            {
+                WriteLine(console, xp, true);
+            }
+
+            console.WriteLine();
+        }
+
+        var edu = talent.EducationInfo;
+        if (edu is not null && edu.Count > 0)
+        {
+            console.WriteLine(ItalicText(), "Education");
+            foreach (var xp in edu)
+            {
+                console.Write(ConsoleColor.Blue, "· ");
+                console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
+                console.Write(ConsoleColor.Blue, "  ");
+                console.Write(xp.Name ?? "?");
+                console.Write(" \t ");
+                console.WriteLine(xp.Major);
+            }
+
+            console.WriteLine();
+        }
+    }
+
+    public static void WriteLine(this StyleConsole console, LarkHireTalentWorkingInfo xp, bool bullet = false)
+    {
+        if (string.IsNullOrWhiteSpace(xp?.Id) && string.IsNullOrWhiteSpace(xp?.Name)) return;
+        if (bullet)
+        {
+            console.Write(ConsoleColor.Blue, "· ");
+            console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
+            console.Write(ConsoleColor.Blue, "  ");
+            console.Write(xp.Name ?? "?");
+            console.Write(" \t ");
+            console.WriteLine(xp.JobTitle);
+        }
+        else
+        {
+            console.WriteLine(BoldText(), xp.Name ?? "?");
+            console.Write(' ');
+            console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
+            if (!string.IsNullOrWhiteSpace(xp.JobTitle))
+            {
+                console.Write(' ');
+                console.WriteLine(xp.JobTitle);
+            }
+
+            if (!string.IsNullOrWhiteSpace(xp.Description)) console.WriteLine(xp.Description);
         }
     }
 }

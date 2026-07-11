@@ -244,10 +244,31 @@ public class LarkDocsBaseTableRecord
         switch (type)
         {
             case "text":
-                var s = value.TryGetStringValue("text");
-                if (string.IsNullOrWhiteSpace(s)) break;
-                target.SetValue(key, s);
-                return;
+                {
+                    var s = value.TryGetStringValue("text");
+                    if (string.IsNullOrWhiteSpace(s)) break;
+                    target.SetValue(key, s);
+                    return;
+                }
+            case "url":
+                {
+                    var s = value.TryGetStringValue("link") ?? value.TryGetStringValue("text");
+                    if (string.IsNullOrWhiteSpace(s)) break;
+                    target.SetValue(key, s);
+                    return;
+                }
+            case "mention":
+                {
+                    if (value.TryGetStringValue("mentionType") == "Wiki")
+                    {
+                        var s = value.TryGetStringValue("link") ?? value.TryGetStringValue("text");
+                        if (string.IsNullOrWhiteSpace(s)) break;
+                        target.SetValue(key, s);
+                        return;
+                    }
+
+                    break;
+                }
         }
 
         target.SetValue(key, value);

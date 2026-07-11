@@ -2,6 +2,7 @@
 using LarkSuite.Security;
 using System;
 using System.Collections.Generic;
+using System.Security;
 using System.Text;
 using System.Text.Json.Nodes;
 using Trivial.Net;
@@ -20,7 +21,7 @@ public partial class LarkApi : TokenContainer
     /// <summary>
     /// Gets the default instance of Lark API.
     /// </summary>
-    public static LarkApi DefaultInstance { get; } = new();
+    public static LarkApi DefaultInstance { get; internal set; } = new();
 
     /// <summary>
     /// Initializes a new instance of the LarkApi class.
@@ -43,6 +44,16 @@ public partial class LarkApi : TokenContainer
     /// <summary>
     /// Initializes a new instance of the LarkApi class.
     /// </summary>
+    /// <param name="appId">The app key identifer.</param>
+    /// <param name="appSecret">The app key secret.</param>
+    public LarkApi(string appId, SecureString appSecret)
+    {
+        AppKey = new(appId ?? LarkUrls.GetAppKeyId(), appSecret ?? SecureStringExtensions.ToSecure(LarkUrls.GetAppKeySecret()));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkApi class.
+    /// </summary>
     /// <param name="appKey">The app key with secret.</param>
     public LarkApi(AppAccessingKey appKey)
     {
@@ -53,6 +64,11 @@ public partial class LarkApi : TokenContainer
     /// Gets the app key to access resource.
     /// </summary>
     protected AppAccessingKey AppKey { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the app accessing key is empty.
+    /// </summary>
+    public bool IsAppKeyEmpty => string.IsNullOrEmpty(AppKey.Id) || AppKey.Secret is null || AppKey.Secret.Length < 1;
 
     /// <summary>
     /// The HTTP client.
