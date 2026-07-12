@@ -214,7 +214,7 @@ public partial class LarkApi
         return new(resp, "records");
     }
 
-    public async Task<LarkResponseBody<string>> UploadDocsFile(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();
         content.Add("file_name", name);
@@ -230,7 +230,7 @@ public partial class LarkApi
         });
     }
 
-    public async Task<LarkResponseBody<string>> UploadDocsFile(string token, string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();
         content.Add("file_token", token);
@@ -247,7 +247,7 @@ public partial class LarkApi
         });
     }
 
-    public Task<LarkResponseBody<string>> ConvertDocsFileFormat(string token, string ext, string docType, string parentToken, string? name = null, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody<string>> ConvertDocsFileFormatAsync(string token, string ext, string docType, string parentToken, string? name = null, CancellationToken cancellationToken = default)
     {
         var json = new JsonObjectNode()
         {
@@ -267,6 +267,6 @@ public partial class LarkApi
         }, cancellationToken);
     }
 
-    public Task<LarkResponseBody> ConvertDocsFileFormatState(string ticket, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> ConvertDocsFileFormatStateAsync(string ticket, CancellationToken cancellationToken = default)
         => GetAsync(string.Concat(LarkUrls.ConvertDocsFileFormatState, ticket), cancellationToken);
 }

@@ -28,11 +28,13 @@ public class LarkResponseBody
     /// Initializes a new instance of the LarkResponseBody class.
     /// </summary>
     /// <param name="isError">true if error; otherwise, false.</param>
-    public LarkResponseBody(bool isError)
+    /// <param name="message">The message.</param>
+    public LarkResponseBody(bool isError, string? message = null)
     {
         IsError = isError;
         Code = -1;
         Data = [];
+        Message = message;
     }
 
     /// <summary>
@@ -119,8 +121,9 @@ public class LarkResponseBody<T> : LarkResponseBody
     /// Initializes a new instance of the LarkResponseBody class.
     /// </summary>
     /// <param name="isError">true if error; otherwise, false.</param>
-    public LarkResponseBody(bool isError)
-        : base(isError)
+    /// <param name="message">The message.</param>
+    public LarkResponseBody(bool isError, string? message = null)
+        : base(isError, message)
     {
     }
 
@@ -235,8 +238,9 @@ public class LarkResponsePagingBody : LarkResponseBody
     /// Initializes a new instance of the LarkResponsePagingBody class.
     /// </summary>
     /// <param name="isError">true if error; otherwise, false.</param>
-    public LarkResponsePagingBody(bool isError)
-        : base(isError)
+    /// <param name="message">The message.</param>
+    public LarkResponsePagingBody(bool isError, string? message = null)
+        : base(isError, message)
     {
         col = [];
         TotalCount = 0;
@@ -490,8 +494,9 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     /// Initializes a new instance of the LarkResponsePagingBody class.
     /// </summary>
     /// <param name="isError">true if error; otherwise, false.</param>
-    public LarkResponsePagingBody(bool isError)
-        : base(isError)
+    /// <param name="message">The message.</param>
+    public LarkResponsePagingBody(bool isError, string? message = null)
+        : base(isError, message)
     {
         col = [];
         Data = col.AsReadOnly();
