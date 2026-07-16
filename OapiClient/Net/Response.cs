@@ -49,6 +49,19 @@ public class LarkResponseBody
     /// <summary>
     /// Initializes a new instance of the LarkResponseBody class.
     /// </summary>
+    /// <param name="code">The response code.</param>
+    /// <param name="message">The response message.</param>
+    /// <param name="data">The data.</param>
+    public LarkResponseBody(int code, string? message, JsonObjectNode data)
+    {
+        Code = code;
+        Message = message;
+        Data = data;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkResponseBody class.
+    /// </summary>
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="key">The property key to resolve result col.</param>
     public LarkResponseBody(JsonObjectNode raw, string? key)
@@ -115,6 +128,19 @@ public class LarkResponseBody<T> : LarkResponseBody
     public LarkResponseBody()
         : base()
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkResponseBody class.
+    /// </summary>
+    /// <param name="code">The response code.</param>
+    /// <param name="message">The response message.</param>
+    /// <param name="data">The data.</param>
+    /// <param name="sourceJsonData">The source data in JSON.</param>
+    public LarkResponseBody(int code, string? message, T data, JsonObjectNode sourceJsonData)
+        : base(code, message, sourceJsonData)
+    {
+        Data = data;
     }
 
     /// <summary>

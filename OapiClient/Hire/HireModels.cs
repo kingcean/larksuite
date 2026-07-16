@@ -14,7 +14,7 @@ using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
 
-namespace LarkSuite;
+namespace LarkSuite.OapiModels;
 
 public enum LarkAcademyDegree : byte
 {

@@ -9,8 +9,14 @@ namespace LarkSuite;
 
 public partial class LarkApi
 {
-    public Task<LarkResponseBody> GetUserInfoAsync(LarkUserInfoRequest options, CancellationToken cancellationToken = default)
-        => GetAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, options), cancellationToken);
+    public Task<LarkResponsePagingBody> GetUserInfoAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+        => ids is null ? Task.FromResult(new LarkResponsePagingBody(true, "ids should not be null or empty.")) : GetItemsAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
+        {
+            UserIds = ids.ToList(),
+        }), cancellationToken);
+
+    public Task<LarkResponsePagingBody> GetUserInfoAsync(LarkUserInfoRequest options, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, options), cancellationToken);
 
     public Task<LarkResponsePagingBody> SearchUserAsync(LarkSearchOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.SearchUser, options, paging, "users", cancellationToken);

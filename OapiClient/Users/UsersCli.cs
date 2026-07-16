@@ -43,4 +43,33 @@ public class LarkUsersCommandVerb : BaseCommandVerb
         if (i < 1) DefaultConsole.WriteLine(ConsoleColor.Red, "Empty");
         return col.Data;
     }
+
+    public static void WriteLine(StyleConsole console, IEnumerable<JsonObjectNode> col)
+    {
+        console ??= StyleConsole.Default;
+        foreach (var user in col)
+        {
+            console.Write(ConsoleColor.Blue, "· ");
+            var nickname = user.TryGetStringValue("nickname");
+            var name = user.TryGetStringValue("name");
+            var enName = user.TryGetStringValue("en_name");
+            if (string.IsNullOrWhiteSpace(nickname) || nickname == name)
+            {
+                console.Write(name);
+                if (!string.IsNullOrWhiteSpace(enName) && enName != name)
+                    console.Write(ConsoleColor.DarkGray, $"  ({enName})");
+            }
+            else
+            {
+                console.Write(nickname);
+                if (!string.IsNullOrWhiteSpace(enName) && enName != name && enName != nickname)
+                    console.Write(ConsoleColor.DarkGray, $"  ({name} | {nickname})");
+                else
+                    console.Write(ConsoleColor.DarkGray, $"  ({name})");
+            }
+
+            console.Write(" \t");
+            console.WriteLine(ConsoleColor.DarkGray, user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true));
+        }
+    }
 }

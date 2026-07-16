@@ -30,7 +30,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
             case ConsoleKey.M:
             case ConsoleKey.Enter:
             case ConsoleKey.Spacebar:
-                await GetInterviewsAsync(DateTime.Now.AddMonths(-1).Date, DateTime.Now, cancellationToken);
+                await GetInterviewsAsync(DateTime.Now.AddDays(-10).Date, DateTime.Now, cancellationToken);
                 break;
             case ConsoleKey.D:
                 {
@@ -73,18 +73,25 @@ public class LarkHireCommandVerb : BaseCommandVerb
     {
         var larkApi = LarkApi.DefaultInstance;
         var console = CurrentConsole;
-        var resp = await larkApi.GetInterviewsAsync(new LarkInterviewOptions
+        var resp = await GetInterviewsAsync(larkApi, new LarkInterviewOptions
         {
             Start = start,
             End = end,
-        }, new(50));
-        var ids = WriteLine(resp);
+        }, cancellationToken);
+        if (resp is null)
+        {
+            LarkCliUtils.WriteEmpty(console);
+            return [];
+        }
+
+        resp = resp.Take(99).ToList();
+        var ids = WriteInterviews(console, resp);
         console.WriteLine();
         console.WriteLine("Please type the index of interview ID to get interview minutes.");
         var id = ReadInterviewId(ids);
-        if (LarkCliUtils.IsToExit(id)) return resp.Data;
-        var interviewInfo = GetInterviewInfo(id, resp.Data);
-        if (interviewInfo is null) return resp.Data;
+        if (LarkCliUtils.IsToExit(id)) return resp;
+        var interviewInfo = GetInterviewInfo(id, resp);
+        if (interviewInfo is null) return resp;
         var applicationId = interviewInfo.TryGetStringTrimmedValue("application_id");
         JsonObjectNode? applicationBasic = null;
         if (!string.IsNullOrWhiteSpace(applicationId))
@@ -115,6 +122,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
         {
             console.Write("Select action: Get [T]alent info, Get [J]ob info, interview [M]inutes, or [Q]uit. ");
             var key = console.ReadKey();
+            console.WriteLine();
             switch (key.Key)
             {
                 case ConsoleKey.M:
@@ -171,11 +179,11 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 case ConsoleKey.Q:
                 default:
                     console.WriteLine();
-                    return resp.Data;
+                    return resp;
             }
         }
 
-        return resp.Data;
+        return resp;
     }
 
     public async Task<IReadOnlyList<LarkInterviewMinuteInfo>> GetTalentInterviewAsync(CancellationToken cancellationToken = default)
@@ -201,7 +209,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
             return [];
         }
 
-        var ids = WriteLine(interviews);
+        var ids = WriteInterviews(console, interviews);
         console.WriteLine();
         console.WriteLine("Please type the index or ID of interview to show minutes.");
         var id = ReadInterviewId(ids);
@@ -232,20 +240,8 @@ public class LarkHireCommandVerb : BaseCommandVerb
         return minutes.Data;
     }
 
-    private string? ReadInterviewId(IList<string> ids)
-        => LarkCliUtils.ReadId(CurrentConsole, "Hire\\Interview", ids);
-
-    private JsonObjectNode? GetInterviewInfo(string? id, IReadOnlyList<JsonObjectNode> arr)
-    {
-        if (string.IsNullOrWhiteSpace(id)) return null;
-        var console = CurrentConsole;
-        foreach (var item in arr)
-        {
-            if (item?.TryGetStringTrimmedValue("id", true) == id) return item;
-        }
-
-        return null;
-    }
+    private JsonObjectNode? GetInterviewInfo(string? id, IEnumerable<JsonObjectNode> arr)
+        => GetInterviewInfo(CurrentConsole, id, arr);
 
     private void WriteInterviewResultLine(JsonObjectNode? item)
     {
@@ -281,16 +277,107 @@ public class LarkHireCommandVerb : BaseCommandVerb
         console.WriteLine();
     }
 
-    private List<string> WriteLine(LarkResponsePagingBody resp)
+    private string? ReadInterviewId(IList<string> ids)
+        => LarkCliUtils.ReadId(CurrentConsole, "Hire\\Interview", ids);
+
+    private static string? ReadTalentId(StyleConsole console, IList<string>? ids)
+        => ids is null ? LarkCliUtils.ReadLine(console, "Hire\\Talent") : LarkCliUtils.ReadId(console, "Hire\\Talent", ids);
+
+    private static JsonObjectNode? GetInterviewInfo(StyleConsole console, string? id, IEnumerable<JsonObjectNode>? arr)
     {
-        var console = CurrentConsole;
-        if (LarkCliUtils.WriteEmpty(console, resp)) return [];
-        return WriteLine(resp.Data);
+        if (string.IsNullOrWhiteSpace(id) || arr is null) return null;
+        foreach (var item in arr)
+        {
+            if (item?.TryGetStringTrimmedValue("id", true) == id) return item;
+        }
+
+        return null;
     }
 
-    private List<string> WriteLine(IReadOnlyList<JsonObjectNode> resp)
+    public static Task<LarkHireTalentInfo?> GetTalentInfoAsync(StyleConsole? console, LarkApi? larkApi, CancellationToken cancellationToken = default)
+        => GetTalentInfoAsync(console, larkApi, null, cancellationToken);
+
+    public static async Task<LarkHireTalentInfo?> GetTalentInfoAsync(StyleConsole? console, LarkApi? larkApi, LarkInterviewOptions? options, CancellationToken cancellationToken)
     {
-        var console = CurrentConsole;
+        larkApi ??= LarkApi.DefaultInstance;
+        console ??= StyleConsole.Default;
+        string? keyword = null;
+        if (options is not null)
+        {
+            console.Write("Loading latest interviews…");
+            var interviews = await GetInterviewsAsync(larkApi, options, cancellationToken);
+            console.Clear(StyleConsole.RelativeAreas.Line);
+            console.BackspaceToBeginning();
+            if (interviews is not null && interviews.Count > 0)
+            {
+                interviews = interviews.Take(60).ToList();
+                var ids = WriteInterviews(console, interviews, true);
+                console.WriteLine("Above are the latest interviews. Please type the index to continue. You can also type the ID, name or keyword of talent.");
+                keyword = ReadTalentId(console, ids)!;
+                var interviewInfo = GetInterviewInfo(console, keyword, interviews);
+                var info2 = await GetTalentByInterviewAsync(larkApi, interviewInfo, cancellationToken);
+                if (info2?.Data is null || info2.IsError)
+                {
+                    console.WriteLine("Load talent failed from the interview.");
+                    keyword = null;
+                }
+                else
+                {
+                    return info2.Data.BasicInfo is not null ? info2.Data : null;
+                }
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            console.WriteLine("Search a talent. Please type the ID, name or keyword.");
+            keyword = ReadTalentId(console, null)!;
+        }
+
+        if (string.IsNullOrEmpty(keyword)) return null;
+        var info = await larkApi.GetHireTalentAsync(keyword, cancellationToken);
+        var talent = info?.Data;
+        if (talent?.BasicInfo is not null) return talent;
+        var talents = await larkApi.SearchHireTalentsAsync(keyword);
+        if (LarkCliUtils.WriteEmpty(console, talents)) return null;
+        var selection = new List<SelectionItem<string>>();
+        var dict = new Dictionary<string, LarkHireTalentInfo>();
+        foreach (var talentInfo in talents.Data)
+        {
+            var talentId = talentInfo.Id ?? talentInfo.IdInOldVersion;
+            var talentName = talentInfo?.BasicInfo?.Name;
+            if (talentId == null || talentName == null) continue;
+            dict[talentId] = talentInfo!;
+            selection.Add(new(talentName, talentId));
+        }
+
+        LarkCliUtils.WriteOrderedLine(console, selection);
+        console.WriteLine("Please type the index.");
+        var id2 = ReadTalentId(console, null);
+        if (LarkCliUtils.IsToExit(id2) || string.IsNullOrWhiteSpace(id2) || !dict.TryGetValue(id2, out talent)) return null;
+        info = await larkApi.GetHireTalentAsync(talent.Id ?? talent.IdInOldVersion, cancellationToken);
+        return info?.Data?.BasicInfo is not null ? info.Data : talent;
+    }
+
+    public static async Task<LarkResponseBody<LarkHireTalentInfo>?> GetTalentByInterviewAsync(LarkApi larkApi, JsonObjectNode interviewInfo, CancellationToken cancellationToken = default)
+    {
+        var applicationId = interviewInfo?.TryGetStringTrimmedValue("application_id");
+        if (string.IsNullOrWhiteSpace(applicationId)) return null;
+        var applicationInfo = await larkApi.GetHireApplicationDetailsAsync(applicationId);
+        var talentId = applicationInfo?.Data?.TryGetObjectValue("basic_info")?.TryGetStringTrimmedValue("talent_id", true);
+        if (talentId is null) return null;
+        var resp = await larkApi.GetHireTalentAsync(talentId, cancellationToken);
+        return resp;
+    }
+
+    public static List<string> WriteInterviews(StyleConsole console, LarkResponsePagingBody resp, bool hideId = false)
+    {
+        if (LarkCliUtils.WriteEmpty(console, resp)) return [];
+        return WriteInterviews(console, resp.Data, hideId);
+    }
+
+    public static List<string> WriteInterviews(StyleConsole console, IEnumerable<JsonObjectNode> resp, bool hideId = false)
+    {
         var ids = new List<string>();
         foreach (var interviewItem in resp)
         {
@@ -348,41 +435,23 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 18 => "Evaluated",
                 _ => "Unknown state"
             });
-            LarkCliUtils.WriteOrderedLine(console, i, interviewId, sb.ToString(), true);
+            LarkCliUtils.WriteOrderedLine(console, i, hideId ? string.Empty : interviewId, sb.ToString(), true);
         }
 
         return ids;
     }
 
-    public static async Task<LarkHireTalentInfo?> GetTalentInfoAsync(StyleConsole? console, LarkApi? larkApi, CancellationToken cancellationToken = default)
+    private static async Task<List<JsonObjectNode>?> GetInterviewsAsync(LarkApi? larkApi, LarkInterviewOptions? options, CancellationToken cancellationToken)
     {
-        larkApi ??= LarkApi.DefaultInstance;
-        console ??= StyleConsole.Default;
-        console.WriteLine("Search a talent. Please type the ID, name or keyword.");
-        var keyword = LarkCliUtils.ReadLine(console, "Hire\\Talent")!;
-        if (string.IsNullOrEmpty(keyword)) return null;
-        var info = await larkApi.GetHireTalentAsync(keyword, cancellationToken);
-        var talent = info?.Data;
-        if (talent?.BasicInfo is not null) return talent;
-        var talents = await larkApi.SearchHireTalentsAsync(keyword);
-        if (LarkCliUtils.WriteEmpty(console, talents)) return null;
-        var selection = new List<SelectionItem<string>>();
-        var dict = new Dictionary<string, LarkHireTalentInfo>();
-        foreach (var talentInfo in talents.Data)
+        var resp = await larkApi.GetInterviewsAsync(options, new(50), cancellationToken);
+        if (resp.IsError || resp.Data is null) return null;
+        while (resp.HasNextPage)
         {
-            var talentId = talentInfo.Id ?? talentInfo.IdInOldVersion;
-            var talentName = talentInfo?.BasicInfo?.Name;
-            if (talentId == null || talentName == null) continue;
-            dict[talentId] = talentInfo!;
-            selection.Add(new(talentName, talentId));
+            var items = await larkApi.GetInterviewsAsync(resp);
+            if (items is null) break;
         }
 
-        LarkCliUtils.WriteOrderedLine(console, selection);
-        console.WriteLine("Please type the index.");
-        var id2 = LarkCliUtils.ReadLine(console, "Hire\\Talent");
-        if (LarkCliUtils.IsToExit(id2) || string.IsNullOrWhiteSpace(id2) || !dict.TryGetValue(id2, out talent)) return null;
-        info = await larkApi.GetHireTalentAsync(talent.Id ?? talent.IdInOldVersion, cancellationToken);
-        return info?.Data?.BasicInfo is not null ? info.Data : talent;
+        return resp.Data.Reverse().ToList();
     }
 }
 

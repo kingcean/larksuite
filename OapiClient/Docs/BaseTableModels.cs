@@ -193,6 +193,7 @@ public class LarkDocsBaseTableRecord
                 return;
             case JsonValueKind.Array:
                 var arr = fields.TryGetArrayValue(sourceKey);
+                if (arr.Length < 1) return;
                 if (arr.Length > 1)
                 {
                     if (arr[0].ValueKind != JsonValueKind.Object)
@@ -224,7 +225,32 @@ public class LarkDocsBaseTableRecord
                 }
 
                 var first = arr.TryGetObjectValue(0);
-                GetBaseTableFieldValueFromJsonValue(first, target, targetKey);
+                if (first is null)
+                {
+                    switch (arr.GetValueKind(0))
+                    {
+                        case JsonValueKind.Null:
+                        case JsonValueKind.Undefined:
+                            break;
+                        case JsonValueKind.String:
+                            target.SetValue(targetKey, arr.TryGetStringValue(0));
+                            break;
+                        case JsonValueKind.True:
+                            target.SetValue(targetKey, true);
+                            break;
+                        case JsonValueKind.False:
+                            target.SetValue(targetKey, false);
+                            break;
+                        default:
+                            target.SetValue(targetKey, arr);
+                            break;
+                    }
+                }
+                else
+                {
+                    GetBaseTableFieldValueFromJsonValue(first, target, targetKey);
+                }
+
                 return;
             case JsonValueKind.Object:
                 GetBaseTableFieldValueFromJsonValue(fields.TryGetObjectValue(sourceKey), target, targetKey);
@@ -259,7 +285,8 @@ public class LarkDocsBaseTableRecord
                 }
             case "mention":
                 {
-                    if (value.TryGetStringValue("mentionType") == "Wiki")
+                    var mentionType = value.TryGetStringValue("mentionType");
+                    if (mentionType == "Wiki" || mentionType == "Docx")
                     {
                         var s = value.TryGetStringValue("link") ?? value.TryGetStringValue("text");
                         if (string.IsNullOrWhiteSpace(s)) break;

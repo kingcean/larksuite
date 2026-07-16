@@ -1,5 +1,6 @@
 ﻿using LarkSuite.Docs;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -121,7 +122,7 @@ public static partial class LarkApiUtils
         {
             foreach (var id in root.ChildIds)
             {
-                var child = GetById(col, id);
+                var child = GetById(col!, id);
                 if (child is null) continue;
                 var sub = ToTree(col, child);
                 if (sub is null) continue;
@@ -169,5 +170,105 @@ public static partial class LarkApiUtils
         {
             yield return new(table.Name, table.Id);
         }
+    }
+
+    public static async Task<List<JsonObjectNode>> SimplifyAsync(LarkApi? larkApi, string baseId, string tableId, LarkPageTokenInfo paging, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        var records = await (larkApi ?? LarkApi.DefaultInstance).ReadBaseTableAsync(baseId, tableId, paging, cancellationToken);
+        return Simplify(records, mapping).ToList();
+    }
+
+    public static async Task<List<T>> SimplifyAsync<T>(LarkApi? larkApi, string baseId, string tableId, LarkPageTokenInfo paging, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        var records = await (larkApi ?? LarkApi.DefaultInstance).ReadBaseTableAsync(baseId, tableId, paging, cancellationToken);
+        return Simplify<T>(records, mapping).ToList();
+    }
+
+    public static async Task<List<JsonObjectNode>> SimplifyAsync(LarkApi? larkApi, string baseId, string tableId, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        var records = await (larkApi ?? LarkApi.DefaultInstance).ReadBaseTableAsync(baseId, tableId, cancellationToken);
+        return Simplify(records, mapping).ToList();
+    }
+
+    public static async Task<List<T>> SimplifyAsync<T>(LarkApi? larkApi, string baseId, string tableId, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        var records = await (larkApi ?? LarkApi.DefaultInstance).ReadBaseTableAsync(baseId, tableId, cancellationToken);
+        return Simplify<T>(records, mapping).ToList();
+    }
+
+    public static async Task<List<JsonObjectNode>> SimplifyAsync(LarkApi? larkApi, string baseId, string tableId, bool all, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        var records = await larkApi.ReadBaseTableAsync(baseId, tableId, cancellationToken);
+        if (records?.Data is null || records.IsError) return [];
+        if (all)
+        {
+            while (records.HasNextPage)
+            {
+                var col = larkApi.ReadBaseTableAsync(records, 500, cancellationToken);
+                if (col is null) break;
+            }
+        }
+
+        return Simplify(records, mapping).ToList();
+    }
+
+    public static async Task<List<T>> SimplifyAsync<T>(LarkApi? larkApi, string baseId, string tableId, bool all, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        var records = await larkApi.ReadBaseTableAsync(baseId, tableId, cancellationToken);
+        if (records?.Data is null || records.IsError) return [];
+        if (all)
+        {
+            while (records.HasNextPage)
+            {
+                var col = larkApi.ReadBaseTableAsync(records, 500, cancellationToken);
+                if (col is null) break;
+            }
+        }
+
+        return Simplify<T>(records, mapping).ToList();
+    }
+
+    public static async Task<List<JsonObjectNode>> SimplifyAsync(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
+        => Simplify(await records, mapping).ToList();
+
+    public static async Task<List<T>> SimplifyAsync<T>(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
+        => Simplify<T>(await records, mapping).ToList();
+
+    public static IEnumerable<T> Simplify<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
+    {
+        foreach (var fields in Simplify(records, mapping))
+        {
+            var info = fields.Deserialize<T>();
+            if (info is not null) yield return info;
+        }
+    }
+
+    public static IEnumerable<JsonObjectNode> Simplify(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
+    {
+        if (records?.Data is null || records.IsError) yield break;
+        foreach (var record in records.Data)
+        {
+            var fields = record.Simplify(mapping);
+            if (fields is null) continue;
+            yield return fields;
+        }
+    }
+
+    public static async Task<T?> SimplifyAsync<T>(LarkApi? larkApi, string baseId, string tableId, string recordId, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        var json = await SimplifyAsync(larkApi, baseId, tableId, recordId, mapping, cancellationToken);
+        if (json is null) return default;
+        return json.Deserialize<T>();
+    }
+
+    public static async Task<JsonObjectNode?> SimplifyAsync(LarkApi? larkApi, string baseId, string tableId, string recordId, Dictionary<string, string> mapping, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        var resp = await larkApi.GetBaseTableRecordsAsync(baseId, tableId, [recordId], cancellationToken);
+        var record = resp?.Data?.Get(recordId);
+        if (string.IsNullOrWhiteSpace(record?.Id)) return default;
+        return record.Simplify(mapping);
     }
 }

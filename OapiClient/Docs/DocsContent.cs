@@ -182,6 +182,7 @@ public class LarkContentTextBlockStyle
     [JsonPropertyName("wrap")]
     public bool Wrap { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("background_color")]
     public string? BackgroundColor { get; set; }
 
@@ -189,6 +190,7 @@ public class LarkContentTextBlockStyle
     [JsonPropertyName("indentation_level")]
     public LarkContentTextIndentationLevel Indentation { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("sequence")]
     public string? Sequence { get; set; }
 }
@@ -219,8 +221,9 @@ public class LarkContentTextElementStyle
     [JsonPropertyName("link")]
     public LarkContentLinkInfo Link { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("comment_ids")]
-    public List<string> CommentIds { get; set; }
+    public List<string>? CommentIds { get; set; }
 }
 
 public class LarkContentLinkInfo
@@ -234,8 +237,9 @@ public class LarkContentUserInfo
     [JsonPropertyName("user_id")]
     public string Id { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("text_element_style")]
-    public LarkContentTextElementStyle Style { get; set; }
+    public LarkContentTextElementStyle? Style { get; set; }
 }
 
 public class LarkContentDocInfo
@@ -249,11 +253,13 @@ public class LarkContentDocInfo
     [JsonPropertyName("url")]
     public string Url { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("title")]
     public string? Name { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("text_element_style")]
-    public LarkContentTextElementStyle Style { get; set; }
+    public LarkContentTextElementStyle? Style { get; set; }
 }
 
 public class LarkDocsAccessUserInfo
@@ -278,12 +284,15 @@ public class LarkDocsAccessUserInfo
     [JsonPropertyName("name")]
     public string Name { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("en_name")]
     public string? EnglishName { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("email")]
     public string? Email { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("avatar_url")]
     public string? AvatarUrl { get; set; }
 }

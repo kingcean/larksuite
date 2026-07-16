@@ -3,16 +3,26 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Text;
 
 namespace LarkSuite.Docs;
 
+/// <summary>
+/// The item info of the docs.
+/// </summary>
 public class LarkDocsItemInfo
 {
-    public string Id { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
 
-    public string Title { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
 
-    public string Url { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
 }
 
 public class LarkContentBlockTree
@@ -106,6 +116,23 @@ public class LarkContentBlockUserReference : BaseLarkContentBlockTreeContentRefe
 
 public class LarkContentBlockLinkReference : BaseLarkContentBlockTreeContentReference
 {
+    public LarkContentBlockLinkReference()
+    {
+    }
+
+    public LarkContentBlockLinkReference(string url, string? title = null)
+    {
+        Url = url;
+        Title = title;
+    }
+
+    public LarkContentBlockLinkReference(JsonObjectNode json)
+    {
+        if (json is null) return;
+        Url = json.TryGetStringValue("url");
+        Title = json.TryGetStringValue("title");
+    }
+
     [JsonIgnore]
     public override string ReferenceType => "link";
 

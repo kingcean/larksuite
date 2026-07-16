@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 using Trivial.Net;
 using Trivial.Text;
 
@@ -70,4 +71,13 @@ public class LarkUserInfoRequest : LarkUserIdTypeRequestOptions
             q.Add("user_ids", user);
         }
     }
+}
+
+public class LarkOwnerInfoRequest
+{
+    [JsonPropertyName("user_id")]
+    public string UserId { get; set; }
+
+    [JsonPropertyName("owner_type")]
+    public string OwnerType { get; set; }
 }

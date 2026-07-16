@@ -153,11 +153,38 @@ public class LarkResourceRequestOptions : BaseQueryRequestInfo
     }
 }
 
+/// <summary>
+/// The sort options.
+/// </summary>
 public class LarkDocsSortItem : IJsonObjectHost
 {
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsSortItem class.
+    /// </summary>
+    public LarkDocsSortItem()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsSortItem class.
+    /// </summary>
+    /// <param name="name">The field name.</param>
+    /// <param name="isDesc">true if ordered by desc; otherwise, false. The default is false, to by asc.</param>
+    public LarkDocsSortItem(string name, bool isDesc = false)
+    {
+        Name = name;
+        IsDesc = isDesc;
+    }
+
+    /// <summary>
+    /// Gets or sets the fieled name.
+    /// </summary>
     [JsonPropertyName("field_name")]
     public string Name { get; set; }
 
+    /// <summary>
+    /// Gets or sets if orders by desc. The default is asc.
+    /// </summary>
     [JsonPropertyName("desc")]
     public bool IsDesc { get; set; }
 
@@ -325,19 +352,126 @@ public class LarkUserIdTypeRequestOptions : BaseQueryRequestInfo
     }
 }
 
+/// <summary>
+/// The request options with user identifer to get the related resources.
+/// </summary>
+public class LarkUserOwnedResourcesRequest : LarkUserIdTypeRequestOptions
+{
+    /// <summary>
+    /// Initializes a new instance of the LarkUserOwnedResourcesRequest class.
+    /// </summary>
+    public LarkUserOwnedResourcesRequest()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkUserOwnedResourcesRequest class.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    public LarkUserOwnedResourcesRequest(string userId)
+    {
+        UserId = userId;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkUserOwnedResourcesRequest class.
+    /// </summary>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="userIdType">The type of user identifier.</param>
+    public LarkUserOwnedResourcesRequest(string userId, LarkUserIdType userIdType)
+        : this(userId)
+    {
+        UserIdType = userIdType;
+    }
+
+    /// <summary>
+    /// Gets or sets the user identifer.
+    /// </summary>
+    public string UserId { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q["user_id"] = UserId;
+    }
+}
+
+/// <summary>
+/// The base request options to resolve resource by identifier.
+/// </summary>
 internal class LarkResourceIdRequest : BaseQueryRequestInfo
 {
+    /// <summary>
+    /// Intiailizes a new instance of the LarkResourceIdRequest class.
+    /// </summary>
+    /// <param name="id">The resource identifier.</param>
+    /// <param name="text">The additional text.</param>
     public LarkResourceIdRequest(string id, string? text = null)
     {
         Id = id;
         Text = text;
     }
 
+    /// <summary>
+    /// Gets or sets the resource identifier.
+    /// </summary>
     public string Id { get; set; }
 
+    /// <summary>
+    /// Gets or sets the additional text.
+    /// </summary>
     public string? Text { get; set; }
 
+    /// <inheritdoc />
     protected override void OnQueryDataFill(QueryData q)
     {
+    }
+}
+
+/// <summary>
+/// The base request options to resolve resources by identifier.
+/// </summary>
+internal class LarkTargetResourcesRequest : LarkUserIdTypeRequestOptions
+{
+    /// <summary>
+    /// Intiailizes a new instance of the LarkResourceIdRequest class.
+    /// </summary>
+    /// <param name="id">The resource identifier.</param>
+    /// <param name="text">The additional text.</param>
+    public LarkTargetResourcesRequest(string id, string? text = null)
+    {
+        Id = id;
+        Text = text;
+    }
+
+    /// <summary>
+    /// Intiailizes a new instance of the LarkResourceIdRequest class.
+    /// </summary>
+    /// <param name="options">The base options.</param>
+    /// <param name="id">The resource identifier.</param>
+    /// <param name="text">The additional text.</param>
+    public LarkTargetResourcesRequest(LarkUserIdTypeRequestOptions options, string id, string? text = null)
+        : this(id, text)
+    {
+        if (options is null) return;
+        UserIdType = options.UserIdType;
+        DepartmentIdType = options.DepartmentIdType;
+    }
+
+    /// <summary>
+    /// Gets or sets the resource identifier.
+    /// </summary>
+    public string Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the additional text.
+    /// </summary>
+    public string? Text { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
     }
 }

@@ -12,6 +12,24 @@ namespace LarkSuite;
 
 public partial class LarkApi
 {
+    public async Task<LarkResponseBody> GetInterviewAsync(string id, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return new(true, "The interview ID should not be null or empty.");
+        var list = await GetInterviewsAsync(new LarkInterviewOptions
+        {
+            Id = id,
+        }, new LarkPageTokenInfo(), cancellationToken);
+        if (list is null) return new(true, "Access resource failed.");
+        if (list.IsError || list.Data is null) return new(true, list.Message);
+        foreach (var item in list.Data)
+        {
+            if (item?.TryGetStringTrimmedValue("id", true) == id) return new(list.Code, list.Message, item);
+        }
+
+        if (list.Count == 1 && list.Data[0] is not null) return new(list.Code, list.Message, list.Data[0]);
+        return new(true, list.Message);
+    }
+
     public Task<LarkResponsePagingBody> GetInterviewsAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Interviews, options, paging, cancellationToken);
 

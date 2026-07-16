@@ -1,6 +1,7 @@
 ﻿using LarkSuite;
 using LarkSuite.CommandLine;
 using LarkSuite.OapiModels;
+using System.Buffers.Text;
 using System.Drawing;
 using Trivial.CommandLine;
 
@@ -46,9 +47,18 @@ if (token is null || token.IsEmpty)
     return;
 }
 
+var records = await LarkApi.DefaultInstance.ReadBaseTableAsync("ZZEZwihKEiWUURkMii2csh5zncf", "tblFFI3gB8ksfnYu");
+var items = records.Simplify(new Dictionary<string, string>()
+{
+    { "reporter" ,"提交人" },
+    { "kr", "对齐KR" },
+    { "minutes", "文字记录" },
+}).ToList();
+
 var dispatcher = new CommandDispatcher();
 dispatcher.Register<LarkDocsCommandVerb>("docs");
 dispatcher.Register<LarkHireCommandVerb>("hire");
 dispatcher.Register<LarkUsersCommandVerb>("users");
+dispatcher.Register<LarkOkrCommandVerb>("okr");
 
 await dispatcher.ProcessAsync();
