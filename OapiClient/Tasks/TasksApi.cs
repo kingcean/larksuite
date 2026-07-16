@@ -86,6 +86,15 @@ public partial class LarkApi
 
     public async IAsyncEnumerable<LarkOkrObjectiveInfo> GetOkrsAsync(IEnumerable<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
     {
+        var list = GetOkrsInternalAsync(objectives, cancellationToken).OrderBy(ele => ele.Position);
+        await foreach (var item in list)
+        {
+            yield return item;
+        }
+    }
+
+    private async IAsyncEnumerable<LarkOkrObjectiveInfo> GetOkrsInternalAsync(IEnumerable<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
+    {
         foreach (var objective in objectives)
         {
             var objectiveId = objective?.Id;
@@ -104,7 +113,16 @@ public partial class LarkApi
             }
 
             var col = new List<LarkOkrKeyResultInfo>();
+            var hasPosition = true;
             foreach (var keyResult in keyResults.Data)
+            {
+                if (keyResult.Position > 0) continue;
+                hasPosition = false;
+                break;
+            }
+
+            var list2 = hasPosition ? keyResults.Data.OrderBy(item => item.Position).ToList() : keyResults.Data;
+            foreach (var keyResult in list2)
             {
                 var keyResultId = keyResult?.Id;
                 if (string.IsNullOrWhiteSpace(keyResultId)) continue;

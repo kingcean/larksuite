@@ -178,16 +178,23 @@ public class LarkOkrObjectiveInfo : BaseLarkOkrItemInfo
     public LarkOkrObjectiveInfo(JsonObjectNode json)
         : base(json)
     {
+        if (json is null) return;
+        var position = json.TryGetInt32Value("position");
+        if (position.HasValue) Position = position.Value;
     }
 
     public LarkOkrObjectiveInfo(LarkOkrObjectiveItem item)
         : base(item)
     {
         Source = item;
+        Position = item.Position;
     }
 
     [JsonPropertyName("keyResults")]
     public List<LarkOkrKeyResultInfo> KeyResults { get; set; }
+
+    [JsonIgnore]
+    internal int Position { get; set; }
 
     [JsonIgnore]
     internal LarkOkrObjectiveItem Source { get; }
