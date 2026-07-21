@@ -67,13 +67,14 @@ public class LarkTenantTokenInfo : TokenInfo
     public LarkTenantToken OriginalToken { get; }
 }
 
-internal class CodeTokenRequest : TokenRequest<CodeTokenRequestBody>
+internal class CodeTokenRequest(CodeTokenRequestBody body, AppAccessingKey appKey, IEnumerable<string>? scope = null) : TokenRequest<CodeTokenRequestBody>(body, appKey, scope)
 {
-    public CodeTokenRequest(CodeTokenRequestBody body, AppAccessingKey appKey, IEnumerable<string> scope = null)
-        : base(body, appKey, scope)
-    {
-    }
+    public JsonObjectNode ToJson()
+        => base.ToJsonObject();
+}
 
+internal class RefreshTokenRequest(string refreshToken, AppAccessingKey appKey, IEnumerable<string>? scope = null) : TokenRequest<RefreshTokenRequestBody>(new(refreshToken), appKey, scope)
+{
     public JsonObjectNode ToJson()
         => base.ToJsonObject();
 }

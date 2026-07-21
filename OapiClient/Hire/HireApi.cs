@@ -7,12 +7,13 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Trivial.Net;
 using Trivial.Text;
+using static Trivial.Reflection.ExceptionHandler;
 
 namespace LarkSuite;
 
 public partial class LarkApi
 {
-    public async Task<LarkResponseBody> GetInterviewAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<LarkHireInterviewInfo>> GetInterviewAsync(string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return new(true, "The interview ID should not be null or empty.");
         var list = await GetInterviewsAsync(new LarkInterviewOptions
@@ -23,21 +24,21 @@ public partial class LarkApi
         if (list.IsError || list.Data is null) return new(true, list.Message);
         foreach (var item in list.Data)
         {
-            if (item?.TryGetStringTrimmedValue("id", true) == id) return new(list.Code, list.Message, item);
+            if (item.Id == id) return new(list.Code, list.Message, item, JsonObjectNode.ConvertFrom(item));
         }
 
-        if (list.Count == 1 && list.Data[0] is not null) return new(list.Code, list.Message, list.Data[0]);
+        if (list.Count == 1 && list.Data[0] is not null) return new(list.Code, list.Message, list.Data[0], JsonObjectNode.ConvertFrom(list.Data[0]));
         return new(true, list.Message);
     }
 
-    public Task<LarkResponsePagingBody> GetInterviewsAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
-        => GetItemsAsync(LarkUrls.Interviews, options, paging, cancellationToken);
+    public Task<LarkResponsePagingBody<LarkHireInterviewInfo>> GetInterviewsAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+        => GetItemsAsync<LarkHireInterviewInfo>(LarkUrls.Interviews, options, paging, cancellationToken);
 
-    public Task<IReadOnlyList<JsonObjectNode>> GetInterviewsAsync(LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<LarkHireInterviewInfo>> GetInterviewsAsync(LarkResponsePagingBody<LarkHireInterviewInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Interviews, response, pageSize, cancellationToken);
 
-    public Task<LarkResponsePagingBody> GetInterviewsAsync(LarkInterviewByTelentOptions options, CancellationToken cancellationToken = default)
-        => GetItemsAsync(LarkUrls.InterviewByTalent, options, null, cancellationToken);
+    public Task<LarkResponsePagingBody<LarkHireApplicationInterviewInfo>> GetInterviewsAsync(LarkInterviewByTelentOptions options, CancellationToken cancellationToken = default)
+        => GetItemsAsync<LarkHireApplicationInterviewInfo>(LarkUrls.InterviewByTalent, options, null, cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkInterviewMinuteInfo>> GetInterviewMinutesAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.InterviewMinutes, options, paging, LarkInterviewMinuteInfo.Deserialize, obj =>

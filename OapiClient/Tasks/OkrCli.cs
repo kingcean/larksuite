@@ -12,6 +12,11 @@ namespace LarkSuite.CommandLine;
 
 public class LarkOkrCommandVerb : BaseCommandVerb
 {
+    /// <summary>
+    /// Gets the command description.
+    /// </summary>
+    public static string Description => "Get OKR information";
+
     protected async override Task OnProcessAsync(CancellationToken cancellationToken = default)
     {
         var console = CurrentConsole;

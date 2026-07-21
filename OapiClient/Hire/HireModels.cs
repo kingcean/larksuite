@@ -30,6 +30,26 @@ public enum LarkAcademyDegree : byte
     Others = 9,
 }
 
+public enum LarkHireInterviewConclusionStatus : byte
+{
+    Unknown = 0,
+    Pass = 1,
+    Failure = 2,
+    NotStart = 3,
+    WaitingToSubmit = 4,
+    WaitingComing = 5,
+    WaitingResult = 6
+}
+
+public enum LarkHireInterviewType : byte
+{
+    Unknown = 0,
+    OnSite = 1,
+    Phone = 2,
+    Video = 3,
+    Others = 15,
+}
+
 public class LarkInterviewMinuteInfo
 {
     [JsonPropertyName("message")]
@@ -68,6 +88,208 @@ public class LarkInterviewMinuteInfo
         };
         return item;
     }
+}
+
+public class LarkHireInterviewInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonPropertyName("begin_time")]
+    public DateTime? BeginDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonPropertyName("end_time")]
+    public DateTime? EndDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonPropertyName("biz_create_time")]
+    public DateTime? CreationDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonPropertyName("biz_modify_time")]
+    public DateTime? LastModificationDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("round")]
+    public int Round { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("interview_record_list")]
+    public List<LarkHireInterviewRecordInfo>? Records { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonPropertyName("feedback_submit_time")]
+    public DateTime? SubmitDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("stage_id")]
+    public string? StageId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("application_id")]
+    public string? ApplicationId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("stage")]
+    public LarkIdNameInfo? Stage { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("creator")]
+    public LarkIdNameInfo? Creator { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("interview_round_summary")]
+    public int State { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("interview_arrangement_id")]
+    public string? ArrangementId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("interview_type")]
+    public LarkHireInterviewType InterviewType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("talent_time_zone")]
+    public JsonObjectNode? TalentTimeZone { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("contact_user")]
+    public LarkIdNameInfo? ContactUser { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("contact_mobile")]
+    public string? ContactMobile { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("remark")]
+    public string? Remark { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("address")]
+    public JsonObjectNode? Address { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("video_type")]
+    public int VideoApp { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("arrangement_status")]
+    public int ArrangementStatus { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("arrangement_type")]
+    public int ArrangementType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("arrangement_appointment_kind")]
+    public int ArrangementAppointmentKind { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("meeting_room_list")]
+    public List<LarkInterviewMeetingRoomInfo>? MeetingRooms { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("interview_round_type")]
+    public LarkIdNameInfo? RoundType { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
+
+    public string GetStateString()
+    {
+        return State switch
+        {
+            2 => "Pending",
+            3 => "Evaluating",
+            4 => "Pass",
+            5 => "Fail",
+            7 => "Evaluating and pass",
+            8 => "Partial evaluated",
+            9 => "Evaluating and fail",
+            10 => "Evaluated",
+            11 or 12 or 13 or 14 => "Partial evaluated",
+            15 => "Evaluated",
+            16 => "Partial fail",
+            17 => "No decision",
+            18 => "Evaluated",
+            _ => "Unknown state"
+        };
+    }
+}
+
+public class LarkHireApplicationInterviewInfo
+{
+    [JsonPropertyName("application_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("interview_list")]
+    public List<LarkHireInterviewInfo> List { get; set; }
+}
+
+public class LarkHireInterviewRecordInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("user_id")]
+    public string UserId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("content")]
+    public string? Content { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("commit_status")]
+    public int CommitStatus { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("conclusion")]
+    public LarkHireInterviewConclusionStatus Conclusion { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("interview_score")]
+    public JsonObjectNode? Score { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("interviewer")]
+    public LarkIdNameInfo? Interviewer { get; set; }
+}
+
+public class LarkInterviewMeetingRoomInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("room_id")]
+    public string Id { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("room_name")]
+    public string Name { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("building_name")]
+    public string? Building { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("reserved_status")]
+    public int ReservedStatus { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("floor_name")]
+    public string? Floor { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
 }
 
 public class LarkHireTalentInfo
@@ -399,4 +621,18 @@ public class LarkHireTalentSnsInfo
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
+}
+
+public class LarkIdNameInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("name")]
+    public JsonObjectNode Name { get; set; }
+
+    public string GetName()
+        => LarkApiUtils.GetName(Name);
 }

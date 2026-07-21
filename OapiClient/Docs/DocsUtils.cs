@@ -113,6 +113,12 @@ public static partial class LarkApiUtils
                     {
                         Id = element.UserMentioned.Id
                     };
+                else if (!string.IsNullOrWhiteSpace(element.Text?.Style?.Link?.Url))
+                    content.Information = new LarkContentBlockLinkReference
+                    {
+                        Url = element.Text.Style.Link.Url,
+                        Title = text,
+                    };
                 tree.Content ??= [];
                 tree.Content.Add(content);
             }

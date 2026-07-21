@@ -29,6 +29,7 @@ public partial class LarkApi : TokenContainer
     public LarkApi()
     {
         AppKey = new(LarkUrls.GetAppKeyId(), LarkUrls.GetAppKeySecret());
+        TokenKind = string.IsNullOrWhiteSpace(AppKey.Id) || AppKey.Secret is null ? LarkApiTokenSourceKind.Empty : LarkApiTokenSourceKind.Tenant;
     }
 
     /// <summary>
@@ -39,6 +40,7 @@ public partial class LarkApi : TokenContainer
     public LarkApi(string appId, string appSecret)
     {
         AppKey = new(appId ?? LarkUrls.GetAppKeyId(), appSecret ?? LarkUrls.GetAppKeySecret());
+        TokenKind = string.IsNullOrWhiteSpace(AppKey.Id) || AppKey.Secret is null ? LarkApiTokenSourceKind.Empty : LarkApiTokenSourceKind.Tenant;
     }
 
     /// <summary>
@@ -49,6 +51,7 @@ public partial class LarkApi : TokenContainer
     public LarkApi(string appId, SecureString appSecret)
     {
         AppKey = new(appId ?? LarkUrls.GetAppKeyId(), appSecret ?? SecureStringExtensions.ToSecure(LarkUrls.GetAppKeySecret()));
+        TokenKind = string.IsNullOrWhiteSpace(AppKey.Id) || AppKey.Secret is null ? LarkApiTokenSourceKind.Empty : LarkApiTokenSourceKind.Tenant;
     }
 
     /// <summary>
@@ -58,12 +61,29 @@ public partial class LarkApi : TokenContainer
     public LarkApi(AppAccessingKey appKey)
     {
         AppKey = appKey ?? new(LarkUrls.GetAppKeyId(), LarkUrls.GetAppKeySecret());
+        TokenKind = string.IsNullOrWhiteSpace(AppKey.Id) || AppKey.Secret is null ? LarkApiTokenSourceKind.Empty : LarkApiTokenSourceKind.Tenant;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkApi class.
+    /// </summary>
+    /// <param name="token">The access token.</param>
+    public LarkApi(TokenInfo token)
+    {
+        AppKey = new();
+        TokenKind = LarkApiTokenSourceKind.Static;
+        Token = token;
     }
 
     /// <summary>
     /// Gets the app key to access resource.
     /// </summary>
     protected AppAccessingKey AppKey { get; }
+
+    /// <summary>
+    /// Gets the source kind of Lark access token.
+    /// </summary>
+    public LarkApiTokenSourceKind TokenKind { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether the app accessing key is empty.
@@ -559,9 +579,18 @@ public partial class LarkApi : TokenContainer
     /// </summary>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The token resolved.</returns>
-    public async Task<LarkTenantToken?> GetTenantTokenAsync(CancellationToken cancellationToken = default)
+    public Task<LarkTenantToken?> GetTenantTokenAsync(CancellationToken cancellationToken = default)
+        => GetTenantTokenAsync(false, cancellationToken);
+
+    /// <summary>
+    /// Gets and refreshes the token of tenant.
+    /// </summary>
+    /// <param name="force">true if force to update token; otherwise, false.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The token resolved.</returns>
+    public async Task<LarkTenantToken?> GetTenantTokenAsync(bool force, CancellationToken cancellationToken = default)
     {
-        if (!WillTokenExpireSoon() && Token is LarkTenantTokenInfo token) return token.OriginalToken;
+        if (!force && !WillTokenExpireSoon() && Token is LarkTenantTokenInfo token) return token.OriginalToken;
         var http = CreateJsonHttpClient<LarkTenantToken>();
         var resp = await http.PostAsync(LarkUrls.tenantTokenUri, new JsonObjectNode
         {
@@ -577,18 +606,23 @@ public partial class LarkApi : TokenContainer
         TokenResolved = DateTime.Now;
         Token = new LarkTenantTokenInfo(resp);
         HttpClient.DefaultRequestHeaders.Authorization = Token.ToAuthenticationHeaderValue();
+        TokenKind = LarkApiTokenSourceKind.Tenant;
         return resp;
     }
+
+    public Task<TokenInfo?> GetUserTokenAsync(CodeTokenRequestBody request, CancellationToken cancellationToken = default)
+        => GetUserTokenAsync(false, request, cancellationToken);
 
     /// <summary>
     /// Gets and refreshes the token of user.
     /// </summary>
+    /// <param name="force">true if force to update token; otherwise, false.</param>
     /// <param name="request">The code token.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The token resolved.</returns>
-    public async Task<TokenInfo?> GetUserTokenAsync(CodeTokenRequestBody request, CancellationToken cancellationToken = default)
+    public async Task<TokenInfo?> GetUserTokenAsync(bool force, CodeTokenRequestBody request, CancellationToken cancellationToken = default)
     {
-        if (!WillTokenExpireSoon() && Token is not LarkTenantTokenInfo) return Token;
+        if (!force && !WillTokenExpireSoon() && Token is not LarkTenantTokenInfo) return Token;
         var http = CreateJsonHttpClient<TokenInfo>();
         var req = new CodeTokenRequest(request, AppKey);
         var resp = await http.PostAsync(LarkUrls.userTokenUri, req.ToJson(), cancellationToken);
@@ -601,7 +635,56 @@ public partial class LarkApi : TokenContainer
         TokenResolved = DateTime.Now;
         Token = resp;
         HttpClient.DefaultRequestHeaders.Authorization = Token.ToAuthenticationHeaderValue();
+        TokenKind = LarkApiTokenSourceKind.User;
         return resp;
+    }
+
+    /// <summary>
+    /// Refreshes the access token.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>true if refresh succeeded; otherwise, false.</returns>
+    public Task<bool> RefreshTokenAsync(CancellationToken cancellationToken = default)
+        => RefreshTokenAsync(false, cancellationToken);
+
+    /// <summary>
+    /// Refreshes the access token.
+    /// </summary>
+    /// <param name="force">true if force to update token; otherwise, false.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>true if refresh succeeded; otherwise, false.</returns>
+    public async Task<bool> RefreshTokenAsync(bool force, CancellationToken cancellationToken = default)
+    {
+        switch (TokenKind)
+        {
+            case LarkApiTokenSourceKind.User:
+                {
+                    if (!force && !WillTokenExpireSoon()) return Token is not LarkTenantTokenInfo;
+                    var refreshToken = Token.RefreshToken;
+                    if (string.IsNullOrWhiteSpace(refreshToken)) return false;
+                    var http = CreateJsonHttpClient<TokenInfo>();
+                    var req = new RefreshTokenRequest(refreshToken, AppKey);
+                    var resp = await http.PostAsync(LarkUrls.userTokenUri, req.ToJson(), cancellationToken);
+                    if (string.IsNullOrWhiteSpace(resp?.AccessToken))
+                    {
+                        if (IsTokenExpired) Token = null;
+                        return false;
+                    }
+
+                    TokenResolved = DateTime.Now;
+                    Token = resp;
+                    HttpClient.DefaultRequestHeaders.Authorization = Token.ToAuthenticationHeaderValue();
+                    TokenKind = LarkApiTokenSourceKind.User;
+                    return true;
+                }
+            case LarkApiTokenSourceKind.Tenant:
+                {
+                    var tenantToken = await GetTenantTokenAsync();
+                    return tenantToken is not null;
+                }
+            default:
+                return false;
+        }
     }
 
     /// <summary>

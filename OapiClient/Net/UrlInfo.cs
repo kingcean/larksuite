@@ -63,8 +63,8 @@ public class LarkUrlInfo
             return;
         }
 
-        url = url[(i + 1)..];
         var id = url[..i];
+        url = url[(i + 1)..];
         i = id.IndexOf('/');
         if (i > 0) id = id[..i];
         else if (i == 0) id = null;
