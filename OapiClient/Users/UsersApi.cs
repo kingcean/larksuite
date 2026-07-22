@@ -1,6 +1,7 @@
 ﻿using LarkSuite.OapiModels;
 using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using System.Text;
 using Trivial.Net;
 using Trivial.Text;
@@ -35,5 +36,13 @@ public partial class LarkApi
         var http = CreateJsonHttpClient<string>();
         return await PostAsync(LarkUrls.ToUrl(LarkUrls.UserId, options), options?.ToJson() ?? [], cancellationToken); ;
     }
-        //=> PostAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, options), options?.ToJson() ?? [], cancellationToken);
+
+    public Task<LarkResponsePagingBody> GetEmployeesAsync(LarkEmployeeResolveRequest options, CancellationToken cancellationToken = default)
+        => PostItemsAsync(LarkUrls.GetEmployees, options, null, cancellationToken);
+
+    public Task<LarkResponsePagingBody> SearchEmployeesAsync(LarkEmployeeSearchRequest options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+        => PostItemsAsync(LarkUrls.SearchEmployees, options, paging, cancellationToken);
+
+    public Task<IReadOnlyList<JsonObjectNode>> SearchEmployeesAsync(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.SearchEmployees, response, pageSize, cancellationToken);
 }

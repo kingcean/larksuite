@@ -204,6 +204,20 @@ public class LarkHireInterviewInfo
     [JsonExtensionData]
     public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
 
+    public IReadOnlyList<LarkIdNameInfo> GetInterviewers()
+    {
+        var records = Records;
+        var list = new List<LarkIdNameInfo>();
+        if (records is null) return list;
+        foreach (var record in records)
+        {
+            var interviewer = record?.Interviewer;
+            if (interviewer is not null) list.Add(interviewer);
+        }
+
+        return list;
+    }
+
     public string GetStateString()
     {
         return State switch

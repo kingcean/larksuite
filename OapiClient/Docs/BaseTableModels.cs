@@ -114,10 +114,17 @@ public class LarkDocsBaseTableTableInfo
 
 public class LarkDocsBaseTableRecord
 {
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsBaseTableRecord class.
+    /// </summary>
     public LarkDocsBaseTableRecord()
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsBaseTableRecord class.
+    /// </summary>
+    /// <param name="json">The raw JSON.</param>
     public LarkDocsBaseTableRecord(JsonObjectNode json)
     {
         if (json is null) return;
@@ -300,6 +307,29 @@ public class LarkDocsBaseTableRecord
 
         target.SetValue(key, value);
     }
+}
+
+/// <summary>
+/// Initializes a new instance of the LarkDocsBaseTableRecord class.
+/// </summary>
+/// <param name="source">The source record.</param>
+/// <param name="data">The data.</param>
+public class LarkDocsBaseTableRecord<T>(LarkDocsBaseTableRecord? source, T? data)
+{
+    /// <summary>
+    /// Gets the record identifier.
+    /// </summary>
+    public string? Id => Source?.Id;
+
+    /// <summary>
+    /// Gets the source record.
+    /// </summary>
+    public LarkDocsBaseTableRecord Source { get; } = source;
+
+    /// <summary>
+    /// Gets the data.
+    /// </summary>
+    public T? Data { get; } = data;
 }
 
 public class LarkDocsBaseTableRecordsInfo

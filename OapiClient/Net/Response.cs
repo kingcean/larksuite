@@ -492,9 +492,10 @@ public class LarkResponsePagingBody : LarkResponseBody
 
     private void AddRangeInternal(JsonObjectNode raw, int count)
     {
-        PageToken = raw.TryGetStringValue("page_token");
-        HasNextPage = raw.TryGetBooleanValue("has_more") ?? false;
-        var record = new LarkResponsePagingStatusInfo(DateTime.Now, raw.TryGetStringValue("msg"), count);
+        var data = raw.TryGetObjectValue("data") ?? [];
+        PageToken = raw.TryGetStringValue("page_token") ?? data.TryGetStringValue("page_token");
+        HasNextPage = raw.TryGetBooleanValue("has_more") ?? data.TryGetBooleanValue("has_more") ?? false;
+        var record = new LarkResponsePagingStatusInfo(DateTime.Now, raw.TryGetStringValue("msg") ?? data.TryGetStringValue("msg"), count);
     }
 }
 

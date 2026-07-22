@@ -209,13 +209,19 @@ public static partial class LarkCliUtils
         return id;
     }
 
-    internal static void WritePropertyLine(StyleConsole console, string label, string value)
+    internal static void WritePropertyLine(StyleConsole console, string label, string? value)
     {
         console ??= StyleConsole.Default;
         var style = new ConsoleTextStyle(Color.FromArgb(0xCE, 0x91, 0x78), ConsoleColor.Green, null, null);
         console.Write(style, label);
+        if (value is null) return;
         console.Write(label.Length < 8 ? "\t\t" : " \t");
         console.WriteLine(value);
+    }
+
+    internal static void WritePropertyLineIfNotEmpty(StyleConsole console, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) WritePropertyLine(console, label, value);
     }
 
     internal static void WriteEmpty(StyleConsole console)

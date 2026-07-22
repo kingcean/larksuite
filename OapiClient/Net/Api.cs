@@ -485,6 +485,32 @@ public partial class LarkApi : TokenContainer
     }
 
     /// <summary>
+    /// Sends a request message by GET to get response with collection result.
+    /// </summary>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="page">The page size and page token.</param>
+    /// <param name="q">The query info.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public async Task<LarkResponsePagingBody> PostItemsAsync(string url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
+        => new(q, await PostJsonObjectAsync(url, q, page, cancellationToken));
+
+    /// <summary>
+    /// Sends a request message by GET to get response with collection result.
+    /// </summary>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="response">The response of the previous or the first page.</param>
+    /// <param name="pageSize">The optional page size.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public async Task<IReadOnlyList<JsonObjectNode>> PostItemsAsync(string url, LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+    {
+        if (!response.HasNextPage || string.IsNullOrWhiteSpace(response.PageToken)) return [];
+        var resp = await PostJsonObjectAsync(url, response, pageSize, cancellationToken);
+        return response.AddRange(resp);
+    }
+
+    /// <summary>
     /// Sends a request message by POST to get response result.
     /// </summary>
     /// <typeparam name="T">The type of resposne.</typeparam>
@@ -713,5 +739,34 @@ public partial class LarkApi : TokenContainer
     {
         var http = CreateJsonHttpClient();
         return await http.GetAsync(new Uri(response.ToUrl(url, pageSize)), cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a request message by GET to get response with collection result.
+    /// </summary>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="page">The page size and page token.</param>
+    /// <param name="q">The query info.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    private async Task<JsonObjectNode> PostJsonObjectAsync(string url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        return await http.PostAsync(new Uri(LarkUrls.ToUrl(url, q, page)), JsonObjectNode.ConvertFrom(q), cancellationToken);
+    }
+
+    /// <summary>
+    /// Sends a request message by GET to get response with collection result.
+    /// </summary>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="response">The response of the previous or the first page.</param>
+    /// <param name="pageSize">The optional page size.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    private async Task<JsonObjectNode> PostJsonObjectAsync(string url, LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var body = response.Query;
+        return await http.PostAsync(new Uri(response.ToUrl(url, pageSize)), JsonObjectNode.ConvertFrom(body), cancellationToken);
     }
 }

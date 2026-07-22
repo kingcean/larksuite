@@ -72,4 +72,37 @@ public class LarkUsersCommandVerb : BaseCommandVerb
             console.WriteLine(ConsoleColor.DarkGray, user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true));
         }
     }
+
+    public static void WriteEmployee(StyleConsole console, JsonObjectNode employee)
+    {
+        if (employee is null) return;
+        console ??= StyleConsole.Default;
+        var info = employee.TryGetObjectValue("person_info");
+        if (info is null) return;
+        console.WriteLine(LarkCliUtils.BoldText(), employee.TryGetStringTrimmedValue("preferred_name", true)
+            ?? info.TryGetStringTrimmedValue("preferred_local_full_name", true)
+            ?? info.TryGetStringTrimmedValue("legal_name", true)
+            ?? info.TryGetStringTrimmedValue("preferred_english_full_name", true)
+            ?? "?");
+        var jobTitle = employee.TryGetObjectValue("job")?.TryGetObjectListValue("name", true);
+        if (jobTitle is not null)
+        {
+            string? nameZh = null;
+            string? nameEn = null;
+            foreach (var jobInfo in jobTitle)
+            {
+                if (jobInfo.TryGetStringTrimmedValue("lang") == "zh-CN") nameZh = jobInfo.TryGetStringTrimmedValue("value", true);
+                else if (jobInfo.TryGetStringTrimmedValue("lang") == "en-US") nameEn = jobInfo.TryGetStringTrimmedValue("value", true);
+            }
+
+            var name = nameZh ?? nameEn;
+            if (name is not null) console.WriteLine(name);
+        }
+
+        console.WriteLine();
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Email", info.TryGetStringValue("email_address"));
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Phone", info.TryGetStringValue("phone_number"));
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Birthday", info.TryGetStringValue("date_of_birth"));
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Gender", info.TryGetObjectValue("gender")?.TryGetStringValue("enum_name")?.ToSpecificCase(Cases.Capitalize));
+    }
 }

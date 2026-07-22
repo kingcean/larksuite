@@ -16,7 +16,7 @@ public partial class LarkApi
     public async Task<LarkResponseBody<LarkHireInterviewInfo>> GetInterviewAsync(string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return new(true, "The interview ID should not be null or empty.");
-        var list = await GetInterviewsAsync(new LarkInterviewOptions
+        var list = await ListInterviewsAsync(new LarkInterviewOptions
         {
             Id = id,
         }, new LarkPageTokenInfo(), cancellationToken);
@@ -31,13 +31,13 @@ public partial class LarkApi
         return new(true, list.Message);
     }
 
-    public Task<LarkResponsePagingBody<LarkHireInterviewInfo>> GetInterviewsAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkHireInterviewInfo>> ListInterviewsAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkHireInterviewInfo>(LarkUrls.Interviews, options, paging, cancellationToken);
 
-    public Task<IReadOnlyList<LarkHireInterviewInfo>> GetInterviewsAsync(LarkResponsePagingBody<LarkHireInterviewInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<LarkHireInterviewInfo>> ListInterviewsAsync(LarkResponsePagingBody<LarkHireInterviewInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Interviews, response, pageSize, cancellationToken);
 
-    public Task<LarkResponsePagingBody<LarkHireApplicationInterviewInfo>> GetInterviewsAsync(LarkInterviewByTelentOptions options, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkHireApplicationInterviewInfo>> ListInterviewsAsync(LarkInterviewByTelentOptions options, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkHireApplicationInterviewInfo>(LarkUrls.InterviewByTalent, options, null, cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkInterviewMinuteInfo>> GetInterviewMinutesAsync(LarkInterviewOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
@@ -70,16 +70,13 @@ public partial class LarkApi
     public Task<IReadOnlyList<LarkHireTalentInfo>> SearchHireTalentsAsync(LarkResponsePagingBody<LarkHireTalentInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.HireTalents, response, pageSize, cancellationToken);
 
-    public Task<LarkResponseBody> GetHireApplicationInfoAsync(string id, CancellationToken cancellationToken = default)
-        => GetAsync(string.Concat(LarkUrls.Applications, id), cancellationToken);
-
-    public Task<LarkResponseBody> GetHireApplicationDetailsAsync(string id, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> GetHireApplicationAsync(string id, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.ApplicationDetails, id), "application_detail", cancellationToken);
 
-    public Task<LarkResponsePagingBody> GetHireApplicationsAsync(LarkHireApplicationOptions options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody> ListHireApplicationsAsync(LarkHireApplicationOptions options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Applications, options, paging, cancellationToken);
 
-    public Task<IReadOnlyList<JsonObjectNode>> GetHireApplicationsAsync(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<JsonObjectNode>> ListHireApplicationsAsync(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Applications, response, pageSize, cancellationToken);
 
     public Task<LarkResponseBody> GetHireJobAsync(string id, CancellationToken cancellationToken = default)

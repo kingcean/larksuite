@@ -29,7 +29,7 @@ internal class JsonDateTimeTickStringConverter : JsonConverter<DateTime>
     }
 }
 
-internal class JsonDateTimeTickNumberConverter : JsonConverter<DateTime>
+public class JsonDateTimeTickNumberConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

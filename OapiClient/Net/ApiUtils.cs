@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Data;
 using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
@@ -195,6 +196,44 @@ public static partial class LarkApiUtils
     /// <returns>The paging result.</returns>
     public static IAsyncEnumerable<JsonObjectNode> ForEachAsync(LarkResponsePagingBody response, CancellationToken cancellationToken = default)
         => ForEachAsync(response, null, null, cancellationToken);
+
+    /// <summary>
+    /// Gets the resource.
+    /// </summary>
+    /// <typeparam name="T">The type of the resource.</typeparam>
+    /// <param name="id">The resource identifier.</param>
+    /// <param name="resolver">The function to resolve resource.</param>
+    /// <param name="cache">The data cache.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The resource.</returns>
+    public static async Task<T?> GetResourceAsync<T>(string id, Func<string, CancellationToken, Task<LarkResponseBody<T>>> resolver, DataCacheCollection<T>? cache, CancellationToken cancellationToken = default)
+    {
+        if (cache is not null && cache.TryGet(id, out var data) && data is not null) return data;
+        if (resolver is null) return default;
+        var resp = await resolver(id, cancellationToken);
+        if (resp is null || resp.Data is null || resp.IsError) return default;
+        if (cache is not null) cache[id] = resp.Data!;
+        return resp.Data;
+    }
+
+    /// <summary>
+    /// Gets the resource.
+    /// </summary>
+    /// <typeparam name="T">The type of the resource.</typeparam>
+    /// <param name="id">The resource identifier.</param>
+    /// <param name="resolver">The function to resolve resource.</param>
+    /// <param name="cache">The data cache.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The resource.</returns>
+    public static async Task<JsonObjectNode?> GetResourceAsync(string id, Func<string, CancellationToken, Task<LarkResponseBody>> resolver, DataCacheCollection<JsonObjectNode>? cache, CancellationToken cancellationToken = default)
+    {
+        if (cache is not null && cache.TryGet(id, out var data) && data is not null) return data;
+        if (resolver is null) return null;
+        var resp = await resolver(id, cancellationToken);
+        if (resp is null || resp.Data is null || resp.IsError) return default;
+        if (cache is not null) cache[id] = resp.Data!;
+        return resp.Data;
+    }
 }
 
 /// <summary>
