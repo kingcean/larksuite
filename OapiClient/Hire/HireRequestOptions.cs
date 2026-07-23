@@ -3,6 +3,7 @@ using LarkSuite.Text;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -103,7 +104,7 @@ public class LarkTalentSearchOptions : BaseQueryRequestInfo
     }
 }
 
-public class LarkHireApplicationOptions : BaseQueryRequestInfo
+public class LarkHireApplicationSearchOptions : BaseQueryRequestInfo
 {
     public string? ProcessId { get; set; }
 
@@ -133,5 +134,43 @@ public class LarkHireApplicationOptions : BaseQueryRequestInfo
         //q.Set("lock_status", LockStatus);
         q.Set("update_start_time", WebFormat.ParseDate(UpdateStartDate)?.ToString("G"));
         q.Set("update_end_time", WebFormat.ParseDate(UpdateEndDate)?.ToString("G"));
+    }
+}
+
+public class LarkHireBasicResourceOptions : LarkUserIdTypeRequestOptions
+{
+    public string JobLevel { get; set; }
+
+    public string JobFamily { get; set; }
+
+    public string EmployeeType { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q.SetIfNotEmpty("job_level_id_type", JobLevel);
+        q.SetIfNotEmpty("job_family_id_type", JobFamily);
+        q.SetIfNotEmpty("employee_type_id_type", EmployeeType);
+    }
+}
+
+public class LarkHireApplicationDetailsOptions : LarkHireBasicResourceOptions
+{
+    public List<string> Options { get; } = [];
+
+    public void AddWith(string resource)
+    {
+        if (string.IsNullOrWhiteSpace(resource)) return;
+        Options.Add(resource.StartsWith("with_") ? resource : $"with_{resource}");
+    }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        foreach (var option in Options)
+        {
+            if (string.IsNullOrWhiteSpace(option)) continue;
+            q.Add("options", option);
+        }
     }
 }

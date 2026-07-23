@@ -97,22 +97,22 @@ public class LarkHireInterviewInfo
     public string Id { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("begin_time")]
     public DateTime? BeginDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("end_time")]
     public DateTime? EndDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("biz_create_time")]
     public DateTime? CreationDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("biz_modify_time")]
     public DateTime? LastModificationDate { get; set; }
 
@@ -125,7 +125,7 @@ public class LarkHireInterviewInfo
     public List<LarkHireInterviewRecordInfo>? Records { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(JsonDateTimeTickNumberConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("feedback_submit_time")]
     public DateTime? SubmitDate { get; set; }
 
@@ -436,7 +436,7 @@ public class LarkHireTalentBasicInfo
     [JsonPropertyName("nationality_code")]
     public string RegionCode { get; set; }
 
-    [JsonConverter(typeof(JsonDateTimeSecondNumberConverter))]
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
     [JsonPropertyName("birthday")]
     public DateTime? Birthday { get; set; }
 
@@ -649,4 +649,27 @@ public class LarkIdNameInfo
 
     public string GetName()
         => LarkApiUtils.GetName(Name);
+}
+
+public class LarkAttachmentInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("mime")]
+    public string ContentType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
+    [JsonPropertyName("create_time")]
+    public DateTime CreationDate { get; set; }
 }

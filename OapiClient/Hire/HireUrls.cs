@@ -15,4 +15,7 @@ internal static partial class LarkUrls
     public const string ApplicationDetails = "https://open.feishu.cn/open-apis/hire/v1/applications/{0}/get_detail";
     public const string Applications = "https://open.feishu.cn/open-apis/hire/v1/applications/";
     public const string HireJob = "https://open.feishu.cn/open-apis/hire/v1/jobs/{0}/get_detail";
+    public const string Attachments = "https://open.feishu.cn/open-apis/hire/v1/attachments/";
+    public const string HireOfferByApplication = "https://open.feishu.cn/open-apis/hire/v1/applications/{0}/offer";
+    public const string HireOfferDetails = "https://open.feishu.cn/open-apis/hire/v1/offers/{0}";
 }

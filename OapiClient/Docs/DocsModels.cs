@@ -175,6 +175,11 @@ public static class LarkDocsFieldsHelper
     public static void SetDate(JsonObjectNode node, string key, DateTime value)
         => node.SetValue(key, WebFormat.ParseDate(value));
 
+    public static void SetDate(JsonObjectNode node, string key, DateTime? value)
+    {
+        if (value.HasValue) SetDate(node, key, value.Value);
+    }
+
     public static void SetLink(JsonObjectNode node, string key, string url, string? title = null)
     {
         if (string.IsNullOrWhiteSpace(url)) return;
