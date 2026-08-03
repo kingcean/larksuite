@@ -132,11 +132,40 @@ public static partial class LarkCliUtils
         return WritePagesAsync(console, resp, restPages, writeLine, restPageSize, cancellationToken);
     }
 
-    internal static bool IsToExit(string? command)
+    public static bool IsToExit(string? command)
     {
         command = command?.Trim()?.ToLowerInvariant();
         if (string.IsNullOrEmpty(command)) return false;
         return command == "exit" || command == "quit" || command == "close" || command == "esc" || command == "bye" || command == "goodbye" || command == "tuichu" || command == "退出" || command == "关闭" || command == "再见" || command == "结束";
+    }
+
+    public static async Task WriteChatMessagesAsync(StyleConsole console, string chatId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(chatId)) return;
+        var backward = await LarkApi.DefaultInstance.GetMessageHistoryAsync(chatId, 50, cancellationToken);
+        if (backward?.Data is null || backward.IsError) return;
+        var col = backward.Data.Reverse();
+        var yesterday = DateTime.Today.AddDays(-1);
+        console ??= StyleConsole.Default;
+        foreach (var item in col)
+        {
+            WriteChatMessage(console, item);
+        }
+    }
+
+    public static void WriteChatMessage(StyleConsole console, LarkMessageResponse item)
+    {
+        if (string.IsNullOrWhiteSpace(item?.MessageType) || item.IsDeleted) return;
+        var text = item.GetContentString();
+        if (text is null) return;
+        var author = item.Sender.SenderName ?? string.Concat(item.Sender.SenderType, ' ', item.Sender.Id);
+        console.Write(ConsoleColor.Blue, "· ");
+        console.Write(BoldText(), author);
+        console.Write(" \t");
+        console.WriteLine(item.CreationDate.ToString());
+        console.WriteLine();
+        console.WriteLine(text);
+        console.WriteLine();
     }
 
     internal static string? GetName(JsonObjectNode? json)

@@ -190,8 +190,13 @@ public class LarkDocsBaseTableRecord
                 target.SetValue(targetKey, fields.TryGetStringValue(sourceKey));
                 return;
             case JsonValueKind.Number:
-                target.SetValue(targetKey, fields.TryGetDoubleValue(sourceKey));
-                return;
+                {
+                    var i1 = fields.TryGetInt64Value(sourceKey);
+                    var i2 = fields.TryGetDoubleValue(sourceKey, false);
+                    if (i1.HasValue && i1.Value == i2) target.SetValue(targetKey, i1);
+                    else target.SetValue(targetKey, i2);
+                    return;
+                }
             case JsonValueKind.True:
                 target.SetValue(targetKey, true);
                 return;

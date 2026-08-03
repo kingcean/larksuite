@@ -21,6 +21,8 @@ public class LarkHireCommandVerb : BaseCommandVerb
     /// </summary>
     public static string Description => "Get details of interview and candidate.";
 
+    private readonly Dictionary<string, string> caps = new();
+
     /// <summary>
     /// Gets a value indicating whether need enable evaluation.
     /// </summary>
@@ -31,44 +33,126 @@ public class LarkHireCommandVerb : BaseCommandVerb
     /// </summary>
     protected virtual int LatestDays => 5;
 
+    /// <summary>
+    /// Registers the additional command.
+    /// </summary>
+    /// <param name="key">The command key.</param>
+    /// <param name="description">The description.</param>
+    protected void Register(string key, string description)
+    {
+        if (key is null) return;
+        key = key.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(key)) return;
+        var method = GetType().GetMethod($"Process{key.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
+        if (method is not null && !method.IsStatic) caps[key] = description;
+    }
+
     /// <inheritdoc />
     protected override async Task OnProcessAsync(CancellationToken cancellationToken = default)
     {
         var console = CurrentConsole;
         var verb = Arguments.Verb;
         var verbStr = verb.Count > 0 ? verb[0]?.Trim()?.ToLowerInvariant() : null;
-        var consoleKey = ConsoleKey.Spacebar;
-        if (!string.IsNullOrEmpty(verbStr))
+
+        var list = new List<SelectionItem<string>>();
+        PrintDefaultMenu(list, "latest", "List interviews started from latest days.");
+        PrintDefaultMenu(list, "day", "List interviews started from the specific day (YYYY-MM-DD).");
+        PrintDefaultMenu(list, "talent", "Get details of a specific talent.");
+        foreach (var item in caps)
         {
-            consoleKey = verbStr.Trim().ToLowerInvariant() switch
+            if (string.IsNullOrWhiteSpace(item.Key)) continue;
+            list.Add(new(item.Value, item.Key));
+        }
+
+        if (string.IsNullOrEmpty(verbStr))
+        {
+
+            LarkCliUtils.WriteOrderedLine(console, list);
+            console.Write("Please type above command to continue; or ");
+            console.Write(ConsoleColor.Yellow, "quit");
+            console.WriteLine(" to exit.");
+            verbStr = LarkCliUtils.ReadLine(console, "Hire\\Command")?.Trim()?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(verbStr)) return;
+        }
+
+        if (LarkCliUtils.IsToExit(verbStr)) return;
+        var selection = list.FirstOrDefault(ele => ele.Data == verbStr.Trim());
+        if (string.IsNullOrEmpty(selection?.Data))
+        {
+            if (int.TryParse(verbStr, out var i) && i > 0 && i <= list.Count)
             {
-                "latest" => ConsoleKey.L,
-                "day" => ConsoleKey.D,
-                "talent" => ConsoleKey.T,
-                "quit" => ConsoleKey.Q,
-                _ => ConsoleKey.Spacebar,
-            };
+                selection = list[i - 1];
+            }
+            else if (verbStr.Length == 1)
+            {
+                verbStr = verbStr switch
+                {
+                    "l" => "latest",
+                    "d" => "day",
+                    "t" => "talent",
+                    "q" => "quit",
+                    _ => null
+                };
+                if (verbStr is not null)
+                    selection = list.FirstOrDefault(ele => ele.Data == verbStr.Trim());
+            }
+            else if (verbStr == "interview" || verbStr == "interviews")
+            {
+                selection = list.FirstOrDefault(ele => ele.Data == "latest");
+            }
+            else if (verbStr.StartsWith("interview ") && verbStr.Length > 10)
+            {
+                var interviewInfo = await LarkApi.DefaultInstance.GetInterviewAsync(verbStr[10..], cancellationToken);
+                if (interviewInfo?.Data is null || interviewInfo.IsError) return;
+                await GetInterviewAsync(interviewInfo.Data, cancellationToken);
+                return;
+            }
+            else
+            {
+                var date = WebFormat.ParseDate(verbStr);
+                if (date.HasValue)
+                {
+                    await GetInterviewsAsync(date.Value.Date, date.Value.Date.AddDays(1), cancellationToken);
+                    return;
+                }
+            }
+
+            if (string.IsNullOrEmpty(selection?.Data))
+            {
+                console.WriteLine("Not supported command.");
+                console.WriteLine();
+                return;
+            }
         }
 
-        if (consoleKey == ConsoleKey.Spacebar)
+        console.WriteLine();
+        if (caps.ContainsKey(selection.Data))
         {
-            console.Write("Search [L]atest, on specific [D]ay, or by specific [T]alent?  ");
-            consoleKey = console.ReadKey().Key;
-            console.WriteLine();
+            var method = GetType().GetMethod($"Process{selection.Data.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
+            if (method is null || method.IsStatic)
+            {
+                console.WriteLine("Not supported command.");
+                console.WriteLine();
+                return;
+            }
+
+            var task = method.Invoke(this, [cancellationToken]) as Task;
+            if (task is not null) await task;
+            return;
         }
 
-        switch (consoleKey)
+        switch (selection.Data)
         {
-            case ConsoleKey.L:
-            case ConsoleKey.M:
-            case ConsoleKey.Enter:
-            case ConsoleKey.Spacebar:
+            case "interviews":
+            case "interview":
+            case "latest":
                 await GetInterviewsAsync(DateTime.Now.AddDays(-Math.Abs(LatestDays)).Date, DateTime.Now, cancellationToken);
                 break;
-            case ConsoleKey.D:
+            case "day":
                 {
                     console.WriteLine("Please type the date in YYYY-MM-DD format.");
                     var s = LarkCliUtils.ReadLine(console, "Date")!;
+                    if (LarkCliUtils.IsToExit(s)) break;
                     var date = WebFormat.ParseDate(s);
                     if (!date.HasValue && !string.IsNullOrWhiteSpace(s) && s.Length < 6)
                     {
@@ -95,9 +179,12 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
                     break;
                 }
-            case ConsoleKey.T:
-            case ConsoleKey.I:
+            case "talent":
                 await GetTalentInterviewAsync(cancellationToken);
+                break;
+            default:
+                console.WriteLine("Not supported command.");
+                console.WriteLine();
                 break;
         }
     }
@@ -140,7 +227,21 @@ public class LarkHireCommandVerb : BaseCommandVerb
         var id = ReadInterviewId(ids);
         if (LarkCliUtils.IsToExit(id)) return resp;
         var interviewInfo = GetInterviewInfo(id, resp);
-        if (interviewInfo is null) return resp;
+        await GetInterviewAsync(interviewInfo, cancellationToken);
+        return resp;
+    }
+
+    /// <summary>
+    /// Gets the interview collection.
+    /// </summary>
+    /// <param name="interviewInfo">The interview info.</param>
+    /// <param name="cancellationToken">A cancellation id to observe while waiting for the task to complete.</param>
+    /// <returns>The interview information collection.</returns>
+    public async Task GetInterviewAsync(LarkHireInterviewInfo? interviewInfo, CancellationToken cancellationToken = default)
+    {
+        var larkApi = LarkApi.DefaultInstance;
+        var console = CurrentConsole;
+        if (interviewInfo is null) return;
         var applicationId = interviewInfo.ApplicationId;
         JsonObjectNode? applicationBasic = null;
         if (!string.IsNullOrWhiteSpace(applicationId))
@@ -189,7 +290,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                     console.WriteLine();
                     break;
                 case ConsoleKey.M:
-                    await GetInterviewMinutesAsync(id);
+                    await GetInterviewMinutesAsync(interviewInfo.Id);
                     console.WriteLine();
                     break;
                 case ConsoleKey.T:
@@ -242,7 +343,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 case ConsoleKey.Q:
                 default:
                     console.WriteLine();
-                    return resp;
+                    return;
             }
         }
     }
@@ -274,7 +375,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
         console.WriteLine();
         console.WriteLine("Please type the index or ID of interview to show minutes.");
         var id = ReadInterviewId(ids);
-        if (LarkCliUtils.IsToExit(id)) return [];
+        if (string.IsNullOrWhiteSpace(id) || LarkCliUtils.IsToExit(id)) return [];
         var interviewInfo = GetInterviewInfo(id, interviews);
         WriteInterviewResultLine(interviewInfo);
         return await GetInterviewMinutesAsync(id);
@@ -303,6 +404,12 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
     private LarkHireInterviewInfo? GetInterviewInfo(string? id, IEnumerable<LarkHireInterviewInfo> arr)
         => GetInterviewInfo(CurrentConsole, id, arr);
+
+    private void PrintDefaultMenu(List<SelectionItem<string>> source, string key, string description)
+    {
+        if (caps.TryGetValue(key, out _)) return;
+        source.Add(new(description, key));
+    }
 
     private void WriteInterviewResultLine(LarkHireInterviewInfo? item)
     {

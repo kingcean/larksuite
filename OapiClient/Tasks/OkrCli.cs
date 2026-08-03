@@ -31,7 +31,7 @@ public class LarkOkrCommandVerb : BaseCommandVerb
             return;
         }
 
-        var okr = larkApi.GetOkrsAsync(id, cancellationToken);
+        var okr = await larkApi.GetOkrsAsync(id, cancellationToken);
         var col = await LarkCliUtils.WriteLineAsync(console, okr);
         console.Write($"Total objective: ");
         console.Write(ConsoleColor.Green, col.Count);
@@ -115,12 +115,12 @@ public class LarkOkrCommandVerb : BaseCommandVerb
 
 public static partial class LarkCliUtils
 {
-    public static async Task<List<LarkOkrObjectiveInfo>> WriteLineAsync(this StyleConsole console, IAsyncEnumerable<LarkOkrObjectiveInfo> objectives)
+    public static async Task<List<LarkOkrObjectiveInfo>> WriteLineAsync(this StyleConsole console, LarkUserOkrInfo? objectives)
     {
         console ??= StyleConsole.Default;
-        if (objectives is null) return [];
+        if (objectives?.Objectives is null) return [];
         var col = new List<LarkOkrObjectiveInfo>();
-        await foreach (var objective in objectives)
+        foreach (var objective in objectives.Objectives)
         {
             if (objective?.Text is null) continue;
             col.Add(objective);

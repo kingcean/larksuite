@@ -58,7 +58,10 @@ public static partial class LarkApiUtils
         return null;
     }
 
-    public static async Task<LarkOkrCycleItem?> GetCycleItemAsync(LarkApi larkApi, string userId, string cycleId, CancellationToken cancellationToken = default)
+    public static Task<LarkOkrCycleItem?> GetOkrCycleAsync(LarkApi larkApi, LarkUserOkrInfo okr, CancellationToken cancellationToken = default)
+        => okr is null ? Task.FromResult<LarkOkrCycleItem?>(null) : GetOkrCycleAsync(larkApi, okr.UserId, okr.CycleId, cancellationToken);
+
+    public static async Task<LarkOkrCycleItem?> GetOkrCycleAsync(LarkApi larkApi, string userId, string cycleId, CancellationToken cancellationToken = default)
     {
         larkApi ??= LarkApi.DefaultInstance;
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(cycleId)) return null;
@@ -77,7 +80,7 @@ public static partial class LarkApiUtils
         return null;
     }
 
-    public static LarkOkrCycleItem? GetByTenantCycleId(this IEnumerable<LarkOkrCycleItem> col, string tenantCycleId)
+    public static LarkOkrCycleItem? GetOkrCycleByTenantCycle(this IEnumerable<LarkOkrCycleItem> col, string tenantCycleId)
     {
         if (col is null || string.IsNullOrWhiteSpace(tenantCycleId)) return null;
         foreach (var item in col)
@@ -88,37 +91,39 @@ public static partial class LarkApiUtils
         return null;
     }
 
-    public static async Task<LarkOkrCycleItem?> GetByTenantCycleIdAsync(LarkApi larkApi, LarkResponsePagingBody<LarkOkrCycleItem> response, string tenantCycleId, CancellationToken cancellationToken = default)
+    public static async Task<LarkOkrCycleItem?> GetOkrCycleByTenantCycleAsync(LarkApi larkApi, string userId, string tenantCycleId, CancellationToken cancellationToken = default)
+    {
+        var periods = await larkApi.ListOkrPeriodsAsync(userId, new(50), cancellationToken);
+        return await GetOkrCycleByTenantCycleAsync(larkApi, periods, tenantCycleId);
+    }
+
+    public static async Task<LarkOkrCycleItem?> GetOkrCycleByTenantCycleAsync(LarkApi larkApi, LarkResponsePagingBody<LarkOkrCycleItem> response, string tenantCycleId, CancellationToken cancellationToken = default)
     {
         if (response?.Data is null || response.IsError || string.IsNullOrWhiteSpace(tenantCycleId)) return null;
         larkApi ??= LarkApi.DefaultInstance;
-        var item = GetByTenantCycleId(response.Data, tenantCycleId);
+        var item = GetOkrCycleByTenantCycle(response.Data, tenantCycleId);
         if (item is not null) return item;
         while (response.HasNextPage)
         {
             var col = await larkApi.ListOkrPeriodsAsync(response, 50, cancellationToken);
             if (col is null) break;
-            item = GetByTenantCycleId(response.Data, tenantCycleId);
+            item = GetOkrCycleByTenantCycle(response.Data, tenantCycleId);
             if (item is not null) return item;
         }
 
         return null;
     }
 
-    public static async IAsyncEnumerable<LarkOkrObjectiveInfo> ListObjectivesByTenantCycleIdAsync(LarkApi larkApi, string userId, string tenantCycleId, CancellationToken cancellationToken = default)
+    public static async Task<LarkUserOkrInfo?> GetOkrByTenantCycleAsync(LarkApi larkApi, string userId, string tenantCycleId, CancellationToken cancellationToken = default)
     {
         larkApi ??= LarkApi.DefaultInstance;
         var response = await larkApi.ListOkrPeriodsAsync(userId, new(50), cancellationToken);
-        var cycle = await GetByTenantCycleIdAsync(larkApi, response, tenantCycleId, cancellationToken);
-        if (cycle is null) yield break;
-        var okrs = larkApi.GetOkrsAsync(cycle.Id, cancellationToken);
-        await foreach (var objective in okrs)
-        {
-            yield return objective;
-        }
+        var cycle = await GetOkrCycleByTenantCycleAsync(larkApi, response, tenantCycleId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(cycle?.Id)) return null;
+        return await larkApi.GetOkrsAsync(cycle.Id, cancellationToken);
     }
 
-    public static IEnumerable<LarkOkrKeyResultInfo> ListKeyResults(this IEnumerable<LarkOkrObjectiveInfo> objectives)
+    public static IEnumerable<LarkOkrKeyResultInfo> ListOkrKeyResults(this IEnumerable<LarkOkrObjectiveInfo> objectives)
     {
         foreach (var objective in objectives)
         {
@@ -129,7 +134,7 @@ public static partial class LarkApiUtils
         }
     }
 
-    public static async IAsyncEnumerable<LarkOkrKeyResultInfo> ListKeyResultsAsync(this IAsyncEnumerable<LarkOkrObjectiveInfo> objectives)
+    public static async IAsyncEnumerable<LarkOkrKeyResultInfo> ListOkrKeyResultsAsync(this IAsyncEnumerable<LarkOkrObjectiveInfo> objectives)
     {
         await foreach (var objective in objectives)
         {

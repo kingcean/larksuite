@@ -3,47 +3,49 @@ using LarkSuite.CommandLine;
 using LarkSuite.OapiModels;
 using System.Buffers.Text;
 using System.Drawing;
+using System.Text;
 using Trivial.CommandLine;
 
+var console = StyleConsole.Default;
 LinearGradientConsoleStyle linear = new(ConsoleColor.Cyan, Color.FromArgb(0x36, 0x70, 0xfa), Color.FromArgb(0x3d, 0xd4, 0xb9));
-DefaultConsole.WriteLine(linear, "LarkSuite");
-DefaultConsole.WriteLine();
+console.WriteLine(linear, "LarkSuite");
+console.WriteLine();
 
 if (LarkApi.DefaultInstance.IsAppKeyEmpty)
 {
-    DefaultConsole.WriteLine("Need use an app key to access the resource.");
-    DefaultConsole.Write("App ID: \t");
-    var s = DefaultConsole.ReadLine();
+    console.WriteLine("Need use an app key to access the resource.");
+    console.Write("App ID: \t");
+    var s = console.ReadLine();
     if (string.IsNullOrWhiteSpace(s))
     {
-        DefaultConsole.Write("App ID: \t");
-        s = DefaultConsole.ReadLine();
+        console.Write("App ID: \t");
+        s = console.ReadLine();
         if (string.IsNullOrWhiteSpace(s)) return;
     }
 
-    DefaultConsole.Write("App Secret: \t");
-    var secret = DefaultConsole.ReadPassword('*');
+    console.Write("App Secret: \t");
+    var secret = console.ReadPassword('*');
     if (string.IsNullOrWhiteSpace(s))
     {
-        DefaultConsole.Write("App Secret: \t");
-        secret = DefaultConsole.ReadPassword();
+        console.Write("App Secret: \t");
+        secret = console.ReadPassword();
         if (string.IsNullOrWhiteSpace(s)) return;
     }
 
     LarkApiUtils.ReplaceDefaultInstance(new(s, secret));
-    DefaultConsole.WriteLine();
+    console.WriteLine();
 }
 
-DefaultConsole.Write(ConsoleColor.DarkGray, "Loading…");
+console.Write(ConsoleColor.DarkGray, "Loading…");
 var token = await LarkApi.DefaultInstance.GetTenantTokenAsync();
-DefaultConsole.Clear(StyleConsole.RelativeAreas.Line);
-DefaultConsole.BackspaceToBeginning();
+console.Clear(StyleConsole.RelativeAreas.Line);
+console.BackspaceToBeginning();
 if (token is null || token.IsEmpty)
 {
-    DefaultConsole.Write(ConsoleColor.Red, "Login failed.");
-    DefaultConsole.Write(" \t");
-    DefaultConsole.WriteLine(token?.Message);
-    DefaultConsole.WriteLine();
+    console.Write(ConsoleColor.Red, "Login failed.");
+    console.Write(" \t");
+    console.WriteLine(token?.Message);
+    console.WriteLine();
     return;
 }
 

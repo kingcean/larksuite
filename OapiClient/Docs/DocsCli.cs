@@ -35,7 +35,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 LarkCliUtils.WriteOrderedLine(console,
                 [
                     new("Get the information of the specific space.", "space"),
-                    new("Get the text content of the specific doc ID.", "doc"),
+                    new("Get the text content of the specific doc ID.", "open"),
                     new("Search docs.", "search"),
                 ]);
                 s = LarkCliUtils.ReadLine(console, "Docs")?.Trim()?.ToLowerInvariant();
@@ -50,6 +50,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                     await ShowSpaceAsync(cancellationToken);
                     break;
                 case "doc":
+                case "open":
                 case "2":
                     await ShowDocAsync(cancellationToken);
                     break;
@@ -240,6 +241,9 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         console.Write(ConsoleColor.DarkGray, "--- * THE END * ---");
         console.Write("  (Press any key to continue...)  ");
         console.ReadKey(true);
+        console.Clear(StyleConsole.RelativeAreas.Line);
+        console.BackspaceToBeginning();
+        console.WriteLine();
     }
 
     public Task<JsonObjectNode?> SearchWikiAsync(CancellationToken cancellationToken = default)

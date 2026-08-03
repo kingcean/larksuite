@@ -110,6 +110,7 @@ public class LarkDocsNodeInfo
 
 public class LarkDocsDocInfo
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("display_settings")]
     public LarkDocsDocDisplaySettings? DisplaySettings { get; set; }
 
@@ -121,6 +122,10 @@ public class LarkDocsDocInfo
 
     [JsonPropertyName("revision_id")]
     public int Revision { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("cover")]
+    public LarkDocsDocCoverInfo Cover { get; set; }
 }
 
 public class LarkDocsDocDisplaySettings
@@ -145,6 +150,18 @@ public class LarkDocsDocDisplaySettings
 
     [JsonPropertyName("show_uv")]
     public bool UV { get; set; }
+}
+
+public class LarkDocsDocCoverInfo
+{
+    [JsonPropertyName("token")]
+    public string ImageToken { get; set; }
+
+    [JsonPropertyName("offset_ratio_x")]
+    public double OffsetRatioX { get; set; }
+
+    [JsonPropertyName("offset_ratio_y")]
+    public double OffsetRatioY { get; set; }
 }
 
 public static class LarkDocsFieldsHelper

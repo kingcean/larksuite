@@ -84,13 +84,26 @@ public partial class LarkApi
     public Task<IReadOnlyList<LarkOkrProgressItem>> GetOkrKeyResultProgressAsync(LarkResponsePagingBody<LarkOkrProgressItem> response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.OkrKeyResultProgress, (response.Query as LarkTargetResourcesRequest)?.Id), response, pageSize, cancellationToken);
 
-    public async IAsyncEnumerable<LarkOkrObjectiveInfo> GetOkrsAsync(IEnumerable<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
+    public async Task<LarkUserOkrInfo?> GetOkrsAsync(IEnumerable<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
     {
-        var list = GetOkrsInternalAsync(objectives, cancellationToken).OrderBy(ele => ele.Position);
-        await foreach (var item in list)
-        {
-            yield return item;
-        }
+        if (objectives is null) return null;
+        var col = objectives is IList<LarkOkrObjectiveItem> arr ? arr : new List<LarkOkrObjectiveItem>(objectives);
+        var list = await GetOkrsInternalAsync(objectives, cancellationToken).OrderBy(ele => ele.Position).ToListAsync(cancellationToken);
+        var first = col.FirstOrDefault();
+        return new(first?.Owner?.UserId!, first?.CycleId!, list);
+    }
+
+    public async Task<LarkUserOkrInfo?> GetOkrsAsync(string cycleId, CancellationToken cancellationToken = default)
+    {
+        var objectives = await ListOkrObjectivesAsync(cycleId, new(50), cancellationToken);
+        return await GetOkrsAsync(objectives, cancellationToken);
+    }
+
+    public async Task<LarkUserOkrInfo?> GetOkrsAsync(LarkResponsePagingBody<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
+    {
+        if (objectives?.Data is null || objectives.IsError) return null;
+        await LarkApiUtils.LoadAllPagesAsync(objectives, 50, ListOkrObjectivesAsync, cancellationToken).CountAsync(cancellationToken);
+        return await GetOkrsAsync(objectives.Data, cancellationToken);
     }
 
     private async IAsyncEnumerable<LarkOkrObjectiveInfo> GetOkrsInternalAsync(IEnumerable<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
@@ -133,32 +146,6 @@ public partial class LarkApi
             {
                 KeyResults = col,
             };
-        }
-    }
-
-    public async IAsyncEnumerable<LarkOkrObjectiveInfo> GetOkrsAsync(string cycleId, CancellationToken cancellationToken = default)
-    {
-        var objectives = await ListOkrObjectivesAsync(cycleId, new(50), cancellationToken);
-        var result = GetOkrsAsync(objectives, cancellationToken);
-        await foreach (var item in result)
-        {
-            yield return item;
-        }
-    }
-
-    public async IAsyncEnumerable<LarkOkrObjectiveInfo> GetOkrsAsync(LarkResponsePagingBody<LarkOkrObjectiveItem> objectives, CancellationToken cancellationToken = default)
-    {
-        if (objectives?.Data is null || objectives.IsError) yield break;
-        while (objectives.HasNextPage)
-        {
-            var list = await ListOkrObjectivesAsync(objectives, 50, cancellationToken);
-            if (list is null || list.Count < 1) break;
-        }
-
-        var result = GetOkrsAsync(objectives.Data, cancellationToken);
-        await foreach (var item in result)
-        {
-            yield return item;
         }
     }
 }

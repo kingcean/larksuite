@@ -42,6 +42,10 @@ public class LarkContentBlockTree
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<LarkContentBlockTree>? Children { get; set; }
 
+    [JsonPropertyName("resouce_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ResourceToken { get; set; }
+
     public override string ToString()
     {
         var sb = new StringBuilder();

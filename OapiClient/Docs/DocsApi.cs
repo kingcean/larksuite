@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Net;
 using Trivial.Security;
@@ -82,8 +83,8 @@ public partial class LarkApi
             { "obj_type", objType },
         }.ToString(LarkUrls.GetWikiNode), "node", cancellationToken);
 
-    public Task<LarkResponseBody<LarkDocsBaseTableInfo>> GetDocsInfoAsync(string token, CancellationToken cancellationToken = default)
-        => GetAsync<LarkDocsBaseTableInfo>(string.Concat(LarkUrls.DocsInfo, LarkUrls.GetId(token)), "document", cancellationToken);
+    public Task<LarkResponseBody<LarkDocsDocInfo>> GetDocsInfoAsync(string token, CancellationToken cancellationToken = default)
+        => GetAsync<LarkDocsDocInfo>(string.Concat(LarkUrls.DocsInfo, LarkUrls.GetId(token)), "document", cancellationToken);
 
     public async Task<LarkResponseBody<string>> GetDocsTextAsync(string token, CancellationToken cancellationToken = default)
     {
@@ -118,6 +119,16 @@ public partial class LarkApi
 
     public Task<LarkResponseBody> GetDocsBoardNodesAsync(string id, LarkUserIdTypeRequestOptions options, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.DocsBoardNodes, options, LarkUrls.GetId(id)), cancellationToken);
+
+    public Task<LarkResponseBody<LarkDocsDocInfo>> CreateDocsNodeAsync(string containerToken, string title, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.DocsInfo, new()
+        {
+            { "folder_token", containerToken },
+            { "title", title },
+        }, json => json?.DeserializeValue<LarkDocsDocInfo>("document")!, cancellationToken);
+
+    public Task<LarkResponseBody<LarkDocsNodeInfo>> CreateDocsNodeAsync(LarkWikiNodesCreateRequestOptions options, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, options.SpaceId), JsonObjectNode.ConvertFrom(options), json => json?.DeserializeValue<LarkDocsNodeInfo>("node")!, cancellationToken);
 
     public Task<LarkResponseBody<LarkDocsBaseTableInfo>> GetBaseTableAsync(string baseId, CancellationToken cancellationToken = default)
         => GetAsync<LarkDocsBaseTableInfo>(string.Concat(LarkUrls.GetBaseTable, LarkUrls.GetId(baseId)), "app", cancellationToken);
@@ -247,6 +258,35 @@ public partial class LarkApi
         });
     }
 
+    public async Task<Stream> DownloadFileAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient<Stream>();
+        var resp = await http.GetAsync(LarkUrls.ToUrl(LarkUrls.DownloadFile, token), cancellationToken);
+        return resp;
+    }
+
+    public async Task<LarkResponseBody<string>> ReadDocsTextFileAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var node = await GetWikiNodeAsync(token, cancellationToken);
+        if (node?.Data is null || node.IsError) return new(true, node?.Message);
+        if (string.IsNullOrWhiteSpace(node.Data.DocToken)) return new(true, "Cannot find file identifier.");
+        var file = await DownloadFileAsync(node.Data.DocToken, cancellationToken);
+        if (file is null) return new(true, "Empty file.");
+        if (!file.CanRead) return new(true, "Cannot read the stream.");
+        using var reader = new StreamReader(file, Encoding.UTF8);
+        var s = await reader.ReadToEndAsync();
+        return new(new JsonObjectNode()
+        {
+            { "code", 0 },
+            { "data", new JsonObjectNode()
+            {
+                { "value", s },
+                { "node", (node as LarkResponseBody).Data },
+            } },
+            { "msg", "OK" },
+        }, "value");
+    }
+
     public Task<LarkResponseBody<string>> ConvertDocsFileFormatAsync(string token, string ext, string docType, string parentToken, string? name = null, CancellationToken cancellationToken = default)
     {
         var json = new JsonObjectNode()
@@ -269,4 +309,19 @@ public partial class LarkApi
 
     public Task<LarkResponseBody> ConvertDocsFileFormatStateAsync(string ticket, CancellationToken cancellationToken = default)
         => GetAsync(string.Concat(LarkUrls.ConvertDocsFileFormatState, ticket), cancellationToken);
+
+    public Task<LarkResponseBody> ConvertDocsBlocksAsync(string? mime, string content, LarkUserIdTypeRequestOptions options, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.ConvertDocsBlocks, options), new()
+        {
+            { "content_type", mime ?? "markdown" },
+            { "content", content },
+        }, cancellationToken);
+
+    public Task<LarkResponseBody> AddDocsBlocksAsync(string documentId, string blockId, List<string> blockChildrenIds, int blockIndex, List<JsonObjectNode> descendants, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.AddDocsBlocks, documentId, blockId), new()
+        {
+            { "children_id", blockChildrenIds },
+            { "index", blockIndex },
+            { "descendants", descendants },
+        }, cancellationToken);
 }

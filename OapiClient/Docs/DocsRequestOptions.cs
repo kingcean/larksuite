@@ -30,6 +30,29 @@ public class LarkWikiNodesRequestOptions : BaseQueryRequestInfo
     }
 }
 
+public class LarkWikiNodesCreateRequestOptions
+{
+    [JsonIgnore]
+    public string SpaceId { get; set; }
+
+    [JsonPropertyName("obj_type")]
+    public string DocType { get; set; } = "docx";
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("parent_node_token")]
+    public string? ParentNodeToken { get; set; }
+
+    [JsonPropertyName("node_type")]
+    public string NodeType { get; set; } = "origin";
+
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("origin_node_token")]
+    public string? OriginNodeToken { get; set; }
+}
+
 public class LarkWikiSearchOptions : LarkPageTokenInfo, IJsonObjectHost
 {
     /// <summary>

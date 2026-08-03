@@ -61,6 +61,37 @@ public class LarkMessageResponse
 
     [JsonPropertyName("upper_message_id")]
     public string UpperMessageId { get; set; }
+
+    public string? GetContentString()
+    {
+        var content = Content?.Content;
+        if (content is null) return null;
+        return MessageType switch
+        {
+            "text" or "hongbao" => content.TryGetStringTrimmedValue("text", true),
+            "post" => LarkApiUtils.GetRichMessageText(content.TryGetStringValue("title"), content.TryGetArrayValue("content_v2") ?? content.TryGetArrayValue("content")),
+            "card" or "interactive" => LarkApiUtils.GetRichMessageText(content.TryGetStringValue("title"), content.TryGetArrayValue("elements") ?? content.TryGetObjectValue("body")?.TryGetArrayValue("elements")),
+            "image" => $"Image `{content.TryGetStringTrimmedValue("image_key")}`",
+            "file" => $"File `{content.TryGetStringTrimmedValue("file_key")}` - {content.TryGetStringTrimmedValue("file_name")}",
+            "folder" => $"Folder `{content.TryGetStringTrimmedValue("file_key")}` - {content.TryGetStringTrimmedValue("file_name")}",
+            "audio" => $"Audio `{content.TryGetStringTrimmedValue("file_key")}`",
+            "media" => $"Video `{content.TryGetStringTrimmedValue("file_key")}` - {content.TryGetStringTrimmedValue("file_name")}",
+            "sticker" => $"Sticker `{content.TryGetStringTrimmedValue("file_key")}`",
+            "share_user" => $"User `{content.TryGetStringTrimmedValue("user_id")}`",
+            "share_chat" => $"Chat `{content.TryGetStringTrimmedValue("chat_id")}`",
+            "calendar" or "share_calendar_event" or "general_calendar" => $"{content.TryGetStringTrimmedValue("summary") ?? "Calendar item"} | {WebFormat.ParseDate(content.TryGetInt64Value("start_time"))?.ToString() ?? "?"} → {WebFormat.ParseDate(content.TryGetInt64Value("end_time"))?.ToString() ?? "?"}",
+            "location" => $"{content.TryGetStringTrimmedValue("name") ?? "Location"} (Longitude = {content.TryGetStringTrimmedValue("longitude") ?? "unknown"} & Latitude = {content.TryGetStringTrimmedValue("latitude") ?? "unknown"})",
+            "vote" => $"""
+                        ## {content.TryGetStringTrimmedValue("topic")}
+
+                        {string.Join(Environment.NewLine, content.TryGetStringListValue("options", true))}
+                        """,
+            "todo" => $"ToDo `{content.TryGetStringTrimmedValue("task_id")}`",
+            "system" => "---",
+            "merge_forward" => $"> {content.TryGetStringValue("content")}",
+            _ => null,
+        };
+    }
 }
 
 public class LarkMessageSenderInfo
@@ -76,6 +107,14 @@ public class LarkMessageSenderInfo
 
     [JsonPropertyName("tenant_key")]
     public string TenantKey { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("sender_name")]
+    public string? SenderName { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("sender_i18n_names")]
+    public JsonObjectNode? SenderNames { get; set; }
 }
 
 public class LarkMessageContentInfo
@@ -110,6 +149,64 @@ public class LarkMessageMentionInfo
 
     [JsonPropertyName("name")]
     public string Name { get; set; }
+
+    [JsonPropertyName("tenant_key")]
+    public string TenantKey { get; set; }
+}
+
+public class LarkEventMessageArgs
+{
+    public LarkEventMessageArgs(LarkEventMessageHeader header, JsonObjectNode body)
+    {
+        Header = header ?? new();
+        Body = body;
+    }
+
+    public LarkEventMessageHeader Header { get; }
+
+    public string EventId => Header.Id;
+
+    public string EventType => Header.EventType;
+
+    public string VerificationToken { get; set; }
+
+    public DateTime CreationDate => Header.CreationDate;
+
+    public JsonObjectNode Body { get; }
+
+    public T GetBody<T>()
+        => Body is null ? default : Body.Deserialize<T>();
+}
+
+public class LarkEventMessage
+{
+    [JsonPropertyName("schema")]
+    public string Schema { get; set; } = "2.0";
+
+    [JsonPropertyName("header")]
+    public LarkEventMessageHeader Header { get; set; }
+
+    [JsonPropertyName("event")]
+    public JsonObjectNode Body { get; set; }
+}
+
+public class LarkEventMessageHeader
+{
+    [JsonPropertyName("event_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("event_type")]
+    public string EventType { get; set; }
+
+    [JsonPropertyName("token")]
+    public string VerificationToken { get; set; }
+
+    [JsonPropertyName("create_time")]
+    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    public DateTime CreationDate { get; set; } = DateTime.Now;
+
+    [JsonPropertyName("app_id")]
+    public string AppId { get; set; }
 
     [JsonPropertyName("tenant_key")]
     public string TenantKey { get; set; }

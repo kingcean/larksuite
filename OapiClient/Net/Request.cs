@@ -475,3 +475,22 @@ internal class LarkTargetResourcesRequest : LarkUserIdTypeRequestOptions
         base.OnQueryDataFill(q);
     }
 }
+
+internal class QueryDataContainer : BaseQueryRequestInfo
+{
+    public QueryDataContainer(QueryData q)
+    {
+        Query = q;
+    }
+
+    public QueryData Query { get; }
+
+    /// <inheritdoc />
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        foreach (var prop in Query)
+        {
+            Query.Add(prop.Key, prop.Value);
+        }
+    }
+}

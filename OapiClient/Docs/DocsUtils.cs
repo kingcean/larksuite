@@ -33,6 +33,23 @@ public static partial class LarkApiUtils
     }
 
     /// <summary>
+    /// Gets the content block by identifier.
+    /// </summary>
+    /// <param name="col">The content block collection.</param>
+    /// <param name="id">The identifier.</param>
+    /// <returns>The content block with the specific identifier; or null, if not found.</returns>
+    public static LarkDocsBaseTableRecord? GetById(this IEnumerable<LarkDocsBaseTableRecord> col, string id)
+    {
+        if (col is null) return null;
+        foreach (var item in col)
+        {
+            if (item?.Id == id) return item;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Gets the content block of page.
     /// </summary>
     /// <param name="col">The content block collection.</param>
@@ -84,6 +101,7 @@ public static partial class LarkApiUtils
         {
             Id = root.Id,
             BlockType = root.BlockType,
+            ResourceToken = root.ResourceToken,
         };
         if (root.Elements is not null)
         {
@@ -326,5 +344,13 @@ public static partial class LarkApiUtils
         var result = await task;
         if (result is null) return default;
         return result.Data ?? default;
+    }
+
+    public static string? GetNodeToken(this LarkResponseBody<LarkDocsNodeInfo>? response)
+    {
+        if (response?.Data is null || response.IsError) return null;
+        var token = response.Data.NodeToken;
+        if (string.IsNullOrWhiteSpace(token)) return null;
+        return token;
     }
 }

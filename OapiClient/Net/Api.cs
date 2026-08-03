@@ -484,6 +484,29 @@ public partial class LarkApi : TokenContainer
         return response.AddRange(resp, items);
     }
 
+    ///// <summary>
+    ///// Sends a request message by GET to get response with collection result.
+    ///// </summary>
+    ///// <param name="url">The URL the request is sent to.</param>
+    ///// <param name="page">The page size and page token.</param>
+    ///// <param name="q">The query info.</param>
+    ///// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    ///// <returns>The response result.</returns>
+    //public Task<LarkResponsePagingBody<T>> GetItemsAsync<T>(string url, QueryData? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
+    //    => GetItemsAsync<T>(url, new QueryDataContainer(q), page, cancellationToken);
+
+    ///// <summary>
+    ///// Sends a request message by GET to get response with collection result.
+    ///// </summary>
+    ///// <param name="url">The URL the request is sent to.</param>
+    ///// <param name="page">The page size and page token.</param>
+    ///// <param name="q">The query info.</param>
+    ///// <param name="converter">The converter of result col.</param>
+    ///// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    ///// <returns>The response result.</returns>
+    //public Task<LarkResponsePagingBody<T>> GetItemsAsync<T>(string url, QueryData? q, LarkPageTokenInfo? page, Func<JsonObjectNode, T?> converter, CancellationToken cancellationToken = default)
+    //    => GetItemsAsync(url, new QueryDataContainer(q), page, converter, cancellationToken);
+
     /// <summary>
     /// Sends a request message by GET to get response with collection result.
     /// </summary>
@@ -587,6 +610,84 @@ public partial class LarkApi : TokenContainer
     /// <returns>The response result.</returns>
     public Task<LarkResponseBody> PostAsync(string uri, JsonObjectNode request, CancellationToken cancellationToken = default)
         => PostAsync(new Uri(uri), request, cancellationToken);
+
+    /// <summary>
+    /// Sends a request message by POST to get response result.
+    /// </summary>
+    /// <typeparam name="T">The type of resposne.</typeparam>
+    /// <param name="uri">The Uri the request is sent to.</param>
+    /// <param name="request">The request body.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public async Task<LarkResponseBody<T>> PutAsync<T>(Uri uri, JsonObjectNode request, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient<JsonObjectNode>();
+        var resp = await http.PutAsync(uri, request, cancellationToken);
+        return new(resp);
+    }
+
+    /// <summary>
+    /// Sends a request message by POST to get response result.
+    /// </summary>
+    /// <typeparam name="T">The type of resposne.</typeparam>
+    /// <param name="uri">The Uri the request is sent to.</param>
+    /// <param name="request">The request body.</param>
+    /// <param name="converter">The converter of result col.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public async Task<LarkResponseBody<T>> PutAsync<T>(Uri uri, JsonObjectNode request, Func<JsonObjectNode, T>? converter, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient<JsonObjectNode>();
+        var resp = await http.PutAsync(uri, request, cancellationToken);
+        return new(resp, converter);
+    }
+
+    /// <summary>
+    /// Sends a request message by POST to get response result.
+    /// </summary>
+    /// <typeparam name="T">The type of resposne.</typeparam>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="request">The request body.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result deserialized.</returns>
+    public Task<LarkResponseBody<T>> PutAsync<T>(string url, JsonObjectNode request, CancellationToken cancellationToken = default)
+        => PutAsync<T>(new Uri(url), request, cancellationToken);
+
+    /// <summary>
+    /// Sends a request message by POST to get response result.
+    /// </summary>
+    /// <typeparam name="T">The type of resposne.</typeparam>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="request">The request body.</param>
+    /// <param name="converter">The converter of result col.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result deserialized.</returns>
+    public Task<LarkResponseBody<T>> PutAsync<T>(string url, JsonObjectNode request, Func<JsonObjectNode, T>? converter, CancellationToken cancellationToken = default)
+        => PutAsync(new Uri(url), request, converter, cancellationToken);
+
+    /// <summary>
+    /// Sends a request message by POST to get response result.
+    /// </summary>
+    /// <param name="uri">The Uri the request is sent to.</param>
+    /// <param name="request">The request body.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result deserialized.</returns>
+    public async Task<LarkResponseBody> PutAsync(Uri uri, JsonObjectNode request, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.PutAsync(uri, request, cancellationToken);
+        return new(resp);
+    }
+
+    /// <summary>
+    /// Sends a request message by POST to get response result.
+    /// </summary>
+    /// <param name="uri">The Uri the request is sent to.</param>
+    /// <param name="request">The request body.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public Task<LarkResponseBody> PutAsync(string uri, JsonObjectNode request, CancellationToken cancellationToken = default)
+        => PutAsync(new Uri(uri), request, cancellationToken);
 
     /// <summary>
     /// Tests if the token will expire soon (less than a quarter of duration) or is expired.

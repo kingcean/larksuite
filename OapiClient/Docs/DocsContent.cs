@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Text;
 
@@ -42,85 +44,218 @@ public class LarkContentBlock : BaseLarkContentBlock
         ParentId = item.TryGetStringTrimmedValue("parent_id", true);
         ChildIds = item.TryGetStringListValue("children");
         BlockType = item.TryGetEnumValue<LarkContentBlockType>("block_type") ?? LarkContentBlockType.Unsupported;
-        BiTableToken = item.TryGetObjectValue("bitable")?.TryGetStringTrimmedValue("token");
-        Callout = item.TryGetObjectValue("callout");
-        ChatCard = item.TryGetObjectValue("chat_card");
-        Diagram = item.TryGetObjectValue("diagram");
-        File = item.TryGetObjectValue("file");
-        Grid = item.TryGetObjectValue("grid");
-        GridColumn = item.TryGetObjectValue("grid_column");
-        WebPage = item.TryGetObjectValue("iframe");
-        Image = item.TryGetObjectValue("image");
-        Isv = item.TryGetObjectValue("isv");
-        var content = BlockType switch
+
+        if (BlockType switch
         {
-            LarkContentBlockType.Page => item.TryGetObjectValue("page"),
-            LarkContentBlockType.Text => item.TryGetObjectValue("text"),
-            LarkContentBlockType.Heading1 => item.TryGetObjectValue("heading1"),
-            LarkContentBlockType.Heading2 => item.TryGetObjectValue("heading2"),
-            LarkContentBlockType.Heading3 => item.TryGetObjectValue("heading3"),
-            LarkContentBlockType.Heading4 => item.TryGetObjectValue("heading4"),
-            LarkContentBlockType.Heading5 => item.TryGetObjectValue("heading5"),
-            LarkContentBlockType.Heading6 => item.TryGetObjectValue("heading6"),
-            LarkContentBlockType.Heading7 => item.TryGetObjectValue("heading7"),
-            LarkContentBlockType.Heading8 => item.TryGetObjectValue("heading8"),
-            LarkContentBlockType.Heading9 => item.TryGetObjectValue("heading9"),
-            LarkContentBlockType.Bullet => item.TryGetObjectValue("bullet"),
-            LarkContentBlockType.Ordered => item.TryGetObjectValue("ordered"),
-            LarkContentBlockType.Code => item.TryGetObjectValue("code"),
-            LarkContentBlockType.Quote => item.TryGetObjectValue("quote"),
-            LarkContentBlockType.Equation => item.TryGetObjectValue("equation"),
-            LarkContentBlockType.ToDo => item.TryGetObjectValue("todo"),
-            _ => null
-        };
-        if (content is null || content.GetValueKind("elements") != System.Text.Json.JsonValueKind.Array)
-            return;
-        Elements = content.TryGetArrayValue("elements").Deserialize<List<LarkContentTextElement>>();
-        var style = content.TryGetObjectValue("style");
-        Style = style?.Deserialize<LarkContentTextBlockStyle>() ?? new();
+            LarkContentBlockType.Page => SetElements(item, "page"),
+            LarkContentBlockType.Text => SetElements(item, "text"),
+            LarkContentBlockType.Heading1 => SetElements(item, "heading1"),
+            LarkContentBlockType.Heading2 => SetElements(item, "heading2"),
+            LarkContentBlockType.Heading3 => SetElements(item, "heading3"),
+            LarkContentBlockType.Heading4 => SetElements(item, "heading4"),
+            LarkContentBlockType.Heading5 => SetElements(item, "heading5"),
+            LarkContentBlockType.Heading6 => SetElements(item, "heading6"),
+            LarkContentBlockType.Heading7 => SetElements(item, "heading7"),
+            LarkContentBlockType.Heading8 => SetElements(item, "heading8"),
+            LarkContentBlockType.Heading9 => SetElements(item, "heading9"),
+            LarkContentBlockType.Bullet => SetElements(item, "bullet"),
+            LarkContentBlockType.Ordered => SetElements(item, "ordered"),
+            LarkContentBlockType.Code => SetElements(item, "code"),
+            LarkContentBlockType.Quote => SetElements(item, "quote"),
+            LarkContentBlockType.Equation => SetElements(item, "equation"),
+            LarkContentBlockType.ToDo => SetElements(item, "todo"),
+            LarkContentBlockType.BaseTable => SetResourceToken(item, "bitable"),
+            LarkContentBlockType.Highlight => SetDataContent(item, "callout"),
+            LarkContentBlockType.Conversation => SetDataContent(item, "chat_card"),
+            LarkContentBlockType.Uml => SetDataContent(item, "diagram"),
+            LarkContentBlockType.File => SetDataContent(item, "file"),
+            LarkContentBlockType.Columns => SetOptionsContent(item, "grid"),
+            LarkContentBlockType.Column => SetOptionsContent(item, "grid_column"),
+            LarkContentBlockType.WebPage => SetDataDeeplyContent(item, "iframe", "component"),
+            LarkContentBlockType.Image => SetDataContent(item, "image"),
+            LarkContentBlockType.Widget => SetDataContent(item, "isv"),
+            LarkContentBlockType.DocsWidget => SetDataContent(item, "add_ons"),
+            LarkContentBlockType.Mind => SetResourceToken(item, "mindnote"),
+            LarkContentBlockType.SheetTable => SetResourceToken(item, "sheet"),
+            LarkContentBlockType.GridTable => SetDataContent(item, "table"),
+            LarkContentBlockType.View => SetDataContent(item, "view"),
+            LarkContentBlockType.Task => SetDataContent(item, "task"),
+            LarkContentBlockType.OkrBlock => SetDataContent(item, "ork"),
+            LarkContentBlockType.JiraIssue => SetDataContent(item, "jira_issue"),
+            LarkContentBlockType.LinkPreview => SetDataContent(item, "link_preview"),
+            LarkContentBlockType.ReferenceSyncBlock => SetDataContent(item, "reference_synced"),
+            LarkContentBlockType.Unsupported or LarkContentBlockType.TableCell or LarkContentBlockType.Quote or LarkContentBlockType.OkrProgress => true,
+            _ => false
+        }) return;
+
+        switch (BlockType)
+        {
+            case LarkContentBlockType.OkrObjective:
+                {
+                    var obj = item.TryGetObjectValue("okr_objective");
+                    if (obj is null) break;
+                    SetElements(obj, "content");
+                    var id = obj.TryGetStringTrimmedValue("objective_id", true);
+                    ResourceToken = id;
+                    Options = new JsonObjectNode
+                    {
+                        { "objective_id", id },
+                        { "confidential", obj.TryGetBooleanValue("confidential") },
+                        { "position", obj.TryGetInt32Value("position") },
+                        { "score", obj.TryGetInt32Value("score") },
+                        { "visible", obj.TryGetBooleanValue("visible") },
+                        { "weight", obj.TryGetDoubleValue("weight") },
+                        { "progress_rate", obj.TryGetObjectValue("progress_rate") },
+                    };
+                    break;
+                }
+            case LarkContentBlockType.OkrKeyResult:
+                {
+                    var obj = item.TryGetObjectValue("okr_key_result");
+                    if (obj is null) break;
+                    SetElements(obj, "content");
+                    var id = obj.TryGetStringTrimmedValue("kr_id", true);
+                    ResourceToken = id;
+                    Options = new JsonObjectNode
+                    {
+                        { "kr_id", id },
+                        { "confidential", obj.TryGetBooleanValue("confidential") },
+                        { "position", obj.TryGetInt32Value("position") },
+                        { "score", obj.TryGetInt32Value("score") },
+                        { "visible", obj.TryGetBooleanValue("visible") },
+                        { "weight", obj.TryGetDoubleValue("weight") },
+                        { "progress_rate", obj.TryGetObjectValue("progress_rate") },
+                    };
+                    break;
+                }
+            case LarkContentBlockType.Whiteboard:
+                {
+                    var obj = item.TryGetObjectValue("board");
+                    if (obj is null) break;
+                    ResourceToken = obj.TryGetStringTrimmedValue("token", true);
+                    Options = new JsonObjectNode
+                    {
+                        { "align", obj.TryGetInt32Value("align") },
+                        { "width", obj.TryGetInt32Value("width") },
+                        { "height", obj.TryGetInt32Value("height") },
+                    };
+                    break;
+                }
+            case LarkContentBlockType.AgendaSubject:
+                {
+                    var obj = item.TryGetObjectValue("agenda_item_title");
+                    if (obj is null) break;
+                    SetElements(item, "agenda_item_title");
+                    Options = new JsonObjectNode
+                    {
+                        { "align", obj.TryGetInt32Value("align") },
+                    };
+                    break;
+                }
+            case LarkContentBlockType.SyncBlock:
+                {
+                    var obj = item.TryGetObjectValue("source_synced");
+                    if (obj is null) break;
+                    SetElements(item, "source_synced");
+                    Options = new JsonObjectNode
+                    {
+                        { "align", obj.TryGetInt32Value("align") },
+                    };
+                    break;
+                }
+            case LarkContentBlockType.WikiContents1:
+                ResourceToken = item.TryGetObjectValue("sub_page_list")?.TryGetStringTrimmedValue("wiki_token", true);
+                break;
+            case LarkContentBlockType.WikiContents2:
+                ResourceToken = item.TryGetObjectValue("wiki_catalog")?.TryGetStringTrimmedValue("wiki_token", true);
+                break;
+        }
     }
 
     public LarkContentTextBlockStyle Style { get; set; }
 
     public List<LarkContentTextElement> Elements { get; set; }
 
-    public string? BiTableToken { get; set; }
-
-    [JsonPropertyName("callout")]
+    [JsonPropertyName("data")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? Callout { get; set; }
+    public JsonObjectNode? Data { get; set; }
 
-    [JsonPropertyName("chat_card")]
+    [JsonPropertyName("token")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? ChatCard { get; set; }
+    public string? ResourceToken { get; set; }
 
-    [JsonPropertyName("diagram")]
+    [JsonPropertyName("options")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? Diagram { get; set; }
+    public JsonObjectNode? Options { get; set; }
 
-    [JsonPropertyName("file")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? File { get; set; }
+    private bool SetElements(JsonObjectNode item, string? elements, string? options = null)
+    {
+        if (string.IsNullOrWhiteSpace(options)) Options = item.TryGetObjectValue(options);
+        if (string.IsNullOrWhiteSpace(elements)) return false;
+        var content = item.TryGetObjectValue(elements);
+        if (content is null || content.GetValueKind("elements") != JsonValueKind.Array)
+            return false;
+        try
+        {
+            Elements = content.TryGetArrayValue("elements").Deserialize<List<LarkContentTextElement>>();
+            var style = content.TryGetObjectValue("style");
+            Style = style?.Deserialize<LarkContentTextBlockStyle>() ?? new();
+            return true;
+        }
+        catch (JsonException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (NotSupportedException)
+        {
+        }
+        catch (ArgumentException)
+        {
+        }
+        catch (NullReferenceException)
+        {
+        }
+        catch (InvalidCastException)
+        {
+        }
 
-    [JsonPropertyName("grid")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? Grid { get; set; }
+        return false;
+    }
 
-    [JsonPropertyName("grid_column")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? GridColumn { get; set; }
+    private bool SetDataContent(JsonObjectNode item, string? data = null, string? options = null)
+    {
+        if (string.IsNullOrWhiteSpace(options)) Options = item.TryGetObjectValue(options);
+        if (string.IsNullOrWhiteSpace(data)) return false;
+        Data = item.TryGetObjectValue(data);
+        if (Data is null) return false;
+        ResourceToken = Data.TryGetStringTrimmedValue("token", true);
+        return true;
+    }
 
-    [JsonPropertyName("iframe")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? WebPage { get; set; }
+    private bool SetDataDeeplyContent(JsonObjectNode item, string? data, string? subKey, string? options = null)
+    {
+        if (string.IsNullOrWhiteSpace(options)) Options = item.TryGetObjectValue(options);
+        if (string.IsNullOrWhiteSpace(data)) return false;
+        Data = item.TryGetObjectValue(data);
+        if (!string.IsNullOrWhiteSpace(subKey)) Data = Data?.TryGetObjectValue(subKey);
+        return true;
+    }
 
-    [JsonPropertyName("image")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? Image { get; set; }
+    private bool SetResourceToken(JsonObjectNode item, string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        ResourceToken = item.TryGetObjectValue(key)?.TryGetStringTrimmedValue("token", true);
+        return ResourceToken is not null;
+    }
 
-    [JsonPropertyName("isv")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public JsonObjectNode? Isv { get; set; }
+    private bool SetOptionsContent(JsonObjectNode item, string options)
+    {
+        if (string.IsNullOrWhiteSpace(options)) return false;
+        Options = item.TryGetObjectValue(options);
+        return true;
+    }
 }
 
 public class LarkContentTextInfo

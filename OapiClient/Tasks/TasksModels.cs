@@ -156,6 +156,14 @@ public abstract class BaseLarkOkrItemInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("weight")]
     public double Weight { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var s = Text;
+        if (s is null) return string.Empty;
+        return string.Join(Environment.NewLine, s);
+    }
 }
 
 public class LarkOkrObjectiveInfo : BaseLarkOkrItemInfo
@@ -194,10 +202,48 @@ public class LarkOkrObjectiveInfo : BaseLarkOkrItemInfo
     public List<LarkOkrKeyResultInfo> KeyResults { get; set; }
 
     [JsonIgnore]
+    public int KeyResultCount => KeyResults?.Count ?? 0;
+
+    [JsonIgnore]
     internal int Position { get; set; }
 
     [JsonIgnore]
     internal LarkOkrObjectiveItem Source { get; }
+
+    public IEnumerable<string> ListMentionedUserIds()
+    {
+        var users = new List<string>();
+        var col = ListMentionedUserIdsInternal();
+        foreach (var userId in col)
+        {
+            if (users.Contains(userId)) continue;
+            users.Add(userId);
+            yield return userId;
+        }
+    }
+
+    internal IEnumerable<string> ListMentionedUserIdsInternal()
+    {
+        if (MentionedUserIds is not null)
+        {
+            foreach (var userId in MentionedUserIds)
+            {
+                if (string.IsNullOrWhiteSpace(userId)) continue;
+                yield return userId;
+            }
+        }
+
+        if (KeyResults is null) yield break;
+        foreach (var keyResult in KeyResults)
+        {
+            if (keyResult is null) continue;
+            var col = keyResult.ListMentionedUserIdsInternal();
+            foreach (var userId in col)
+            {
+                yield return userId;
+            }
+        }
+    }
 }
 
 public class LarkOkrKeyResultInfo : BaseLarkOkrItemInfo
@@ -230,4 +276,71 @@ public class LarkOkrKeyResultInfo : BaseLarkOkrItemInfo
 
     [JsonIgnore]
     internal LarkOkrKeyResultItem Source { get; }
+
+    public IEnumerable<string> ListMentionedUserIds()
+    {
+        var users = new List<string>();
+        var col = ListMentionedUserIdsInternal();
+        foreach (var userId in col)
+        {
+            if (users.Contains(userId)) continue;
+            users.Add(userId);
+            yield return userId;
+        }
+    }
+
+    internal IEnumerable<string> ListMentionedUserIdsInternal()
+    {
+        if (MentionedUserIds is null) yield break;
+        foreach (var userId in MentionedUserIds)
+        {
+            if (string.IsNullOrWhiteSpace(userId)) continue;
+            yield return userId;
+        }
+    }
+}
+
+public class LarkUserOkrInfo(string userId, string cycleId, List<LarkOkrObjectiveInfo> objectives)
+{
+    [JsonPropertyName("user_id")]
+    public string UserId { get; } = userId;
+
+    [JsonPropertyName("cycle_id")]
+    public string CycleId { get; } = cycleId;
+
+    [JsonPropertyName("objectives")]
+    public List<LarkOkrObjectiveInfo> Objectives { get; } = objectives;
+
+    public IEnumerable<string> ListMentionedUserIds(ICollection<string>? skip = null)
+    {
+        var os = Objectives;
+        if (os is null) yield break;
+        var users = new List<string>();
+        skip ??= [];
+        foreach (var objective in os)
+        {
+            if (objective is null) continue;
+            var col = objective.ListMentionedUserIdsInternal();
+            foreach (var userId in col)
+            {
+                if (userId == UserId || users.Contains(userId) || skip.Contains(userId)) continue;
+                users.Add(userId);
+                yield return userId;
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var os = Objectives;
+        if (os is null) return string.Concat("Empty", UserId);
+        var i = 0;
+        foreach (var o in os)
+        {
+            i += o.KeyResultCount;
+        }
+
+        return $"Total {os.Count} O {i} KR - {UserId}";
+    }
 }
