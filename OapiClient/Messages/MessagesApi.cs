@@ -216,19 +216,25 @@ public partial class LarkApi
     public Task<LarkResponseBody> UpdateCardMessageSettingsAsync(LarkMessageStreamingRequest options, CancellationToken cancellationToken = default)
         => UpdateCardMessageSettingsAsync(options.Finish(), cancellationToken);
 
-    public async Task<string?> SendResponseAsync(Task? task, LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, CancellationToken cancellationToken = default)
+    public async Task<string?> SendResponseAsync(Task? task, LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, int delaySeconds, CancellationToken cancellationToken = default)
     {
         if (request is null) return null;
-        if (task is not null) await task;
+        if (task is not null)
+        {
+            await task;
+            task = null;
+        }
+
         await SendMessageAsync(request, cancellationToken);
+        if (delaySeconds < 1) delaySeconds = 1;
         var sb = new StringBuilder();
         try
         {
-            var tick = DateTime.Now.AddSeconds(-3);
+            var tick = DateTime.Now.AddSeconds(-delaySeconds);
             await foreach (var update in response)
             {
                 sb.Append(update);
-                if ((DateTime.Now - tick).TotalSeconds > 2)
+                if ((DateTime.Now - tick).TotalSeconds > delaySeconds)
                 {
                     if (task is null)
                     {
@@ -278,6 +284,9 @@ public partial class LarkApi
 
         return sb.ToString();
     }
+
+    public Task<string?> SendResponseAsync(LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, CancellationToken cancellationToken = default)
+        => SendResponseAsync(null, request, response, 2, cancellationToken);
 
     /// <summary>
     /// Registers an event.

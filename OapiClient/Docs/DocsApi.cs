@@ -266,6 +266,12 @@ public partial class LarkApi
         return new(resp, "records");
     }
 
+    public Task<LarkResponsePagingBody> ListDocsComments(LarkDocsCommentListOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsComments, options.DocToken), options, paging, cancellationToken);
+
+    public Task<IReadOnlyList<JsonObjectNode>> ListDocsComments(LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsComments, (response.Query as LarkDocsCommentListOptions)?.DocToken), response, pageSize, cancellationToken);
+
     public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();

@@ -34,4 +34,5 @@ internal static partial class LarkUrls
     public const string ConvertDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/blocks/convert";
     public const string AddDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/descendant";
     public const string DeleteDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/children/batch_delete";
+    public const string DocsComments = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments";
 }

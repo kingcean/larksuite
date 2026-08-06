@@ -111,3 +111,25 @@ public class LarkDocsBaseTableRecordOptions : LarkUserIdTypeRequestOptions
         if (IgnoreConsistencyCheck.HasValue) q["ignore_consistency_check"] = IgnoreConsistencyCheck.Value ? JsonBooleanNode.TrueString : JsonBooleanNode.FalseString;
     }
 }
+
+public class LarkDocsCommentListOptions : LarkUserIdTypeRequestOptions
+{
+    public string DocToken { get; set; }
+
+    public string DocType { get; set; }
+
+    public bool IsWhole { get; set; }
+
+    public bool IsSolved { get; set; }
+
+    public bool NeedReaction { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q["file_type"] = DocType ?? "docx";
+        if (IsWhole) q["is_whole"] = JsonBooleanNode.TrueString;
+        if (IsSolved) q["is_solved"] = JsonBooleanNode.TrueString;
+        if (NeedReaction) q["need_reaction"] = JsonBooleanNode.TrueString;
+    }
+}
