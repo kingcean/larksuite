@@ -23,7 +23,7 @@ public static partial class LarkApiUtils
     /// <returns>The content block with the specific identifier; or null, if not found.</returns>
     public static LarkContentBlock? GetById(this IEnumerable<LarkContentBlock> col, string id)
     {
-        if (col is null) return null;
+        if (col is null || string.IsNullOrWhiteSpace(id)) return null;
         foreach (var item in col)
         {
             if (item?.Id == id) return item;
@@ -40,13 +40,85 @@ public static partial class LarkApiUtils
     /// <returns>The content block with the specific identifier; or null, if not found.</returns>
     public static LarkDocsBaseTableRecord? GetById(this IEnumerable<LarkDocsBaseTableRecord> col, string id)
     {
-        if (col is null) return null;
+        if (col is null || string.IsNullOrWhiteSpace(id)) return null;
         foreach (var item in col)
         {
             if (item?.Id == id) return item;
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Gets the content block by identifier.
+    /// </summary>
+    /// <param name="response">The response.</param>
+    /// <param name="id">The identifier.</param>
+    /// <returns>The content block with the specific identifier; or null, if not found.</returns>
+    public static LarkDocsBaseTableRecord? GetById(this LarkResponsePagingBody<LarkDocsBaseTableRecord> response, string id)
+    {
+        if (response is null || response.IsError) return null;
+        return GetById(response.Data, id);
+    }
+
+    /// <summary>
+    /// Gets the content block by identifier.
+    /// </summary>
+    /// <param name="response">The response.</param>
+    /// <param name="id">The identifier.</param>
+    /// <returns>The content block with the specific identifier; or null, if not found.</returns>
+    public static LarkDocsBaseTableRecord? GetById(this LarkResponseBody<LarkDocsBaseTableRecordsInfo> response, string id)
+    {
+        if (response?.Data is null || response.IsError) return null;
+        return GetById(response.Data.Records, id);
+    }
+
+    /// <summary>
+    /// Gets the content block by identifier.
+    /// </summary>
+    /// <typeparam name="T">The type of fields.</typeparam>
+    /// <param name="col">The content block collection.</param>
+    /// <param name="id">The identifier.</param>
+    /// <returns>The content block with the specific identifier; or null, if not found.</returns>
+    public static LarkDocsBaseTableRecord<T>? GetById<T>(this IEnumerable<LarkDocsBaseTableRecord<T>> col, string id)
+    {
+        if (col is null || string.IsNullOrWhiteSpace(id)) return null;
+        foreach (var item in col)
+        {
+            if (item?.Id == id) return item;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the content block by identifier.
+    /// </summary>
+    /// <typeparam name="T">The type of fields.</typeparam>
+    /// <param name="response">The response.</param>
+    /// <param name="mapping">The mapping to simplify the record fields.</param>
+    /// <param name="id">The identifier.</param>
+    /// <returns>The content block with the specific identifier; or null, if not found.</returns>
+    public static LarkDocsBaseTableRecord<T>? GetById<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord> response, Dictionary<string, string> mapping, string id)
+    {
+        if (response?.Data is null || response.IsError || string.IsNullOrWhiteSpace(id)) return null;
+        var col = Simplify<T>(response, mapping);
+        return GetById(col, id);
+    }
+
+    /// <summary>
+    /// Gets the content block by identifier.
+    /// </summary>
+    /// <typeparam name="T">The type of fields.</typeparam>
+    /// <param name="response">The response.</param>
+    /// <param name="mapping">The mapping to simplify the record fields.</param>
+    /// <param name="id">The identifier.</param>
+    /// <returns>The content block with the specific identifier; or null, if not found.</returns>
+    public static LarkDocsBaseTableRecord<T>? GetById<T>(this LarkResponseBody<LarkDocsBaseTableRecordsInfo> response, Dictionary<string, string> mapping, string id)
+    {
+        if (response?.Data?.Records is null || response.IsError || string.IsNullOrWhiteSpace(id)) return null;
+        var col = Simplify<T>(response.Data.Records, mapping);
+        return GetById(col, id);
     }
 
     /// <summary>
@@ -260,6 +332,28 @@ public static partial class LarkApiUtils
     public static async Task<List<LarkDocsBaseTableRecord<T>>> SimplifyAsync<T>(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
         => Simplify<T>(await records, mapping).ToList();
 
+    public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
+    {
+        if (records?.Data is null || records.IsError) yield break;
+        foreach (var record in records.Data)
+        {
+            var fields = record.Simplify(mapping);
+            if (fields is null) continue;
+            yield return new(record, fields);
+        }
+    }
+
+    public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this IEnumerable<LarkDocsBaseTableRecord> col, Dictionary<string, string> mapping)
+    {
+        if (col is null) yield break;
+        foreach (var record in col)
+        {
+            var fields = record.Simplify(mapping);
+            if (fields is null) continue;
+            yield return new(record, fields);
+        }
+    }
+
     public static IEnumerable<LarkDocsBaseTableRecord<T>> Simplify<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
     {
         foreach (var fields in Simplify(records, mapping))
@@ -269,14 +363,12 @@ public static partial class LarkApiUtils
         }
     }
 
-    public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
+    public static IEnumerable<LarkDocsBaseTableRecord<T>> Simplify<T>(this IEnumerable<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
     {
-        if (records?.Data is null || records.IsError) yield break;
-        foreach (var record in records.Data)
+        foreach (var fields in Simplify(records, mapping))
         {
-            var fields = record.Simplify(mapping);
-            if (fields is null) continue;
-            yield return new(record, fields);
+            var info = fields.Deserialize<T>();
+            if (info is not null && info.Data is not null) yield return info;
         }
     }
 
@@ -353,4 +445,14 @@ public static partial class LarkApiUtils
         if (string.IsNullOrWhiteSpace(token)) return null;
         return token;
     }
+
+    internal static LarkDocContent ToDocContent<T>(LarkResponseBody<T>? body, LarkDocsNodeInfo node, string errorMessage)
+    {
+        if (body is null) return ErrorLarkDocContent(node.NodeToken, errorMessage ?? "Load content failed.");
+        if (body.Data is null || body.IsError) return new LarkDocContent<string>(node.NodeToken, "Error", node.DocToken, "error", errorMessage ?? "Load content failed.");
+        return new LarkDocContent<T>(node, body.Data);
+    }
+
+    internal static LarkDocContent<string> ErrorLarkDocContent(string? nodeToken, string message)
+        => new(nodeToken, "Error", null, "error", message);
 }

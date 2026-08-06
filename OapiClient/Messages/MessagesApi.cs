@@ -92,7 +92,7 @@ public partial class LarkApi
         {
             { "type", "template" },
             { "data", options.ToJson().ToString() },
-        }, json => json?.TryGetStringTrimmedValue("card_id", true), cancellationToken);
+        }, json => json?.TryGetStringTrimmedValue("card_id", true)!, cancellationToken);
 
     /// <summary>
     /// Creates a message card.
@@ -111,7 +111,7 @@ public partial class LarkApi
                 { "data", options.ToJson().ToString() },
             } },
             { "sequence", sequence },
-        }, json => json?.TryGetStringTrimmedValue("card_id", true), cancellationToken);
+        }, json => json?.TryGetStringTrimmedValue("card_id", true)!, cancellationToken);
 
     public Task<LarkResponseBody> UpdateCardMessageAsync(LarkMessageElementUpdateRequest options, CancellationToken cancellationToken = default)
         => PutAsync(LarkUrls.ToUrl(LarkUrls.UpdateMessageCard, options.CardId, options.ElementId), JsonObjectNode.ConvertFrom(options), cancellationToken);
@@ -130,10 +130,11 @@ public partial class LarkApi
     /// </summary>
     /// <param name="receiveIdType">The user identifier type, e.g. open_id, union_id, user_id, email, chat_id.</param>
     /// <param name="receiveId">The identifier of the receive user or chat group.</param>
-    /// <param name="callback"></param>
+    /// <param name="callback">A handler called on the initialized card message request options is generated.</param>
+    /// <param name="options">The additional options.
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>An instance to generate the request options to update message.</returns>
-    public async Task<LarkMessageStreamingRequest?> CreateStreamingMessageRequestAsync(string receiveIdType, string receiveId, Action<LarkMessageJsonCardRequest>? callback, CancellationToken cancellationToken = default)
+    public async Task<LarkMessageStreamingRequest?> CreateStreamingMessageRequestAsync(string receiveIdType, string receiveId, Action<LarkMessageJsonCardRequest>? callback, LarkSimpleStreamingMessageOptions? options = null, CancellationToken cancellationToken = default)
     {
         var elementId = "main_md";
         var json = new LarkMessageJsonCardRequest();
@@ -143,10 +144,27 @@ public partial class LarkApi
             new JsonObjectNode
             {
                 { "tag", "markdown" },
-                { "content", string.Empty },
+                { "content", options?.Placeholder ?? string.Empty },
                 { "element_id", elementId },
             },
         });
+        if (options is not null)
+        {
+            if (options.DisableForward) json.Config.SetValue("enable_forward", false);
+            if (!string.IsNullOrWhiteSpace(options.WidthMode)) json.Config.SetValue("width_mode", options.WidthMode);
+            if (!string.IsNullOrWhiteSpace(options.Title)) json.Header.SetValue("title", new JsonObjectNode
+            {
+                { "tag", "plain_text" },
+                { "content", options.Title },
+            });
+            if (!string.IsNullOrWhiteSpace(options.Subtitle)) json.Header.SetValue("subtitle", new JsonObjectNode
+            {
+                { "tag", "plain_text" },
+                { "content", options.Subtitle },
+            });
+            if (!string.IsNullOrWhiteSpace(options.TitleBackgroundColor)) json.Header.SetValue("template", options.TitleBackgroundColor);
+        }
+
         callback?.Invoke(json);
         var id = await CreateMessageCardAsync(json, cancellationToken);
         if (string.IsNullOrEmpty(id?.Data) || id.IsError) return null;
@@ -175,7 +193,18 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>An instance to generate the request options to update message.</returns>
     public Task<LarkMessageStreamingRequest?> CreateStreamingMessageRequestAsync(string receiveIdType, string receiveId, CancellationToken cancellationToken = default)
-        => CreateStreamingMessageRequestAsync(receiveIdType, receiveId, null, cancellationToken);
+        => CreateStreamingMessageRequestAsync(receiveIdType, receiveId, null, null, cancellationToken);
+
+    /// <summary>
+    /// Creates the request options for streaming message.
+    /// </summary>
+    /// <param name="receiveIdType">The user identifier type, e.g. open_id, union_id, user_id, email, chat_id.</param>
+    /// <param name="receiveId">The identifier of the receive user or chat group.</param>
+    /// <param name="options">The additional options.
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>An instance to generate the request options to update message.</returns>
+    public Task<LarkMessageStreamingRequest?> CreateStreamingMessageRequestAsync(string receiveIdType, string receiveId, LarkSimpleStreamingMessageOptions options, CancellationToken cancellationToken = default)
+        => CreateStreamingMessageRequestAsync(receiveIdType, receiveId, null, options, cancellationToken);
 
     public async Task<LarkResponseBody> UpdateCardMessageSettingsAsync(LarkMessageSettingsUpdateRequest options, CancellationToken cancellationToken = default)
     {
@@ -186,6 +215,69 @@ public partial class LarkApi
 
     public Task<LarkResponseBody> UpdateCardMessageSettingsAsync(LarkMessageStreamingRequest options, CancellationToken cancellationToken = default)
         => UpdateCardMessageSettingsAsync(options.Finish(), cancellationToken);
+
+    public async Task<string?> SendResponseAsync(Task? task, LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, CancellationToken cancellationToken = default)
+    {
+        if (request is null) return null;
+        if (task is not null) await task;
+        await SendMessageAsync(request, cancellationToken);
+        var sb = new StringBuilder();
+        try
+        {
+            var tick = DateTime.Now.AddSeconds(-3);
+            await foreach (var update in response)
+            {
+                sb.Append(update);
+                if ((DateTime.Now - tick).TotalSeconds > 2)
+                {
+                    if (task is null)
+                    {
+                        task = UpdateCardMessageAsync(request.Update(sb), cancellationToken);
+                    }
+                    else if (task.IsCompleted)
+                    {
+                        try
+                        {
+                            await task;
+                        }
+                        catch (FailedHttpException)
+                        {
+                        }
+                        catch (InvalidOperationException)
+                        {
+                        }
+                        finally
+                        {
+                            tick = DateTime.Now;
+                            task = null;
+                        }
+                    }
+                }
+            }
+
+            if (task is not null)
+            {
+                try
+                {
+                    await task;
+                }
+                catch (FailedHttpException)
+                {
+                }
+                catch (InvalidOperationException)
+                {
+                }
+            }
+
+            await UpdateCardMessageAsync(request.Update(sb), cancellationToken);
+        }
+        finally
+        {
+            await UpdateCardMessageSettingsAsync(request.Finish(), cancellationToken);
+        }
+
+        return sb.ToString();
+    }
 
     /// <summary>
     /// Registers an event.

@@ -221,6 +221,12 @@ public class LarkDocsFilter : List<LarkDocsFilterCondition>, IJsonObjectHost
     /// </summary>
     public CriteriaBooleanOperator Conjunction { get; set; }
 
+    public void Add(string name, string op, string value)
+        => Add(new(name, op, value));
+
+    public void Add(string name, string op, List<string> value)
+        => Add(new(name, op, value));
+
     /// <inheritdoc />
     public JsonObjectNode? ToJson()
     {

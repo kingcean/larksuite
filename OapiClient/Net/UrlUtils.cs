@@ -24,6 +24,9 @@ internal static partial class LarkUrls
     public static string ToUrl(string url, string? arg)
         => url.Replace("{0}", arg);
 
+    public static string? ToUrl(string url, string? arg, bool testArg)
+        => testArg && string.IsNullOrWhiteSpace(arg) ? null : url.Replace("{0}", arg);
+
     public static string ToUrl(string url, string? arg0, string? arg1, string? arg2 = null, string? arg3 = null)
         => url.Replace("{0}", arg0).Replace("{1}", arg1).Replace("{2}", arg2).Replace("{3}", arg3);
 

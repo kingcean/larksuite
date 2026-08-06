@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Trivial.Maths;
 using Trivial.Net;
 using Trivial.Security;
 using Trivial.Text;
@@ -36,6 +37,13 @@ public class LarkDocsBaseTableInfo
     public string AdvanceVersion { get; set; }
 }
 
+public class LarkDocsBaseTableFullInfo(LarkDocsBaseTableInfo info, List<LarkDocsBaseTableTableInfo>? tables)
+{
+    public LarkDocsBaseTableInfo Info { get; } = info;
+
+    public List<LarkDocsBaseTableTableInfo> Tables { get; } = tables ?? [];
+}
+
 public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
 {
     public LarkDocsBaseTableFilter()
@@ -48,11 +56,28 @@ public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
         TableId = tableId;
     }
 
-    public LarkDocsBaseTableFilter(string baseId, string tableId, LarkDocsFilter filter, List<LarkDocsSortItem>? sort = null)
+    public LarkDocsBaseTableFilter(string baseId, string tableId, LarkDocsFilter filter)
         : this(baseId, tableId)
     {
         Filter = filter;
+    }
+
+    public LarkDocsBaseTableFilter(string baseId, string tableId, LarkDocsFilterCondition condition)
+        : this(baseId, tableId)
+    {
+        Filter = new(CriteriaBooleanOperator.Or, condition);
+    }
+
+    public LarkDocsBaseTableFilter(string baseId, string tableId, LarkDocsFilter filter, List<LarkDocsSortItem> sort)
+        : this(baseId, tableId, filter)
+    {
         Sort = sort;
+    }
+
+    public LarkDocsBaseTableFilter(string baseId, string tableId, LarkDocsFilter filter, LarkDocsSortItem sort)
+        : this(baseId, tableId, filter)
+    {
+        Sort = [sort];
     }
 
     public LarkDocsBaseTableFilter(string baseId, string tableId, string viewId)
@@ -70,6 +95,27 @@ public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
     public LarkDocsFilter? Filter { get; set; }
 
     public List<LarkDocsSortItem>? Sort { get; set; }
+
+    public void SetOrder(string name, bool isDesc)
+        => Sort = [new(name, isDesc)];
+
+    public void AddOrder(string name, bool isDesc)
+    {
+        Sort ??= [];
+        Sort.Add(new(name, isDesc));
+    }
+
+    public void SetFilter(CriteriaBooleanOperator conjunction, params IEnumerable<LarkDocsFilterCondition> conditions)
+        => Filter = new(conjunction, conditions);
+
+    public void SetFilter(LarkDocsFilterCondition condition)
+        => Filter = new(CriteriaBooleanOperator.Or, [condition]);
+
+    public void SetFilter(string name, string op, string value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, string op, List<string> value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
 
     /// <inheritdoc />
     public JsonObjectNode ToJson()
@@ -163,6 +209,32 @@ public class LarkDocsBaseTableRecord
 
     [JsonPropertyName("record_url")]
     public string RecordUrl { get; set; }
+
+    public JsonObjectNode? Simplify()
+    {
+        var fields = Fields;
+        if (fields is null) return null;
+        var json = new JsonObjectNode();
+        foreach (var kvp in fields)
+        {
+            Simplify(kvp.Key, json, kvp.Key);
+        }
+
+        return json;
+    }
+
+    public JsonObjectNode? Simplify(IEnumerable<string> keys)
+    {
+        var fields = Fields;
+        if (fields is null) return null;
+        var json = new JsonObjectNode();
+        foreach (var key in keys ?? fields.Keys)
+        {
+            Simplify(key, json, key);
+        }
+
+        return json;
+    }
 
     public JsonObjectNode? Simplify(Dictionary<string, string> mapping)
     {

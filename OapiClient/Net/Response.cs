@@ -41,7 +41,7 @@ public class LarkResponseBody
     /// Initializes a new instance of the LarkResponseBody class.
     /// </summary>
     /// <param name="raw">The raw package col in JSON.</param>
-    public LarkResponseBody(JsonObjectNode raw)
+    public LarkResponseBody(JsonObjectNode? raw)
         : this(raw, null)
     {
     }
@@ -64,11 +64,12 @@ public class LarkResponseBody
     /// </summary>
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="key">The property key to resolve result col.</param>
-    public LarkResponseBody(JsonObjectNode raw, string? key)
+    public LarkResponseBody(JsonObjectNode? raw, string? key)
     {
         if (raw is null)
         {
             Code = -1;
+            IsError = true;
             Data = [];
             return;
         }
@@ -280,7 +281,7 @@ public class LarkResponsePagingBody : LarkResponseBody
     /// <param name="query">The query info without page token to list current list.</param>
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="key">The property key of items.</param>
-    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode raw, string? key = null)
+    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode? raw, string? key = null)
         : base(raw)
     {
         Query = query;
@@ -307,7 +308,7 @@ public class LarkResponsePagingBody : LarkResponseBody
     /// <param name="query">The query info without page token to list current list.</param>
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="items">The handler to get items.</param>
-    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode raw, Func<JsonObjectNode, List<JsonObjectNode>?> items)
+    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode? raw, Func<JsonObjectNode, List<JsonObjectNode>?> items)
         : base(raw)
     {
         Query = query;
@@ -420,7 +421,7 @@ public class LarkResponsePagingBody : LarkResponseBody
     /// <param name="jsonResult">The result collection in JSON.</param>
     /// <param name="objectResult">The result collection in customized object.</param>
     /// <returns>true if the raw package contains any item; otherwise, false.</returns>
-    protected bool AddRange(JsonObjectNode raw, string? key, out List<JsonObjectNode> jsonResult, out List<object> objectResult)
+    protected bool AddRange(JsonObjectNode? raw, string? key, out List<JsonObjectNode> jsonResult, out List<object> objectResult)
     {
         jsonResult = [];
         objectResult = [];
@@ -434,12 +435,12 @@ public class LarkResponsePagingBody : LarkResponseBody
             AddItem(item, jsonResult, objectResult);
         }
 
-        var total = raw.TryGetInt32Value("total");
+        var total = raw!.TryGetInt32Value("total");
         if (total.HasValue) TotalCount = total;
         return true;
     }
 
-    internal List<JsonObjectNode> AddRange(JsonObjectNode raw, string? key = null)
+    internal List<JsonObjectNode> AddRange(JsonObjectNode? raw, string? key = null)
         => AddRange(raw, key, out var result, out _) ? result : [];
 
     /// <summary>
@@ -450,7 +451,7 @@ public class LarkResponsePagingBody : LarkResponseBody
     /// <param name="jsonResult">The result collection in JSON.</param>
     /// <param name="objectResult">The result collection in customized object.</param>
     /// <returns>true if the raw package contains any item; otherwise, false.</returns>
-    protected bool AddRange(JsonObjectNode raw, Func<JsonObjectNode, List<JsonObjectNode>?> items, out List<JsonObjectNode> jsonResult, out List<object> objectResult)
+    protected bool AddRange(JsonObjectNode? raw, Func<JsonObjectNode, List<JsonObjectNode>?> items, out List<JsonObjectNode> jsonResult, out List<object> objectResult)
     {
         jsonResult = [];
         objectResult = [];
@@ -463,12 +464,12 @@ public class LarkResponsePagingBody : LarkResponseBody
             AddItem(item, jsonResult, objectResult);
         }
 
-        var total = raw.TryGetInt32Value("total");
+        var total = raw!.TryGetInt32Value("total");
         if (total.HasValue) TotalCount = total;
         return true;
     }
 
-    internal List<JsonObjectNode> AddRange(JsonObjectNode raw, Func<JsonObjectNode, List<JsonObjectNode>?> items)
+    internal List<JsonObjectNode> AddRange(JsonObjectNode? raw, Func<JsonObjectNode, List<JsonObjectNode>?> items)
         => AddRange(raw, items, out var result, out _) ? result : [];
 
     /// <summary>
@@ -536,7 +537,7 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="items">The handler to get items.</param>
     /// <param name="converter">The converter of result col.</param>
-    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode raw, Func<JsonObjectNode, List<JsonObjectNode>?> items, Func<JsonObjectNode, T?>? converter = null)
+    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode? raw, Func<JsonObjectNode, List<JsonObjectNode>?> items, Func<JsonObjectNode, T?>? converter = null)
         : base(query, raw, items)
     {
         col = [];
@@ -554,7 +555,7 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     /// <param name="query">The query info without page token to list current list.</param>
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="converter">The converter of result col.</param>
-    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode raw, Func<JsonObjectNode, T?>? converter = null)
+    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode? raw, Func<JsonObjectNode, T?>? converter = null)
         : base(query, raw)
     {
         col = [];
@@ -576,6 +577,50 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     /// Gets the count of items.
     /// </summary>
     public override int Count => Data.Count;
+
+    public void ForEach(Action<T> callback)
+    {
+        var col = Data;
+        if (IsError || col is null || callback is null) return;
+        foreach (var item in col)
+        {
+            callback(item);
+        }
+    }
+
+    public void ForEach(Action<T, int> callback)
+    {
+        var col = Data;
+        if (IsError || col is null || callback is null) return;
+        var i = 0;
+        foreach (var item in col)
+        {
+            callback(item, i);
+            i++;
+        }
+    }
+
+    public IEnumerable<TResult> Select<TResult>(Func<T, TResult> callback)
+    {
+        var col = Data;
+        if (IsError || col is null || callback is null) yield break;
+        foreach (var item in col)
+        {
+            yield return callback(item);
+        }
+    }
+
+    public IEnumerable<TResult> Select<TResult>(Func<T, int, TResult> callback)
+    {
+        var col = Data;
+        if (IsError || col is null || callback is null) yield break;
+        var i = 0;
+        foreach (var item in col)
+        {
+            yield return callback(item, i);
+            i++;
+        }
+    }
 
     internal new List<T> AddRange(JsonObjectNode raw, string? key = null)
         => AddRange(raw, key, out _, out var result) ? result.Cast<T>().ToList() : [];

@@ -1,6 +1,7 @@
 ﻿using LarkSuite.OapiModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Text.Json.Serialization;
 using Trivial.Text;
@@ -149,4 +150,67 @@ public class LarkContentBlockLinkReference : BaseLarkContentBlockTreeContentRefe
 
     [JsonIgnore]
     public override string DisplayName => string.IsNullOrWhiteSpace(Title) ? Url : $"{Title} ({Url})";
+}
+
+public class LarkDocLinkItem(string nodeToken, string? name)
+{
+    /// <summary>
+    /// Gets the doc title.
+    /// </summary>
+    [JsonPropertyName("name")]
+    [Description("The doc title.")]
+    public string? Name { get; } = name;
+
+    /// <summary>
+    /// Gets the node token. The node token is a kind of identifier to a doc node used to get its information, content and child nodes.
+    /// </summary>
+    [JsonPropertyName("nodeToken")]
+    [Description("The node token is a kind of identifier to a doc node used to get its information, content and child nodes.")]
+    public string NodeToken { get; } = nodeToken;
+}
+
+public class LarkDocContent(string nodeToken, string? name, string? docToken, string docType, object content)
+    : LarkDocLinkItem(nodeToken, name)
+{
+    public LarkDocContent(LarkDocsNodeInfo info, object content)
+        : this(info.NodeToken, info.Name, info.DocToken, info.DocToken, content)
+    {
+    }
+
+    /// <summary>
+    /// Gets the doc token. The doc token is a kind of identifier to a doc object used to get its content.
+    /// </summary>
+    [JsonPropertyName("docToken")]
+    [Description("The doc token is a kind of identifier to a doc object used to get its content.")]
+    public string DocToken { get; } = docToken;
+
+    /// <summary>
+    /// Gets the doc type. The doc type is the type of the node resource, e.g. docx (online document), file (online file), bitable (Base Table, a kind of digital rich sheets), etc.
+    /// </summary>
+    [JsonPropertyName("type")]
+    [Description("The doc type is the type of the node resource, e.g. docx (online document), file (online file), bitable (Base Table, a kind of digital rich sheets), etc.")]
+    public string DocType { get; } = docType;
+
+    /// <summary>
+    /// Gets the content.
+    /// </summary>
+    [JsonPropertyName("content")]
+    [Description("The content.")]
+    public object Content { get; } = content;
+}
+
+public class LarkDocContent<T>(string nodeToken, string? name, string? docToken, string docType, T content)
+    : LarkDocContent(nodeToken, name, docToken, docType, content)
+{
+    public LarkDocContent(LarkDocsNodeInfo info, T content)
+        : this(info.NodeToken, info.Name, info.DocToken, info.DocType, content)
+    {
+    }
+
+    /// <summary>
+    /// Gets the content.
+    /// </summary>
+    [JsonPropertyName("content")]
+    [Description("The content.")]
+    public new T Content { get; } = content;
 }

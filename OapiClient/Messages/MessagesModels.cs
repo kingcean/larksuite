@@ -154,6 +154,41 @@ public class LarkMessageMentionInfo
     public string TenantKey { get; set; }
 }
 
+public class LarkSimpleStreamingMessageOptions
+{
+    /// <summary>
+    /// Gets or sets the placeholder in markdown format. This is the initialized content.
+    /// </summary>
+    public string? Placeholder { get; set; }
+
+    /// <summary>
+    /// Gets or sets the title in plain text.
+    /// </summary>
+    public string? Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the subtitle in plain text.
+    /// </summary>
+    public string? Subtitle { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether need disable the permission to forward.
+    /// </summary>
+    public bool DisableForward { get; set; }
+
+    /// <summary>
+    /// Gets or sets the background color of title.
+    /// e.g. blue, wathet, turquoise, green, yellow, orange, red, carmine, violet, purple, indigo, grey, default.
+    /// </summary>
+    public string? TitleBackgroundColor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the width mode.
+    /// e.g. default (600px), compact (400px), fill.
+    /// </summary>
+    public string? WidthMode { get; set; }
+}
+
 public class LarkEventMessageArgs
 {
     public LarkEventMessageArgs(LarkEventMessageHeader header, JsonObjectNode body)

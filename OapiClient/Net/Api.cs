@@ -198,9 +198,10 @@ public partial class LarkApi : TokenContainer
     /// <param name="uri">The URI the request is sent to.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public async Task<LarkResponseBody> GetAsync(Uri uri, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody> GetAsync(Uri? uri, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
+        if (uri is null) return new(true, "URI or resource ID/token/key is null.");
         var resp = await http.GetAsync(uri, cancellationToken);
         return new(resp);
     }
@@ -212,9 +213,10 @@ public partial class LarkApi : TokenContainer
     /// <param name="key">The property key to resolve result col.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public async Task<LarkResponseBody> GetAsync(Uri uri, string key, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody> GetAsync(Uri? uri, string key, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
+        if (uri is null) return new(true, "URI or resource ID/token/key is null.");
         var resp = await http.GetAsync(uri, cancellationToken);
         return new(resp, key);
     }
@@ -225,8 +227,8 @@ public partial class LarkApi : TokenContainer
     /// <param name="url">The URL the request is sent to.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public Task<LarkResponseBody> GetAsync(string url, CancellationToken cancellationToken = default)
-        => GetAsync(new Uri(url), cancellationToken);
+    public Task<LarkResponseBody> GetAsync(string? url, CancellationToken cancellationToken = default)
+        => GetAsync(string.IsNullOrWhiteSpace(url) ? null : new Uri(url), cancellationToken);
 
     /// <summary>
     /// Sends a request message by GET to get response result.
@@ -235,8 +237,8 @@ public partial class LarkApi : TokenContainer
     /// <param name="key">The property key to resolve result col.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public Task<LarkResponseBody> GetAsync(string url, string key, CancellationToken cancellationToken = default)
-        => GetAsync(new Uri(url), key, cancellationToken);
+    public Task<LarkResponseBody> GetAsync(string? url, string key, CancellationToken cancellationToken = default)
+        => GetAsync(string.IsNullOrWhiteSpace(url) ? null : new Uri(url), key, cancellationToken);
 
     /// <summary>
     /// Sends a request message by GET to get response with collection result.
@@ -244,9 +246,10 @@ public partial class LarkApi : TokenContainer
     /// <param name="uri">The URI the request is sent to.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public async Task<LarkResponsePagingBody> GetItemsAsync(Uri uri, CancellationToken cancellationToken = default)
+    public async Task<LarkResponsePagingBody> GetItemsAsync(Uri? uri, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
+        if (uri is null) return new(true, "URI or resource ID/token/key is null.");
         var resp = await http.GetAsync(uri, cancellationToken);
         return new(null, resp);
     }
@@ -279,7 +282,7 @@ public partial class LarkApi : TokenContainer
     /// <param name="pageSize">The optional page size.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public async Task<IReadOnlyList<JsonObjectNode>> GetItemsAsync(string url, LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<JsonObjectNode>> GetItemsAsync(string? url, LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
     {
         if (!response.HasNextPage || string.IsNullOrWhiteSpace(response.PageToken)) return [];
         var resp = await GetJsonObjectAsync(url, response, pageSize, cancellationToken);
@@ -449,7 +452,7 @@ public partial class LarkApi : TokenContainer
     /// <param name="converter">The converter of result col.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    public async Task<LarkResponsePagingBody<T>> GetItemsAsync<T>(string url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, Func<JsonObjectNode, T?> converter, CancellationToken cancellationToken = default)
+    public async Task<LarkResponsePagingBody<T>> GetItemsAsync<T>(string? url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, Func<JsonObjectNode, T?> converter, CancellationToken cancellationToken = default)
         => new(q, await GetJsonObjectAsync(url, q, page, cancellationToken), converter);
 
     /// <summary>
@@ -737,6 +740,12 @@ public partial class LarkApi : TokenContainer
         return resp;
     }
 
+    /// <summary>
+    /// Gets and refreshes the token of user.
+    /// </summary>
+    /// <param name="request">The code token request.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The token resolved.</returns>
     public Task<TokenInfo?> GetUserTokenAsync(CodeTokenRequestBody request, CancellationToken cancellationToken = default)
         => GetUserTokenAsync(false, request, cancellationToken);
 
@@ -806,7 +815,7 @@ public partial class LarkApi : TokenContainer
                 }
             case LarkApiTokenSourceKind.Tenant:
                 {
-                    var tenantToken = await GetTenantTokenAsync();
+                    var tenantToken = await GetTenantTokenAsync(cancellationToken);
                     return tenantToken is not null;
                 }
             default:
@@ -822,9 +831,10 @@ public partial class LarkApi : TokenContainer
     /// <param name="q">The query info.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    private async Task<JsonObjectNode> GetJsonObjectAsync(string url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
+    private async Task<JsonObjectNode?> GetJsonObjectAsync(string? url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
+        if (string.IsNullOrWhiteSpace(url)) return null;
         return await http.GetAsync(new Uri(LarkUrls.ToUrl(url, q, page)), cancellationToken);
     }
 
@@ -836,9 +846,10 @@ public partial class LarkApi : TokenContainer
     /// <param name="pageSize">The optional page size.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    private async Task<JsonObjectNode> GetJsonObjectAsync(string url, LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+    private async Task<JsonObjectNode?> GetJsonObjectAsync(string? url, LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
+        if (string.IsNullOrWhiteSpace(url)) return null;
         return await http.GetAsync(new Uri(response.ToUrl(url, pageSize)), cancellationToken);
     }
 
@@ -850,9 +861,10 @@ public partial class LarkApi : TokenContainer
     /// <param name="q">The query info.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
-    private async Task<JsonObjectNode> PostJsonObjectAsync(string url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
+    private async Task<JsonObjectNode?> PostJsonObjectAsync(string? url, BaseQueryRequestInfo? q, LarkPageTokenInfo? page, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
+        if (string.IsNullOrWhiteSpace(url)) return null;
         return await http.PostAsync(new Uri(LarkUrls.ToUrl(url, q, page)), JsonObjectNode.ConvertFrom(q), cancellationToken);
     }
 

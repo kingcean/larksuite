@@ -164,6 +164,13 @@ public class LarkDocsDocCoverInfo
     public double OffsetRatioY { get; set; }
 }
 
+public class LarkDocsFileTextResponse(LarkDocsNodeInfo node, string value)
+{
+    public LarkDocsNodeInfo Node { get; } = node;
+
+    public string Value { get; } = value;
+}
+
 public static class LarkDocsFieldsHelper
 {
     public static void SetUser(JsonObjectNode node, string key, string id)
