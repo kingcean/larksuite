@@ -21,6 +21,8 @@ internal static partial class LarkUrls
     public const string DownloadFile = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/download";
     public const string GetBaseTable = "https://open.feishu.cn/open-apis/bitable/v1/apps/";
     public const string ListBaseTableTables = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables";
+    public const string ListBaseTableViews = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/views";
+    public const string GetBaseTableView = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/views/{2}";
     public const string GetBaseTableRecords = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/batch_get";
     public const string RenameBaseTable = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}";
     public const string ReadBaseTable = "https://open.feishu.cn/open-apis/bitable/v1/apps/{0}/tables/{1}/records/search";
@@ -35,4 +37,7 @@ internal static partial class LarkUrls
     public const string AddDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/descendant";
     public const string DeleteDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/children/batch_delete";
     public const string DocsComments = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments";
+    public const string DocsReplyComment = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments/{1}/replies";
+    public const string DocsWhiteboardNodes = "https://open.feishu.cn/open-apis/board/v1/whiteboards/{0}/nodes";
+    public const string DocsWhiteboardImage = "https://open.feishu.cn/open-apis/board/v1/whiteboards/{0}/download_as_image";
 }

@@ -11,6 +11,7 @@ using System.Net.Http.Headers;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Trivial.Collection;
 using Trivial.CommandLine;
 using Trivial.Tasks;
@@ -231,6 +232,9 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             case "bitable":
                 await ResolveBaseTable(node.DocToken, cancellationToken);
                 break;
+            case "file":
+                await ResolveFileAsync(node.NodeToken, node.Name, cancellationToken);
+                break;
             default:
                 pressKey = false;
                 LarkCliUtils.WritePropertyLine(console, "Doc Type", node.DocType);
@@ -267,13 +271,14 @@ public class LarkDocsCommandVerb : BaseCommandVerb
     {
         if (string.IsNullOrEmpty(token)) return null;
         var console = CurrentConsole;
+        var larkApi = LarkApi.DefaultInstance;
         console.WriteLine();
-        var task = LarkApi.DefaultInstance.GetDocsBlocksAsync(token, cancellationToken);
+        var task = larkApi.GetDocsBlocksAsync(token, cancellationToken);
         var writer = new InternalLarkDocsContentCliWriter();
         var blocks = await LarkCliUtils.WritePagesAsync(
             console,
-            LarkApi.DefaultInstance.GetDocsBlocksAsync,
-            LarkApi.DefaultInstance.GetDocsBlocksAsync,
+            larkApi.GetDocsBlocksAsync,
+            larkApi.GetDocsBlocksAsync,
             token,
             writer.WriteLine,
             null,
@@ -302,7 +307,101 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         }
 
         LarkCliUtils.WriteOrderedLine(console, col);
+        var id = LarkCliUtils.ReadId(console, $"Docs\\Doc\\{t.Data.Name}", col);
+        if (LarkCliUtils.IsToExit(id) || string.IsNullOrWhiteSpace(id)) return tables.Data;
+        var views = await lark.ListBaseTableViewsAsync(token, id, new LarkPageTokenInfo(50), cancellationToken);
+        if (views?.Data is null || views.IsError || views.Data.Count < 2)
+        {
+            // No additional views.
+        }
+        else
+        {
+            console.Write(LarkCliUtils.ItalicText(), "Views");
+            foreach (var view in views.Data)
+            {
+                console.Write(ConsoleColor.Blue, "· ");
+                console.Write(view.Name ?? "?");
+                console.Write(" \t");
+                console.Write(view.ViewType ?? "?");
+                console.Write(" \t");
+                console.WriteLine(ConsoleColor.DarkGray, view.Id);
+            }
+
+            console.WriteLine();
+        }
+
+        console.WriteLine(LarkCliUtils.ItalicText(), "Records");
+        var records = await lark.ReadBaseTableAsync(token, id, new LarkPageTokenInfo(100), cancellationToken);
+        if (records?.Data is null || records.IsError || records.Data.Count < 1)
+        {
+            LarkCliUtils.WriteEmpty(console);
+            return tables.Data;
+        }
+
+        var recordItems = new List<SelectionItem<string>>();
+        foreach (var record in records.Data)
+        {
+            var json = record.Simplify();
+            if (json is null) continue;
+            recordItems.Add(new(json.ToString()));
+        }
+
+        if (records.Data.Count >= 100) console.WriteLine("Return 100 records at most.");
+        LarkCliUtils.WriteOrderedLine(console, recordItems, true);
         return tables.Data;
+    }
+
+    private async Task ResolveFileAsync(string node, string name, CancellationToken cancellationToken = default)
+    {
+        var console = CurrentConsole;
+        var lark = LarkApi.DefaultInstance;
+        if (string.IsNullOrWhiteSpace(name) || !name.Contains('.'))
+        {
+            console.WriteLine("This is an online file.");
+            return;
+        }
+
+        name = name.Trim().ToLowerInvariant();
+        if (name.EndsWith(".md") || name.EndsWith(".markdown") || name.EndsWith(".txt") || name.EndsWith(".yaml") || name.EndsWith(".jsonl") || name.EndsWith(".xml") || name.EndsWith(".log"))
+        {
+            var file = await lark.ReadDocsTextFileAsync(node, cancellationToken);
+            if (file?.Data is null || file.IsError)
+            {
+                console.WriteLine("Load file failed.");
+                if (!string.IsNullOrWhiteSpace(file?.Message)) console.WriteLine(file.Message);
+            }
+            else if (string.IsNullOrWhiteSpace(file.Data.Value))
+            {
+                LarkCliUtils.WriteEmpty(console);
+            }
+            else
+            {
+                console.WriteLine(file.Data.Value);
+            }
+        }
+        else if (name.EndsWith(".json"))
+        {
+            var file = await lark.ReadDocsTextFileAsync(node, cancellationToken);
+            if (file?.Data is null || file.IsError)
+            {
+                console.WriteLine("Load file failed.");
+                if (!string.IsNullOrWhiteSpace(file?.Message)) console.WriteLine(file.Message);
+            }
+            else if (string.IsNullOrWhiteSpace(file.Data.Value))
+            {
+                LarkCliUtils.WriteEmpty(console);
+            }
+            else
+            {
+                var json = JsonObjectNode.TryParse(file.Data.Value);
+                if (json is null) console.WriteLine(file.Data.Value);
+                else console.WriteLine(json);
+            }
+        }
+        else
+        {
+            console.WriteLine("This is an online file.");
+        }
     }
 }
 

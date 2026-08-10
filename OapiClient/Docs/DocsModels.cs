@@ -40,6 +40,10 @@ public class LarkWikiSpaceInfo
 
     public static LarkWikiSpaceInfo Convert(JsonObjectNode json)
         => (json.TryGetObjectValue("space") ?? json)?.TryConvert<LarkWikiSpaceInfo>();
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Space ID = {Id} & Type = {SpaceType})";
 }
 
 public class LarkDocsNodeInfo
@@ -106,6 +110,10 @@ public class LarkDocsNodeInfo
     [JsonPropertyName("parent_node_token")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string ParentNodeToken { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Doc Type = {DocType} & Node Token = {NodeToken} & Doc Token = {DocToken} & Space ID = {SpaceId} & {(HasChild ? "Has Child" : "No Child")})";
 }
 
 public class LarkDocsDocInfo
@@ -126,6 +134,10 @@ public class LarkDocsDocInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("cover")]
     public LarkDocsDocCoverInfo Cover { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Doc ID = {Id} & Rev = {Revision})";
 }
 
 public class LarkDocsDocDisplaySettings

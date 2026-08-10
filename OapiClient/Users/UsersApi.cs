@@ -1,6 +1,7 @@
 ﻿using LarkSuite.OapiModels;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.NetworkInformation;
 using System.Text;
 using Trivial.Net;
@@ -10,7 +11,8 @@ namespace LarkSuite;
 
 public partial class LarkApi
 {
-    public Task<LarkResponsePagingBody> GetUserInfoAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    [Description("Get the users information.")]
+    public Task<LarkResponsePagingBody> GetUserInfoAsync([Description("The user identifier list to get information.")] IEnumerable<string> ids, CancellationToken cancellationToken = default)
         => ids is null ? Task.FromResult(new LarkResponsePagingBody(true, "ids should not be null or empty.")) : GetItemsAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
         {
             UserIds = ids.ToList(),

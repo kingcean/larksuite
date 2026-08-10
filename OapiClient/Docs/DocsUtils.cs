@@ -326,11 +326,28 @@ public static partial class LarkApiUtils
         return Simplify<T>(records, mapping).ToList();
     }
 
+    public static async Task<List<LarkDocsBaseTableRecord<JsonObjectNode>>> SimplifyAsync(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records)
+        => Simplify(await records).ToList();
+
     public static async Task<List<LarkDocsBaseTableRecord<JsonObjectNode>>> SimplifyAsync(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
         => Simplify(await records, mapping).ToList();
 
+    public static async Task<List<LarkDocsBaseTableRecord<T>>> SimplifyAsync<T>(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records)
+        => Simplify<T>(await records).ToList();
+
     public static async Task<List<LarkDocsBaseTableRecord<T>>> SimplifyAsync<T>(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
         => Simplify<T>(await records, mapping).ToList();
+
+    public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records)
+    {
+        if (records?.Data is null || records.IsError) yield break;
+        foreach (var record in records.Data)
+        {
+            var fields = record.Simplify();
+            if (fields is null) continue;
+            yield return new(record, fields);
+        }
+    }
 
     public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
     {
@@ -338,6 +355,17 @@ public static partial class LarkApiUtils
         foreach (var record in records.Data)
         {
             var fields = record.Simplify(mapping);
+            if (fields is null) continue;
+            yield return new(record, fields);
+        }
+    }
+
+    public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this IEnumerable<LarkDocsBaseTableRecord> col)
+    {
+        if (col is null) yield break;
+        foreach (var record in col)
+        {
+            var fields = record.Simplify();
             if (fields is null) continue;
             yield return new(record, fields);
         }
@@ -354,9 +382,27 @@ public static partial class LarkApiUtils
         }
     }
 
+    public static IEnumerable<LarkDocsBaseTableRecord<T>> Simplify<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records)
+    {
+        foreach (var fields in Simplify(records))
+        {
+            var info = fields.Deserialize<T>();
+            if (info is not null && info.Data is not null) yield return info;
+        }
+    }
+
     public static IEnumerable<LarkDocsBaseTableRecord<T>> Simplify<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records, Dictionary<string, string> mapping)
     {
         foreach (var fields in Simplify(records, mapping))
+        {
+            var info = fields.Deserialize<T>();
+            if (info is not null && info.Data is not null) yield return info;
+        }
+    }
+
+    public static IEnumerable<LarkDocsBaseTableRecord<T>> Simplify<T>(this IEnumerable<LarkDocsBaseTableRecord> records)
+    {
+        foreach (var fields in Simplify(records))
         {
             var info = fields.Deserialize<T>();
             if (info is not null && info.Data is not null) yield return info;

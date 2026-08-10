@@ -188,6 +188,23 @@ public class LarkContentBlock : BaseLarkContentBlock
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public JsonObjectNode? Options { get; set; }
 
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var sb = new StringBuilder($"Type = {BlockType.ToString()}");
+        var eles = Elements;
+        if (eles is not null && eles.Count > 0)
+        {
+            sb.Append($"; Count = {eles.Count}");
+        }
+        if (!string.IsNullOrWhiteSpace(ResourceToken))
+        {
+            sb.Append($"; Ref = {ResourceToken}");
+        }
+
+        return sb.ToString();
+    }
+
     private bool SetElements(JsonObjectNode item, string? elements, string? options = null)
     {
         if (string.IsNullOrWhiteSpace(options)) Options = item.TryGetObjectValue(options);
@@ -269,26 +286,33 @@ public class LarkContentTextInfo
 
 public class LarkContentTextElement
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("text_run")]
-    public LarkContentTextRun Text { get; set; }
+    public LarkContentTextRun? Text { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("mention_user")]
-    public LarkContentUserInfo UserMentioned { get; set; }
+    public LarkContentUserInfo? UserMentioned { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("mention_doc")]
-    public LarkContentDocInfo DocMentioned { get; set; }
+    public LarkContentDocInfo? DocMentioned { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("reminder")]
-    public JsonObjectNode Reminder { get; set; }
+    public JsonObjectNode? Reminder { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("file")]
-    public JsonObjectNode File { get; set; }
+    public JsonObjectNode? File { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("inline_block")]
-    public JsonObjectNode InlineBlock { get; set; }
+    public JsonObjectNode? InlineBlock { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("equation")]
-    public JsonObjectNode Equation { get; set; }
+    public JsonObjectNode? Equation { get; set; }
 }
 
 public class LarkContentTextRun
@@ -298,6 +322,10 @@ public class LarkContentTextRun
 
     [JsonPropertyName("text_element_style")]
     public LarkContentTextElementStyle Style { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => Content ?? string.Empty;
 }
 
 public class LarkContentTextBlockStyle
@@ -375,6 +403,10 @@ public class LarkContentUserInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("text_element_style")]
     public LarkContentTextElementStyle? Style { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => Id ?? string.Empty;
 }
 
 public class LarkContentDocInfo
@@ -395,6 +427,10 @@ public class LarkContentDocInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("text_element_style")]
     public LarkContentTextElementStyle? Style { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => string.IsNullOrWhiteSpace(Name) ? (Url ?? Token ?? string.Empty) : $"[{Name}]({Url ?? Token})";
 }
 
 public class LarkDocsAccessUserInfo
@@ -430,4 +466,11 @@ public class LarkDocsAccessUserInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("avatar_url")]
     public string? AvatarUrl { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var name = Name ?? EnglishName ?? Email;
+        return string.IsNullOrWhiteSpace(name) ? (Id ?? string.Empty) : $"{name} ({Id})";
+    }
 }

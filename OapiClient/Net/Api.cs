@@ -546,7 +546,7 @@ public partial class LarkApi : TokenContainer
     /// <returns>The response result.</returns>
     public async Task<LarkResponseBody<T>> PostAsync<T>(Uri uri, JsonObjectNode request, CancellationToken cancellationToken = default)
     {
-        var http = CreateJsonHttpClient<JsonObjectNode>();
+        var http = CreateJsonHttpClient();
         var resp = await http.PostAsync(uri, request, cancellationToken);
         return new(resp);
     }
@@ -562,7 +562,7 @@ public partial class LarkApi : TokenContainer
     /// <returns>The response result.</returns>
     public async Task<LarkResponseBody<T>> PostAsync<T>(Uri uri, JsonObjectNode request, Func<JsonObjectNode, T>? converter, CancellationToken cancellationToken = default)
     {
-        var http = CreateJsonHttpClient<JsonObjectNode>();
+        var http = CreateJsonHttpClient();
         var resp = await http.PostAsync(uri, request, cancellationToken);
         return new(resp, converter);
     }
@@ -624,7 +624,7 @@ public partial class LarkApi : TokenContainer
     /// <returns>The response result.</returns>
     public async Task<LarkResponseBody<T>> PutAsync<T>(Uri uri, JsonObjectNode request, CancellationToken cancellationToken = default)
     {
-        var http = CreateJsonHttpClient<JsonObjectNode>();
+        var http = CreateJsonHttpClient();
         var resp = await http.PutAsync(uri, request, cancellationToken);
         return new(resp);
     }
@@ -640,7 +640,7 @@ public partial class LarkApi : TokenContainer
     /// <returns>The response result.</returns>
     public async Task<LarkResponseBody<T>> PutAsync<T>(Uri uri, JsonObjectNode request, Func<JsonObjectNode, T>? converter, CancellationToken cancellationToken = default)
     {
-        var http = CreateJsonHttpClient<JsonObjectNode>();
+        var http = CreateJsonHttpClient();
         var resp = await http.PutAsync(uri, request, cancellationToken);
         return new(resp, converter);
     }

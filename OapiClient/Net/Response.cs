@@ -4,10 +4,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Trivial.Net;
 using Trivial.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using static Trivial.Reflection.ExceptionHandler;
 
 namespace LarkSuite.OapiModels;
 
@@ -84,21 +83,25 @@ public class LarkResponseBody
     /// <summary>
     /// Gets a value indicating whether the response is in error.
     /// </summary>
+    [JsonIgnore]
     public bool IsError { get; }
 
     /// <summary>
     /// Gets the response message.
     /// </summary>
+    [JsonPropertyName("message")]
     public string? Message { get; }
 
     /// <summary>
     /// Gets the response code. 0 means success, others means failure.
     /// </summary>
+    [JsonPropertyName("code")]
     public int Code { get; }
 
     /// <summary>
     /// Gets the result col.
     /// </summary>
+    [JsonPropertyName("data")]
     public JsonObjectNode Data { get; }
 
     /// <summary>
@@ -214,6 +217,7 @@ public class LarkResponseBody<T> : LarkResponseBody
     /// <summary>
     /// Gets the result col.
     /// </summary>
+    [JsonPropertyName("data")]
     public new T? Data { get; }
 }
 
@@ -332,36 +336,44 @@ public class LarkResponsePagingBody : LarkResponseBody
     /// <summary>
     /// Gets the query info used to resolve the items.
     /// </summary>
+    [JsonIgnore]
     public BaseQueryRequestInfo? Query { get; }
 
     /// <summary>
     /// Gets the result col.
     /// </summary>
+    [JsonPropertyName("data")]
     public new IReadOnlyList<JsonObjectNode> Data { get; }
 
     /// <summary>
     /// Gets the token used to get next page.
     /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("pageToken")]
     public string? PageToken { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether has next page.
     /// </summary>
+    [JsonPropertyName("hasNextPage")]
     public bool HasNextPage { get; private set; }
 
     /// <summary>
     /// Gets the total count; or null, if not provided.
     /// </summary>
+    [JsonIgnore]
     public int? TotalCount { get; private set; }
 
     /// <summary>
     /// Gets the count of items.
     /// </summary>
+    [JsonIgnore]
     public virtual int Count => Data.Count;
 
     /// <summary>
     /// Gets the action records of paging.
     /// </summary>
+    [JsonIgnore]
     public IReadOnlyList<LarkResponsePagingStatusInfo> PagingRecords { get; }
 
     /// <summary>
@@ -571,11 +583,13 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     /// <summary>
     /// Gets the result col.
     /// </summary>
+    [JsonPropertyName("data")]
     public new IReadOnlyList<T> Data { get; }
 
     /// <summary>
     /// Gets the count of items.
     /// </summary>
+    [JsonIgnore]
     public override int Count => Data.Count;
 
     public void ForEach(Action<T> callback)

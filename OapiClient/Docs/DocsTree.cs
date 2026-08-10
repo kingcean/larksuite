@@ -26,24 +26,47 @@ public class LarkDocsItemInfo
     public string? Url { get; set; }
 }
 
+/// <summary>
+/// The block content, key properties and child blocks.
+/// </summary>
 public class LarkContentBlockTree
 {
+    /// <summary>
+    /// Gets or sets the block identifier.
+    /// </summary>
     [JsonPropertyName("id")]
+    [Description("The block identifier.")]
     public string Id { get; set; }
 
+    /// <summary>
+    /// Gets or sets the block type.
+    /// </summary>
     [JsonPropertyName("type")]
+    [Description("The block type.")]
     [JsonConverter(typeof(JsonStringEnumConverter<LarkContentBlockType>))]
     public LarkContentBlockType BlockType { get; set; }
 
+    /// <summary>
+    /// Gets or sets the block content.
+    /// </summary>
     [JsonPropertyName("content")]
+    [Description("The block content.")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<LarkContentBlockTreeContent> Content { get; set; }
 
+    /// <summary>
+    /// Gets or sets the child blocks.
+    /// </summary>
     [JsonPropertyName("children")]
+    [Description("The child blocks.")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<LarkContentBlockTree>? Children { get; set; }
 
+    /// <summary>
+    /// Gets or sets the resource token if the block is a kind of other node reference.
+    /// </summary>
     [JsonPropertyName("resouce_token")]
+    [Description("The resource token if the block is a kind of other node reference.")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ResourceToken { get; set; }
 

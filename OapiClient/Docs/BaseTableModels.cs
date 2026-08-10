@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Maths;
 using Trivial.Net;
 using Trivial.Security;
@@ -35,6 +36,10 @@ public class LarkDocsBaseTableInfo
 
     [JsonPropertyName("advance_version")]
     public string AdvanceVersion { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Token = {Token} & Rev = {Revision})";
 }
 
 public class LarkDocsBaseTableFullInfo(LarkDocsBaseTableInfo info, List<LarkDocsBaseTableTableInfo>? tables)
@@ -156,8 +161,43 @@ public class LarkDocsBaseTableTableInfo
 
     [JsonPropertyName("name")]
     public string Name { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Table ID = {Id} & Rev = {Revision})";
 }
 
+public class LarkDocsBaseTableViewInfo
+{
+    [JsonPropertyName("view_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("view_name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("view_type")]
+    public string ViewType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("view_public_level")]
+    public string Visibility { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("view_private_owner_id")]
+    public string OwnerId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("property")]
+    public JsonObjectNode Properties { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (View ID = {Id} & Type = {ViewType})";
+}
+
+/// <summary>
+/// The table record of Lark Base.
+/// </summary>
 public class LarkDocsBaseTableRecord
 {
     /// <summary>
@@ -175,7 +215,7 @@ public class LarkDocsBaseTableRecord
     {
         if (json is null) return;
         Fields = json.TryGetObjectValue("fields");
-        Id = json.TryGetStringTrimmedValue("record_id");
+        Id = json.TryGetStringTrimmedValue("record_id", true);
         Creator = new(json.TryGetObjectValue("created_by"));
         CreateDate = json.TryGetDateTimeValue("created_time") ?? DateTime.Now;
         LastModifier = new(json.TryGetObjectValue("last_modified_by"));
@@ -184,32 +224,71 @@ public class LarkDocsBaseTableRecord
         RecordUrl = json.TryGetStringTrimmedValue("record_url");
     }
 
+    /// <summary>
+    /// Gets or sets all the fields of the record.
+    /// The JSON property key is the field name; the value is the value and properties of the field.
+    /// </summary>
+    [Description("All the fields of the record. The property key is the field name; the value is the value and properties of the field.")]
     [JsonPropertyName("fields")]
     public JsonObjectNode Fields { get; set; } = new();
 
+    /// <summary>
+    /// Gets or sets the record identifier.
+    /// </summary>
+    [Description("The record identifier.")]
     [JsonPropertyName("record_id")]
     public string Id { get; set; }
 
+    /// <summary>
+    /// Gets or sets the user created the record.
+    /// </summary>
+    [Description("The user created the record.")]
     [JsonPropertyName("created_by")]
     public LarkDocsAccessUserInfo Creator { get; set; }
 
+    /// <summary>
+    /// Gets or sets the creation date time.
+    /// </summary>
+    [Description("The creation date time.")]
     [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("created_time")]
     public DateTime CreateDate { get; set; }
 
+    /// <summary>
+    /// Gets or sets the user modified the record.
+    /// </summary>
+    [Description("The user created the record.")]
     [JsonPropertyName("last_modified_by")]
     public LarkDocsAccessUserInfo LastModifier { get; set; }
 
+    /// <summary>
+    /// Gets or sets the last modification date time.
+    /// </summary>
+    [Description("The creation date time.")]
     [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("last_modified_time")]
     public DateTime LastModificationDate { get; set; }
 
+    /// <summary>
+    /// Gets or sets the URL to share.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [Description("The URL to share.")]
     [JsonPropertyName("shared_url")]
-    public string SharedUrl { get; set; }
+    public string? SharedUrl { get; set; }
 
+    /// <summary>
+    /// Gets or sets the URL of the record.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [Description("The URL of the record.")]
     [JsonPropertyName("record_url")]
-    public string RecordUrl { get; set; }
+    public string? RecordUrl { get; set; }
 
+    /// <summary>
+    /// Simplifies the data of all the record fields.
+    /// </summary>
+    /// <returns>A JSON object with fields data.</returns>
     public JsonObjectNode? Simplify()
     {
         var fields = Fields;
@@ -223,6 +302,11 @@ public class LarkDocsBaseTableRecord
         return json;
     }
 
+    /// <summary>
+    /// Simplifies the data of all the record fields.
+    /// </summary>
+    /// <param name="keys">The field keys.</param>
+    /// <returns>A JSON object with fields data.</returns>
     public JsonObjectNode? Simplify(IEnumerable<string> keys)
     {
         var fields = Fields;
@@ -236,6 +320,11 @@ public class LarkDocsBaseTableRecord
         return json;
     }
 
+    /// <summary>
+    /// Simplifies the data of all the record fields.
+    /// </summary>
+    /// <param name="mapping">A mapping of field key.</param>
+    /// <returns>A JSON object with fields data.</returns>
     public JsonObjectNode? Simplify(Dictionary<string, string> mapping)
     {
         var fields = Fields;
@@ -249,6 +338,12 @@ public class LarkDocsBaseTableRecord
         return json;
     }
 
+    /// <summary>
+    /// Simplifies the data of all the record fields.
+    /// </summary>
+    /// <param name="sourceKey">The original field key.</param>
+    /// <param name="target">The JSON object target to save the field.</param>
+    /// <param name="targetKey">The field key to save into the target.</param>
     public void Simplify(string sourceKey, JsonObjectNode target, string targetKey)
     {
         var fields = Fields;
@@ -341,6 +436,10 @@ public class LarkDocsBaseTableRecord
                 return;
         }
     }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"Record ID = {Id}; Fields Count = {Fields?.Count ?? 0}";
 
     private static void GetBaseTableFieldValueFromJsonValue(JsonObjectNode value, JsonObjectNode target, string key)
     {
@@ -435,11 +534,27 @@ public class LarkDocsBaseTableRecordsInfo
     }
 }
 
+/// <summary>
+/// The table record deletion information of Lark Base.
+/// </summary>
+[Description("The table record deletion information of Lark Base.")]
 public class LarkDocsBaseTableRecordDeletionInfo
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the record has deleted.
+    /// </summary>
+    [Description("A value indicating whether the record has deleted.")]
     [JsonPropertyName("deleted")]
     public bool HasDeleted { get; set; }
 
+    /// <summary>
+    /// Gets or sets the record identifier.
+    /// </summary>
+    [Description("The record identifier.")]
     [JsonPropertyName("record_id")]
     public string Id { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => HasDeleted ? $"{Id ?? "?"} (Deleted)" : (Id ?? string.Empty);
 }

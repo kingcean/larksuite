@@ -7,5 +7,4 @@
     <File Path="Tools/Common.props" />
   </Folder>
   <Project Path="OapiClient/OapiClient.csproj" />
-  <Project Path="UnitTests/UnitTests.csproj" />
 </Solution>

@@ -277,9 +277,58 @@ public partial class LarkApi
 
             await UpdateCardMessageAsync(request.Update(sb), cancellationToken);
         }
+        catch (OutOfMemoryException)
+        {
+        }
+        catch (Exception ex)
+        {
+            task = null;
+            if (sb.Length > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine();
+            }
+
+            sb.Append("> __Error__");
+            if (ex is FailedHttpException httpEx && httpEx.StatusCode.HasValue)
+            {
+                sb.Append(" [HTTP status ");
+                sb.Append((int)httpEx.StatusCode);
+                if (!string.IsNullOrWhiteSpace(httpEx.ReasonPhrase))
+                {
+                    sb.Append(' ');
+                    sb.Append(httpEx.ReasonPhrase);
+                }
+
+                sb.Append("] ");
+            }
+            else
+            {
+                sb.Append(" [");
+                sb.Append(ex.GetType().Name);
+                sb.Append("] ");
+            }
+
+            sb.Append(ex.Message);
+            try
+            {
+                await UpdateCardMessageAsync(request.Update(sb), cancellationToken);
+            }
+            catch (Exception)
+            {
+            }
+
+            throw;
+        }
         finally
         {
-            await UpdateCardMessageSettingsAsync(request.Finish(), cancellationToken);
+            try
+            {
+                await UpdateCardMessageSettingsAsync(request.Finish(), cancellationToken);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         return sb.ToString();
