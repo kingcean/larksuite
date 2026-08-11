@@ -117,10 +117,23 @@ public static partial class LarkApiUtils
 
                             break;
                         default:
-                            var text = json.TryGetStringValue("text") ?? json.TryGetStringValue("content");
+                            var text = json.TryGetStringValue("text") ?? json.TryGetStringValue("content") ?? json.TryGetObjectValue("text")?.TryGetStringValue("content");
                             if (string.IsNullOrEmpty(text)) break;
                             sb.Append(text);
-                            if (tag == "md" || tag == "markdown") needBreak = true;
+                            if (tag == "md" || tag == "markdown")
+                            {
+                                needBreak = true;
+                            }
+                            else
+                            {
+                                var url = json.TryGetStringTrimmedValue("url", true);
+                                if (url is not null)
+                                {
+                                    sb.Append(' ');
+                                    sb.Append(url);
+                                }
+                            }
+
                             break;
                     }
                 }

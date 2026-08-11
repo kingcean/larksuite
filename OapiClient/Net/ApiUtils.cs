@@ -28,6 +28,23 @@ public static partial class LarkApiUtils
     }
 
     /// <summary>
+    /// Gets the item with the specific identifier.
+    /// </summary>
+    /// <param name="col">The collection.</param>
+    /// <param name="id">The identifier of the item.</param>
+    /// <returns>The instance with the identifier.</returns>
+    public static LarkIdNameInfo? GetById(this IEnumerable<LarkIdNameInfo> col, string id)
+    {
+        if (col is null || string.IsNullOrWhiteSpace(id)) return null;
+        foreach (var item in col)
+        {
+            if (item?.Id == id) return item;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Sets the default instance of Lark API.
     /// </summary>
     /// <param name="instance">The new instance.</param>

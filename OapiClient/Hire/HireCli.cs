@@ -243,21 +243,26 @@ public class LarkHireCommandVerb : BaseCommandVerb
         var console = CurrentConsole;
         if (interviewInfo is null) return;
         var applicationId = interviewInfo.ApplicationId;
-        JsonObjectNode? applicationBasic = null;
+        LarkHireApplicationBasicInfo? applicationBasic = null;
+        LarkHireTalentInfo? talent = null;
         if (!string.IsNullOrWhiteSpace(applicationId))
         {
             var applicationInfo = await larkApi.GetHireApplicationAsync(applicationId);
-            applicationBasic = applicationInfo?.Data?.TryGetObjectValue("basic_info");
-            var talentInfo = applicationInfo?.Data?.TryGetObjectValue("talent");
-            if (talentInfo is not null)
+            applicationBasic = applicationInfo?.Data?.Info;
+            LarkCliUtils.WritePropertyLine(console, "ID", applicationBasic?.Id);
+            var stage = applicationBasic?.Stage ?? new();
+            LarkCliUtils.WritePropertyLine(console, "Stage", stage.ChineseName ?? stage.EnglishName ?? stage.StageType.ToString());
+            console.WriteLine();
+
+            var talentId = applicationBasic?.TalentId;
+            if (talentId is not null)
             {
-                console.WriteLine(LarkCliUtils.ItalicText(), "Talent Info");
-                console.WriteLine(LarkCliUtils.BoldText(), talentInfo.TryGetStringTrimmedValue("name"));
-                console.WriteLine(ConsoleColor.Yellow, talentInfo.TryGetStringTrimmedValue("id"));
-                console.WriteLine();
+                var talentResp = await larkApi.GetHireTalentAsync(talentId, cancellationToken);
+                talent = talentResp?.Data;
+                if (talent is not null) console.WriteLine(talent);
             }
 
-            var jobInfo = applicationInfo?.Data?.TryGetObjectValue("job");
+            var jobInfo = applicationInfo?.Data?.Job;
             if (jobInfo is not null)
             {
                 console.WriteLine(LarkCliUtils.ItalicText(), "Job Info");
@@ -270,7 +275,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
         WriteInterviewResultLine(interviewInfo);
         while (true)
         {
-            console.Write("Select action: Get [T]alent info, Get [J]ob info, interview [M]inutes, ");
+            console.Write("Select action: Get [J]ob info, interview [M]inutes, ");
             if (IsEvaluationEnabled) console.Write("[E]valuation, ");
             console.Write("or [Q]uit. ");
             var key = console.ReadKey();
@@ -296,15 +301,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 case ConsoleKey.T:
                 case ConsoleKey.I:
                     {
-                        var talentId = applicationBasic?.TryGetStringTrimmedValue("talent_id", true);
-                        if (talentId == null)
-                        {
-                            LarkCliUtils.WriteEmpty(console);
-                            break;
-                        }
-
-                        var talent = await larkApi.GetHireTalentAsync(talentId, cancellationToken);
-                        if (talent?.Data is not null) console.WriteLine(talent.Data);
+                        if (talent is not null) console.WriteLine(talent);
                         else LarkCliUtils.WriteEmpty(console);
                     }
 
@@ -312,7 +309,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 case ConsoleKey.J:
                 case ConsoleKey.A:
                     {
-                        var jobId = applicationBasic?.TryGetStringTrimmedValue("job_id", true);
+                        var jobId = applicationBasic?.JobId;
                         if (jobId == null)
                         {
                             LarkCliUtils.WriteEmpty(console);
@@ -417,7 +414,6 @@ public class LarkHireCommandVerb : BaseCommandVerb
         var console = CurrentConsole;
         var records = item.Records;
         if (records is null || records.Count < 1) return;
-        console.WriteLine();
         console.WriteLine(LarkCliUtils.ItalicText(), "Interview records");
         foreach (var record in records)
         {
@@ -549,17 +545,17 @@ public class LarkHireCommandVerb : BaseCommandVerb
         return await GetTalentByApplicationAsync(larkApi, applicationInfo?.Data, cancellationToken);
     }
 
-    public static async Task<LarkResponseBody<LarkHireTalentInfo>?> GetTalentByApplicationAsync(LarkApi larkApi, JsonObjectNode? application, CancellationToken cancellationToken = default)
+    public static async Task<LarkResponseBody<LarkHireTalentInfo>?> GetTalentByApplicationAsync(LarkApi larkApi, LarkHireApplicationInfo? application, CancellationToken cancellationToken = default)
     {
-        var talentId = application?.TryGetObjectValue("basic_info")?.TryGetStringTrimmedValue("talent_id", true);
+        var talentId = application?.Info?.TalentId;
         if (talentId is null) return null;
         var resp = await larkApi.GetHireTalentAsync(talentId, cancellationToken);
         return resp;
     }
 
-    public static async Task<LarkHireTalentInfo?> GetTalentByApplicationAsync(LarkApi larkApi, JsonObjectNode? application, DataCacheCollection<LarkHireTalentInfo> cache, CancellationToken cancellationToken = default)
+    public static async Task<LarkHireTalentInfo?> GetTalentByApplicationAsync(LarkApi larkApi, LarkHireApplicationInfo? application, DataCacheCollection<LarkHireTalentInfo> cache, CancellationToken cancellationToken = default)
     {
-        var talentId = application?.TryGetObjectValue("basic_info")?.TryGetStringTrimmedValue("talent_id", true);
+        var talentId = application?.Info?.TalentId;
         if (talentId is null) return null;
         if (cache is not null && cache.TryGet(talentId, out var data) && data is not null) return data;
         var resp = await larkApi.GetHireTalentAsync(talentId, cancellationToken);
@@ -573,17 +569,17 @@ public class LarkHireCommandVerb : BaseCommandVerb
         return await GetTalentByApplicationAsync(larkApi, application.Data, cache, cancellationToken);
     }
 
-    public static async Task<LarkResponseBody?> GetJobByApplicationAsync(LarkApi larkApi, JsonObjectNode? application, CancellationToken cancellationToken = default)
+    public static async Task<LarkResponseBody?> GetJobByApplicationAsync(LarkApi larkApi, LarkHireApplicationInfo? application, CancellationToken cancellationToken = default)
     {
-        var jobId = application?.TryGetObjectValue("basic_info")?.TryGetStringTrimmedValue("job_id", true);
+        var jobId = application?.Info?.JobId;
         if (jobId is null) return null;
         var resp = await larkApi.GetHireJobAsync(jobId, cancellationToken);
         return resp;
     }
 
-    public static async Task<JsonObjectNode?> GetJobByApplicationAsync(LarkApi larkApi, JsonObjectNode? application, DataCacheCollection<JsonObjectNode> cache, CancellationToken cancellationToken = default)
+    public static async Task<JsonObjectNode?> GetJobByApplicationAsync(LarkApi larkApi, LarkHireApplicationInfo? application, DataCacheCollection<JsonObjectNode> cache, CancellationToken cancellationToken = default)
     {
-        var jobId = application?.TryGetObjectValue("basic_info")?.TryGetStringTrimmedValue("job_id", true);
+        var jobId = application?.Info?.JobId;
         if (jobId is null) return null;
         if (cache is not null && cache.TryGet(jobId, out var data) && data is not null) return data;
         var resp = await larkApi.GetHireJobAsync(jobId, cancellationToken);

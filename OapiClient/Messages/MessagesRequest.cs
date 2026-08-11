@@ -3,6 +3,7 @@ using LarkSuite.Text;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 using System.Reflection;
 using System.Reflection.PortableExecutable;
@@ -51,6 +52,7 @@ public class LarkMessageRequest : BaseQueryRequestInfo
     /// <summary>
     /// Gets or sets the identifier of the receive user or chat group.
     /// </summary>
+    [Description("The identifier of the receive user or chat group.")]
     [JsonPropertyName("receive_id")]
     public string ReceiveId { get; set; }
 
@@ -58,12 +60,14 @@ public class LarkMessageRequest : BaseQueryRequestInfo
     /// Gets or sets the message content type.
     /// text, post (richtext), image, file, audio, media (video), sticker, interactive (card), share_chat (namecard of group with 7d expiration), share_user (namecard of user), system (seperator notification).
     /// </summary>
+    [Description("The message content type, including text, post (richtext), image, file, audio, media (video), sticker, interactive (card), share_chat (namecard of group with 7d expiration), share_user (namecard of user), system (seperator notification).")]
     [JsonPropertyName("msg_type")]
     public string MessageType { get; set; }
 
     /// <summary>
     /// Gets or sets the message content in JSON string format.
     /// </summary>
+    [Description("The message content in JSON string format.")]
     [JsonPropertyName("content")]
     public string ContentSerialized
     {
@@ -80,6 +84,7 @@ public class LarkMessageRequest : BaseQueryRequestInfo
     /// <summary>
     /// Gets or sets the message identifier (UUID).
     /// </summary>
+    [Description("The message identifier (UUID).")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("uuid")]
     public string? Id { get; set; }

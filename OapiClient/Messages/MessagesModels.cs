@@ -62,6 +62,9 @@ public class LarkMessageResponse
     [JsonPropertyName("upper_message_id")]
     public string UpperMessageId { get; set; }
 
+    [JsonIgnore]
+    public JsonObjectNode? ContentJson => Content?.Content;
+
     public string? GetContentString()
     {
         var content = Content?.Content;

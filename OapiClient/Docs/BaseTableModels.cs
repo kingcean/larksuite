@@ -116,7 +116,7 @@ public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
     public void SetFilter(LarkDocsFilterCondition condition)
         => Filter = new(CriteriaBooleanOperator.Or, [condition]);
 
-    public void SetFilter(string name, string op, string value)
+    public void SetFilter(string name, string op, string? value)
         => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
 
     public void SetFilter(string name, string op, List<string> value)
