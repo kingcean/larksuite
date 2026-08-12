@@ -200,11 +200,23 @@ public class LarkDocsSortItem : IJsonObjectHost
     }
 }
 
+public abstract class BaseLarkDocsFilter : IJsonObjectHost
+{
+    internal BaseLarkDocsFilter()
+    {
+    }
+
+    /// <inheritdoc />
+    public abstract JsonObjectNode? ToJson();
+}
+
 /// <summary>
 /// The filter of Lark Base table.
 /// </summary>
-public class LarkDocsFilter : List<LarkDocsFilterCondition>, IJsonObjectHost
+public class LarkDocsFilter : BaseLarkDocsFilter
 {
+    private readonly List<BaseLarkDocsFilter> list = [];
+
     /// <summary>
     /// Initializes a new instance of the LarkDocsFilter class.
     /// </summary>
@@ -213,7 +225,7 @@ public class LarkDocsFilter : List<LarkDocsFilterCondition>, IJsonObjectHost
     public LarkDocsFilter(CriteriaBooleanOperator conjunction, params IEnumerable<LarkDocsFilterCondition> conditions)
     {
         Conjunction = conjunction;
-        if (conditions is not null) AddRange(conditions);
+        if (conditions is not null) list.AddRange(conditions);
     }
 
     /// <summary>
@@ -222,16 +234,22 @@ public class LarkDocsFilter : List<LarkDocsFilterCondition>, IJsonObjectHost
     public CriteriaBooleanOperator Conjunction { get; set; }
 
     public void Add(string name, string op, string value)
-        => Add(new(name, op, value));
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
 
     public void Add(string name, string op, List<string> value)
-        => Add(new(name, op, value));
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(LarkDocsFilterCondition item)
+        => list.Add(item);
+
+    public void Add(LarkDocsFilter item)
+        => list.Add(item);
 
     /// <inheritdoc />
-    public JsonObjectNode? ToJson()
+    public override JsonObjectNode? ToJson()
     {
         var arr = new JsonArrayNode();
-        foreach (var item in this)
+        foreach (var item in list)
         {
             var json = item?.ToJson();
             if (json is null) continue;
@@ -249,7 +267,7 @@ public class LarkDocsFilter : List<LarkDocsFilterCondition>, IJsonObjectHost
 /// <summary>
 /// The filter condition of Lark Base table.
 /// </summary>
-public class LarkDocsFilterCondition: IJsonObjectHost
+public class LarkDocsFilterCondition: BaseLarkDocsFilter
 {
     /// <summary>
     /// Initializes a new instance of the LarkDocsFilterCondition class.
@@ -301,7 +319,7 @@ public class LarkDocsFilterCondition: IJsonObjectHost
     public List<string> Value { get; set; }
 
     /// <inheritdoc />
-    public JsonObjectNode? ToJson()
+    public override JsonObjectNode? ToJson()
     {
         if (string.IsNullOrWhiteSpace(Name)) return null;
         return new()

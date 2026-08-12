@@ -318,7 +318,7 @@ public partial class LarkApi
             {
             }
 
-            throw;
+            if (ex.GetType().Name != "ClientResultException" && ex is not InvalidOperationException) throw;
         }
         finally
         {
