@@ -216,6 +216,46 @@ public partial class LarkApi
     public Task<LarkResponseBody> UpdateCardMessageSettingsAsync(LarkMessageStreamingRequest options, CancellationToken cancellationToken = default)
         => UpdateCardMessageSettingsAsync(options.Finish(), cancellationToken);
 
+    public async Task<LarkResponseBody<LarkMessageResponse>> SendMessageAsync(string userOpenId, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(userOpenId)) return new(true, "The user identifier is null.");
+        var card = await CreateMessageCardAsync(req);
+        if (string.IsNullOrWhiteSpace(card?.Data) || card.IsError) return new(true, card?.Message ?? "Create message interactive card failed.");
+        var info = new LarkMessageRequest("open_id", userOpenId)
+        {
+            Id = Guid.NewGuid().ToString(),
+        };
+        info.SetCard(card.Data);
+        var resp = await SendMessageAsync(info, cancellationToken);
+        return resp;
+    }
+
+    public async IAsyncEnumerable<string> SendMessageAsync(IEnumerable<string> userOpenIds, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    {
+        var ids = new List<string>();
+        foreach (var userId in userOpenIds)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || ids.Contains(userId)) continue;
+            ids.Add(userId);
+            var resp = await SendMessageAsync(userId, req, cancellationToken);
+            if (resp?.Data is null || resp.IsError) continue;
+            yield return userId;
+        }
+    }
+
+    public async IAsyncEnumerable<LarkIdNameInfo> SendMessageAsync(IEnumerable<LarkIdNameInfo> users, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    {
+        var ids = new List<string>();
+        foreach (var user in users)
+        {
+            if (string.IsNullOrWhiteSpace(user?.Id) || ids.Contains(user.Id)) continue;
+            ids.Add(user.Id);
+            var resp = await SendMessageAsync(user.Id, req, cancellationToken);
+            if (resp?.Data is null || resp.IsError) continue;
+            yield return user;
+        }
+    }
+
     public async Task<string?> SendResponseAsync(Task? task, LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, int delaySeconds, CancellationToken cancellationToken = default)
     {
         if (request is null) return null;

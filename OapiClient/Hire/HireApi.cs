@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Data;
 using Trivial.Net;
 using Trivial.Text;
 
@@ -63,6 +64,23 @@ public partial class LarkApi
     public Task<LarkResponseBody<LarkHireTalentInfo>> GetHireTalentAsync(string id, CancellationToken cancellationToken = default)
         => GetAsync<LarkHireTalentInfo>(string.Concat(LarkUrls.HireTalent, id), cancellationToken);
 
+    public Task<LarkResponseBody<LarkHireTalentInfo>> GetHireTalentAsync(LarkHireApplicationInfo application, CancellationToken cancellationToken = default)
+    {
+        if (application is null) return Task.FromResult(new LarkResponseBody<LarkHireTalentInfo>(true, "The job application should not be null."));
+        var id = application.Info?.TalentId ?? application.Talent?.Id;
+        if (string.IsNullOrWhiteSpace(id)) return Task.FromResult(new LarkResponseBody<LarkHireTalentInfo>(true, "Cannot get the job identifier from the application info."));
+        return GetHireTalentAsync(id, cancellationToken);
+    }
+
+    public async Task<LarkResponseBody<LarkHireTalentInfo>> GetHireTalentAsync(LarkHireInterviewInfo interview, CancellationToken cancellationToken = default)
+    {
+        if (interview is null) return new(true, "The hire interview instance should not be null.");
+        if (string.IsNullOrWhiteSpace(interview.Id)) return new(true, "The hire interview indentifier should not be null.");
+        var application = await GetHireApplicationAsync(interview.Id, cancellationToken);
+        if (application?.Data is null || application.IsError) return new(true, application?.Message ?? "Get job application failed.");
+        return await GetHireTalentAsync(application.Data, cancellationToken);
+    }
+
     public Task<LarkResponsePagingBody<LarkHireTalentInfo>> SearchHireTalentsAsync(string keyword, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkHireTalentInfo>(LarkUrls.HireTalents, new LarkTalentSearchOptions(keyword), paging, cancellationToken);
 
@@ -83,6 +101,23 @@ public partial class LarkApi
 
     public Task<IReadOnlyList<string>> ListHireApplicationsAsync(LarkResponsePagingBody<string> response, int? pageSize, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.Applications, response, pageSize, cancellationToken);
+
+    public Task<LarkResponseBody> GetHireJobAsync(LarkHireApplicationInfo application, CancellationToken cancellationToken = default)
+    {
+        if (application is null) return Task.FromResult(new LarkResponseBody(true, "The job application should not be null."));
+        var id = application.Info?.JobId ?? application.Job?.TryGetStringTrimmedValue("id");
+        if (string.IsNullOrWhiteSpace(id)) return Task.FromResult(new LarkResponseBody(true, "Cannot get the job identifier from the application info."));
+        return GetHireJobAsync(id, cancellationToken);
+    }
+
+    public async Task<LarkResponseBody> GetHireJobAsync(LarkHireInterviewInfo interview, CancellationToken cancellationToken = default)
+    {
+        if (interview is null) return new(true, "The hire interview instance should not be null.");
+        if (string.IsNullOrWhiteSpace(interview.Id)) return new(true, "The hire interview indentifier should not be null.");
+        var application = await GetHireApplicationAsync(interview.Id, cancellationToken);
+        if (application?.Data is null || application.IsError) return new(true, application?.Message ?? "Get job application failed.");
+        return await GetHireJobAsync(application.Data, cancellationToken);
+    }
 
     public Task<LarkResponseBody> GetHireJobAsync(string id, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.HireJob, id), "job_detail", cancellationToken);

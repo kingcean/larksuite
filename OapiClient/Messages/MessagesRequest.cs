@@ -168,6 +168,20 @@ public class LarkMessageRequest : BaseQueryRequestInfo
         };
     }
 
+    public void SetCard(string id)
+    {
+        MessageType = "interactive";
+        Content = new()
+        {
+            { "type", "card" },
+            { "data", new JsonObjectNode
+            {
+                { "card_id", id }
+            }
+            },
+        };
+    }
+
     public void SetDivider(string text, JsonObjectNode? i18n = null, JsonObjectNode? options = null)
     {
         MessageType = "system";
@@ -197,6 +211,25 @@ public class LarkMessageRequest : BaseQueryRequestInfo
         Content = new()
         {
             { "file_key", fileKey },
+        };
+    }
+
+    public void SetFile(string? messageType, string fileKey, string posterImageKey)
+    {
+        MessageType = messageType ?? "file";
+        Content = new()
+        {
+            { "file_key", fileKey },
+            { "image_key", posterImageKey },
+        };
+    }
+
+    public void SetImage(string fileKey)
+    {
+        MessageType = "image";
+        Content = new()
+        {
+            { "image_key", fileKey },
         };
     }
 }

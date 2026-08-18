@@ -217,6 +217,52 @@ public class LarkHireInterviewInfo
         return list;
     }
 
+    public string GetInterviewers(Func<LarkIdNameInfo, string?>? template, string? separator)
+    {
+        template ??= ele => ele.GetName();
+        var col = GetInterviewers().Select(template).Select(ele => !string.IsNullOrEmpty(ele));
+        return string.Join(separator ?? string.Empty, col);
+    }
+
+    public string GetInterviewers(Func<LarkIdNameInfo, string?>? template, string? separator, string? prefix, string? suffix = null)
+    {
+        var interviewers = GetInterviewers();
+        var sb = new StringBuilder();
+        if (!string.IsNullOrEmpty(prefix)) sb.Append(prefix);
+        sb.Append(GetInterviewers(template, separator));
+        if (!string.IsNullOrEmpty(suffix)) sb.Append(suffix);
+        return sb.ToString();
+    }
+
+    public bool GetBeginEndDateString(StringBuilder sb, string? prefix = null, string? suffix = null)
+    {
+        var start = BeginDate;
+        if (!start.HasValue) return false;
+        if (sb is null) return true;
+        if (!string.IsNullOrEmpty(prefix)) sb.Append(prefix);
+        sb.Append(start.Value.ToString("f"));
+        var end = EndDate;
+        if (!end.HasValue) return true;
+        sb.Append(" → ");
+        sb.Append(start.Value.Date == end.Value.Date
+            ? end.Value.ToShortTimeString()
+            : end.Value.ToString("f"));
+        if (!string.IsNullOrEmpty(suffix)) sb.Append(suffix);
+        return true;
+    }
+
+    public string? GetBeginEndDateString()
+    {
+        var sb = new StringBuilder();
+        return GetBeginEndDateString(sb) ? sb.ToString() : null;
+    }
+
+    public string? GetBeginEndDateString(string prefix, string? suffix = null)
+    {
+        var sb = new StringBuilder();
+        return GetBeginEndDateString(sb, prefix, suffix) ? sb.ToString() : null;
+    }
+
     public string GetStateString()
     {
         return State switch

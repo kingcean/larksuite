@@ -434,7 +434,7 @@ public static partial class LarkApiUtils
         return new(record, record.Simplify(mapping));
     }
 
-    public static IEnumerable<T?> ListDataOrNull<T>(this IEnumerable<LarkDocsBaseTableRecord<T>> records)
+    public static IEnumerable<T?> ListDataOrNull<T>(this IEnumerable<LarkDocsBaseTableRecord<T>>? records)
     {
         if (records is null) yield break;
         foreach (var fields in records)
@@ -443,7 +443,7 @@ public static partial class LarkApiUtils
         }
     }
 
-    public static IEnumerable<T> ListData<T>(this IEnumerable<LarkDocsBaseTableRecord<T>> records)
+    public static IEnumerable<T> ListData<T>(this IEnumerable<LarkDocsBaseTableRecord<T>>? records)
     {
         if (records is null) yield break;
         foreach (var fields in records)
@@ -468,6 +468,24 @@ public static partial class LarkApiUtils
         {
             if (fields.Data is not null) yield return fields.Data;
         }
+    }
+
+    public static async Task<List<T?>> ListDataOrNullAsync<T>(this Task<List<LarkDocsBaseTableRecord<T>>> records)
+        => records is null ? [] : ListDataOrNull(await records).ToList();
+
+    public static async Task<List<T>> ListDataAsync<T>(this Task<List<LarkDocsBaseTableRecord<T>>> records)
+        => records is null ? [] : ListData(await records).ToList();
+
+    public static List<T?> ListDataOrNullAsync<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord<T>> records)
+    {
+        if (records?.Data is null || records.IsError) return [];
+        return ListDataOrNull(records.Data).ToList();
+    }
+
+    public static List<T> ListDataAsync<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord<T>> records)
+    {
+        if (records?.Data is null || records.IsError) return [];
+        return ListData(records.Data).ToList();
     }
 
     public static LarkDocsBaseTableRecord<T> Deserialize<T>(this LarkDocsBaseTableRecord<JsonObjectNode> record)

@@ -195,6 +195,39 @@ public class LarkDocsBaseTableViewInfo
         => $"{Name ?? "?"} (View ID = {Id} & Type = {ViewType})";
 }
 
+public class LarkDocsBaseTableFieldInfo
+{
+    [JsonPropertyName("field_id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("field_name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("type")]
+    public int FieldType { get; set; }
+
+    [JsonPropertyName("ui_type")]
+    public string UIType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
+
+    [JsonPropertyName("is_primary")]
+    public bool IsPrimary { get; set; }
+
+    [JsonPropertyName("is_hidden")]
+    public bool IsHidden { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("property")]
+    public JsonObjectNode Properties { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Type = {FieldType} / {UIType}{(IsHidden ? " / Hidden" : string.Empty)})";
+}
+
 /// <summary>
 /// The table record of Lark Base.
 /// </summary>
@@ -371,75 +404,90 @@ public class LarkDocsBaseTableRecord
                 target.SetValue(targetKey, false);
                 return;
             case JsonValueKind.Array:
-                var arr = fields.TryGetArrayValue(sourceKey);
-                if (arr.Length < 1) return;
-                if (arr.Length > 1)
-                {
-                    if (arr[0].ValueKind != JsonValueKind.Object)
-                    {
-                        target.SetValue(targetKey, arr);
-                        return;
-                    }
-
-                    var strings = new List<string>();
-                    foreach (var item in arr)
-                    {
-                        if (item is null) continue;
-                        if (item is not JsonObjectNode itemJson || itemJson.TryGetStringValue("type") != "text")
-                        {
-                            strings.Clear();
-                            break;
-                        }
-
-                        var s = itemJson.TryGetStringValue("text");
-                        if (string.IsNullOrWhiteSpace(s)) continue;
-                        strings.Add(s);
-                    }
-
-                    if (strings.Count > 0)
-                        target.SetValue(targetKey, string.Join(Environment.NewLine, strings));
-                    else
-                        target.SetValue(targetKey, arr);
-                    return;
-                }
-
-                var first = arr.TryGetObjectValue(0);
-                if (first is null)
-                {
-                    switch (arr.GetValueKind(0))
-                    {
-                        case JsonValueKind.Null:
-                        case JsonValueKind.Undefined:
-                            break;
-                        case JsonValueKind.String:
-                            target.SetValue(targetKey, arr.TryGetStringValue(0));
-                            break;
-                        case JsonValueKind.True:
-                            target.SetValue(targetKey, true);
-                            break;
-                        case JsonValueKind.False:
-                            target.SetValue(targetKey, false);
-                            break;
-                        default:
-                            target.SetValue(targetKey, arr);
-                            break;
-                    }
-                }
-                else
-                {
-                    GetBaseTableFieldValueFromJsonValue(first, target, targetKey);
-                }
-
+                GetBaseTableFieldValueFromJsonValue(fields.TryGetArrayValue(sourceKey), target, targetKey);
                 return;
             case JsonValueKind.Object:
-                GetBaseTableFieldValueFromJsonValue(fields.TryGetObjectValue(sourceKey), target, targetKey);
-                return;
+                {
+                    var obj = fields.TryGetObjectValue(sourceKey);
+                    if (obj.GetValueKind("type") == JsonValueKind.Number && obj.GetValueKind("value") == JsonValueKind.Array)
+                    {
+                        var arr = obj.TryGetArrayValue("value");
+                        GetBaseTableFieldValueFromJsonValue(arr, target, targetKey);
+                    }
+                    else
+                    {
+                        GetBaseTableFieldValueFromJsonValue(obj, target, targetKey);
+                    }
+
+                    return;
+                }
         }
     }
 
     /// <inheritdoc />
     public override string ToString()
         => $"Record ID = {Id}; Fields Count = {Fields?.Count ?? 0}";
+
+    private static void GetBaseTableFieldValueFromJsonValue(JsonArrayNode arr, JsonObjectNode target, string key)
+    {
+        if (arr.Length < 1) return;
+        if (arr.Length > 1)
+        {
+            if (arr[0].ValueKind != JsonValueKind.Object)
+            {
+                target.SetValue(key, arr);
+                return;
+            }
+
+            var strings = new List<string>();
+            foreach (var item in arr)
+            {
+                if (item is null) continue;
+                if (item is not JsonObjectNode itemJson || itemJson.TryGetStringValue("type") != "text")
+                {
+                    strings.Clear();
+                    break;
+                }
+
+                var s = itemJson.TryGetStringValue("text");
+                if (string.IsNullOrWhiteSpace(s)) continue;
+                strings.Add(s);
+            }
+
+            if (strings.Count > 0)
+                target.SetValue(key, string.Join(Environment.NewLine, strings));
+            else
+                target.SetValue(key, arr);
+            return;
+        }
+
+        var first = arr.TryGetObjectValue(0);
+        if (first is null)
+        {
+            switch (arr.GetValueKind(0))
+            {
+                case JsonValueKind.Null:
+                case JsonValueKind.Undefined:
+                    break;
+                case JsonValueKind.String:
+                    target.SetValue(key, arr.TryGetStringValue(0));
+                    break;
+                case JsonValueKind.True:
+                    target.SetValue(key, true);
+                    break;
+                case JsonValueKind.False:
+                    target.SetValue(key, false);
+                    break;
+                default:
+                    target.SetValue(key, arr);
+                    break;
+            }
+        }
+        else
+        {
+            GetBaseTableFieldValueFromJsonValue(first, target, key);
+        }
+    }
 
     private static void GetBaseTableFieldValueFromJsonValue(JsonObjectNode value, JsonObjectNode target, string key)
     {
@@ -495,16 +543,19 @@ public class LarkDocsBaseTableRecord<T>(LarkDocsBaseTableRecord? source, T? data
     /// <summary>
     /// Gets the record identifier.
     /// </summary>
+    [JsonIgnore]
     public string? Id => Source?.Id;
 
     /// <summary>
     /// Gets the source record.
     /// </summary>
-    public LarkDocsBaseTableRecord Source { get; } = source;
+    [JsonPropertyName("record")]
+    public LarkDocsBaseTableRecord? Source { get; } = source;
 
     /// <summary>
     /// Gets the data.
     /// </summary>
+    [JsonPropertyName("data")]
     public T? Data { get; } = data;
 }
 

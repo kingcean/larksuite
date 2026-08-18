@@ -200,22 +200,13 @@ public class LarkDocsSortItem : IJsonObjectHost
     }
 }
 
-public abstract class BaseLarkDocsFilter : IJsonObjectHost
-{
-    internal BaseLarkDocsFilter()
-    {
-    }
-
-    /// <inheritdoc />
-    public abstract JsonObjectNode? ToJson();
-}
-
 /// <summary>
 /// The filter of Lark Base table.
 /// </summary>
-public class LarkDocsFilter : BaseLarkDocsFilter
+public class LarkDocsFilter : IJsonObjectHost
 {
-    private readonly List<BaseLarkDocsFilter> list = [];
+    private readonly List<LarkDocsFilterCondition> list = [];
+    private readonly List<LarkDocsFilter> children = [];
 
     /// <summary>
     /// Initializes a new instance of the LarkDocsFilter class.
@@ -240,13 +231,22 @@ public class LarkDocsFilter : BaseLarkDocsFilter
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
     public void Add(LarkDocsFilterCondition item)
-        => list.Add(item);
+    {
+        if (item is null) return;
+        list.Add(item);
+    }
 
     public void Add(LarkDocsFilter item)
-        => list.Add(item);
+    {
+        if (item is null) return;
+        children.Add(item);
+    }
+
+    public void Add(CriteriaBooleanOperator conjunction, params IEnumerable<LarkDocsFilterCondition> conditions)
+        => children.Add(new LarkDocsFilter(conjunction, conditions));
 
     /// <inheritdoc />
-    public override JsonObjectNode? ToJson()
+    public JsonObjectNode? ToJson()
     {
         var arr = new JsonArrayNode();
         foreach (var item in list)
@@ -256,18 +256,32 @@ public class LarkDocsFilter : BaseLarkDocsFilter
             arr.Add(json);
         }
 
-        return arr.Count > 0 ? new()
+        var result = arr.Count > 0 ? new JsonObjectNode()
         {
             { "conjunction", Conjunction.ToString().ToLowerInvariant() },
             { "conditions", arr },
         } : null;
+
+        if (children.Count < 1) return result;
+        arr = [];
+        if (result is not null) arr.Add(result);
+        foreach (var item in children)
+        {
+            arr.Add(item);
+        }
+
+        return new()
+        {
+            { "conjunction", Conjunction.ToString().ToLowerInvariant() },
+            { "children", arr },
+        };
     }
 }
 
 /// <summary>
 /// The filter condition of Lark Base table.
 /// </summary>
-public class LarkDocsFilterCondition: BaseLarkDocsFilter
+public class LarkDocsFilterCondition : IJsonObjectHost
 {
     /// <summary>
     /// Initializes a new instance of the LarkDocsFilterCondition class.
@@ -319,7 +333,7 @@ public class LarkDocsFilterCondition: BaseLarkDocsFilter
     public List<string> Value { get; set; }
 
     /// <inheritdoc />
-    public override JsonObjectNode? ToJson()
+    public JsonObjectNode? ToJson()
     {
         if (string.IsNullOrWhiteSpace(Name)) return null;
         return new()
