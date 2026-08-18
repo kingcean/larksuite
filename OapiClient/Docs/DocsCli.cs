@@ -309,6 +309,26 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         LarkCliUtils.WriteOrderedLine(console, col);
         var id = LarkCliUtils.ReadId(console, $"Docs\\Doc\\{t.Data.Name}", col);
         if (LarkCliUtils.IsToExit(id) || string.IsNullOrWhiteSpace(id)) return tables.Data;
+
+        var fields = await lark.ListBaseTableFieldsAsync(token, id, true, cancellationToken);
+        if (fields?.Data is null || fields.IsError || fields.Data.Count < 1)
+        {
+            // No additional views.
+        }
+        else
+        {
+            console.WriteLine(LarkCliUtils.ItalicText(), "Fields");
+            foreach (var field in fields.Data)
+            {
+                console.Write(ConsoleColor.Blue, "· ");
+                console.Write(field.Name ?? "?");
+                console.Write(" \t");
+                console.WriteLine(field.FieldType);
+            }
+
+            console.WriteLine();
+        }
+
         var views = await lark.ListBaseTableViewsAsync(token, id, new LarkPageTokenInfo(50), cancellationToken);
         if (views?.Data is null || views.IsError || views.Data.Count < 2)
         {
@@ -316,7 +336,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         }
         else
         {
-            console.Write(LarkCliUtils.ItalicText(), "Views");
+            console.WriteLine(LarkCliUtils.ItalicText(), "Views");
             foreach (var view in views.Data)
             {
                 console.Write(ConsoleColor.Blue, "· ");

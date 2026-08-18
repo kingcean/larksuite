@@ -74,8 +74,7 @@ public partial class LarkApi
     /// <param name="id">The wiki space identifier.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The doc node info.</returns>
-    [Description("List the top level nodes of the wiki space.")]
-    public Task<LarkResponsePagingBody<LarkDocsNodeInfo>> GetWikiSpaceNodesAsync([Description("The wiki space identifier.")] string id, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkDocsNodeInfo>> GetWikiSpaceNodesAsync(string id, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkDocsNodeInfo>(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, LarkUrls.GetId(id)), cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkDocsNodeInfo>> GetWikiSpaceNodesAsync(LarkWikiNodesRequestOptions options, LarkPageTokenInfo? page = null, CancellationToken cancellationToken = default)
@@ -87,8 +86,33 @@ public partial class LarkApi
     public Task<LarkResponsePagingBody> GetWikiSpaceMembersAsync(string token, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceMembers, token), cancellationToken);
 
-    public Task<LarkResponsePagingBody> GetWikiSpaceNodesAsync(string token, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
-        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, token), new LarkResourceIdRequest(token), paging, cancellationToken);
+    public Task<LarkResponsePagingBody> GetWikiSpaceNodesAsync(string id, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, id), new LarkResourceIdRequest(id), paging, cancellationToken);
+
+    /// <summary>
+    /// Lists the top level nodes of the wiki space.
+    /// </summary>
+    /// <param name="id">The wiki space identifier.</param>
+    /// <param name="loadAll">true if load all pages; otherwise, false, to load the first page of list.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The doc node info.</returns>
+    [Description("List the top level nodes of the wiki space.")]
+    public async Task<LarkResponsePagingBody> GetWikiSpaceNodesAsync([Description("The wiki space identifier.")] string id, [Description("A value indicating whether load all items instead of the first page of list.")] bool loadAll, CancellationToken cancellationToken = default)
+    {
+        if (!loadAll) return await GetWikiSpaceNodesAsync(id, cancellationToken);
+        var resp = await GetWikiSpaceNodesAsync(id, new LarkPageTokenInfo(50), cancellationToken);
+        await LarkApiUtils.LoadAllPagesAsync(resp, 50, GetWikiSpaceNodesAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
+
+    public async Task<LarkResponsePagingBody<LarkDocsNodeInfo>> GetWikiSpaceNodesAsync(LarkWikiNodesRequestOptions options, bool loadAll, CancellationToken cancellationToken = default)
+    {
+        var paging = new LarkPageTokenInfo(50);
+        if (!loadAll) return await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
+        var resp = await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
+        await LarkApiUtils.LoadAllPagesAsync(resp, paging.Size, GetWikiSpaceNodesAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
 
     public Task<IReadOnlyList<JsonObjectNode>> GetWikiSpaceNodesAsync(LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, (response?.Query as LarkResourceIdRequest)?.Id), response!, pageSize, cancellationToken);
@@ -204,12 +228,21 @@ public partial class LarkApi
         => GetItemsAsync<LarkDocsBaseTableViewInfo>(LarkUrls.ToUrl(LarkUrls.GetBaseTableView, LarkUrls.GetId(baseId), tableId, viewId), cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkDocsBaseTableFieldInfo>> ListBaseTableFieldsAsync(string baseId, string tableId, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
-        => GetItemsAsync<LarkDocsBaseTableFieldInfo>(LarkUrls.ToUrl(LarkUrls.ListBaseTableTables, LarkUrls.GetId(baseId), tableId), new LarkResourceIdRequest(LarkUrls.GetId(baseId), tableId), paging, cancellationToken);
+        => GetItemsAsync<LarkDocsBaseTableFieldInfo>(LarkUrls.ToUrl(LarkUrls.GetBaseTableFields, LarkUrls.GetId(baseId), tableId), new LarkResourceIdRequest(LarkUrls.GetId(baseId), tableId), paging, cancellationToken);
 
     public Task<IReadOnlyList<LarkDocsBaseTableFieldInfo>> ListBaseTableFieldsAsync(LarkResponsePagingBody<LarkDocsBaseTableFieldInfo> response, int? pageSize, CancellationToken cancellationToken = default)
     {
         if (response?.Query is not LarkResourceIdRequest info || string.IsNullOrWhiteSpace(info?.Id) || string.IsNullOrWhiteSpace(info.Text)) return Task.FromResult<IReadOnlyList<LarkDocsBaseTableFieldInfo>>([]);
-        return GetItemsAsync(LarkUrls.ToUrl(LarkUrls.ListBaseTableTables, LarkUrls.GetId(info.Id), info.Text), response, pageSize, cancellationToken);
+        return GetItemsAsync(LarkUrls.ToUrl(LarkUrls.GetBaseTableFields, LarkUrls.GetId(info.Id), info.Text), response, pageSize, cancellationToken);
+    }
+
+    public async Task<LarkResponsePagingBody<LarkDocsBaseTableFieldInfo>> ListBaseTableFieldsAsync(string baseId, string tableId, bool loadAll, CancellationToken cancellationToken = default)
+    {
+        var paging = new LarkPageTokenInfo(50);
+        if (!loadAll) return await ListBaseTableFieldsAsync(baseId, tableId, paging, cancellationToken);
+        var resp = await ListBaseTableFieldsAsync(baseId, tableId, paging, cancellationToken);
+        await LarkApiUtils.LoadAllPagesAsync(resp, paging.Size, ListBaseTableFieldsAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
     }
 
     public Task<LarkResponseBody<LarkDocsBaseTableRecordsInfo>> GetBaseTableRecordsAsync(string baseId, string tableId, IEnumerable<string> recordIds, CancellationToken cancellationToken = default)
