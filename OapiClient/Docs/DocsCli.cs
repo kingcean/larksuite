@@ -150,11 +150,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 {
                     console.WriteLine(node);
                     prefix = LarkCliUtils.ToPrefix("Docs\\Doc\\", node.Name);
-                    nodes = await lark.GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions()
-                    {
-                        SpaceId = space?.Id ?? node.SpaceId,
-                        ParentNodeToken = node.NodeToken,
-                    }, null, cancellationToken);
+                    nodes = await lark.GetWikiSpaceNodesAsync(node, cancellationToken);
                 }
 
                 console.WriteLine();
@@ -323,7 +319,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 console.Write(ConsoleColor.Blue, "· ");
                 console.Write(field.Name ?? "?");
                 console.Write(" \t");
-                console.WriteLine(field.FieldType);
+                console.WriteLine(field.FieldType.ToString());
             }
 
             console.WriteLine();

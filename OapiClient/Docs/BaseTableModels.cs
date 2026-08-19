@@ -14,6 +14,30 @@ using Trivial.Text;
 
 namespace LarkSuite.OapiModels;
 
+public enum LarkDocsBaseTableFieldType
+{
+    Text = 1,
+    Number = 2,
+    Radio = 3,
+    Multiselect = 4,
+    Date = 5,
+    Checkbox = 7,
+    User = 11,
+    Phone = 13,
+    Link = 15,
+    Attachment = 17,
+    Reference = 18,
+    Formula = 20,
+    Correlation = 21,
+    Geolocation = 22,
+    UserGroup = 23,
+    CreationDate = 1001,
+    LastModification = 1002,
+    Creator = 1003,
+    Modifier = 1004,
+    AutoIndex = 1005,
+}
+
 public class LarkDocsBaseTableInfo
 {
     [JsonPropertyName("app_token")]
@@ -42,11 +66,11 @@ public class LarkDocsBaseTableInfo
         => $"{Name ?? "?"} (Token = {Token} & Rev = {Revision})";
 }
 
-public class LarkDocsBaseTableFullInfo(LarkDocsBaseTableInfo info, List<LarkDocsBaseTableTableInfo>? tables)
+public class LarkDocsBaseTableFullInfo(LarkDocsBaseTableInfo info, List<LarkDocsBaseTableTableDetailsInfo>? tables)
 {
     public LarkDocsBaseTableInfo Info { get; } = info;
 
-    public List<LarkDocsBaseTableTableInfo> Tables { get; } = tables ?? [];
+    public List<LarkDocsBaseTableTableDetailsInfo> Tables { get; } = tables ?? [];
 }
 
 public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
@@ -167,6 +191,13 @@ public class LarkDocsBaseTableTableInfo
         => $"{Name ?? "?"} (Table ID = {Id} & Rev = {Revision})";
 }
 
+public class LarkDocsBaseTableTableDetailsInfo : LarkDocsBaseTableTableInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("fields")]
+    public List<LarkDocsBaseTableFieldBasicInfo> Fields { get; set; }
+}
+
 public class LarkDocsBaseTableViewInfo
 {
     [JsonPropertyName("view_id")]
@@ -195,6 +226,36 @@ public class LarkDocsBaseTableViewInfo
         => $"{Name ?? "?"} (View ID = {Id} & Type = {ViewType})";
 }
 
+public class LarkDocsBaseTableFieldBasicInfo
+{
+    [JsonPropertyName("field_name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("type")]
+    [JsonConverter(typeof(JsonStringEnumConverter<LarkDocsBaseTableFieldType>))]
+    public LarkDocsBaseTableFieldType FieldType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("description")]
+    public string Description { get; set; }
+
+    [JsonPropertyName("is_hidden")]
+    public bool IsHidden { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Name ?? "?"} (Type = {FieldType.ToString()}{(IsHidden ? " / Hidden" : string.Empty)})";
+
+    public static explicit operator LarkDocsBaseTableFieldInfo(LarkDocsBaseTableFieldBasicInfo value)
+        => value is null ? null : new()
+        {
+            Name = value.Name,
+            FieldType = value.FieldType,
+            Description = value.Description,
+            IsHidden = value.IsHidden,
+        };
+}
+
 public class LarkDocsBaseTableFieldInfo
 {
     [JsonPropertyName("field_id")]
@@ -204,7 +265,7 @@ public class LarkDocsBaseTableFieldInfo
     public string Name { get; set; }
 
     [JsonPropertyName("type")]
-    public int FieldType { get; set; }
+    public LarkDocsBaseTableFieldType FieldType { get; set; }
 
     [JsonPropertyName("ui_type")]
     public string UIType { get; set; }
@@ -214,6 +275,7 @@ public class LarkDocsBaseTableFieldInfo
     public string Description { get; set; }
 
     [JsonPropertyName("is_primary")]
+
     public bool IsPrimary { get; set; }
 
     [JsonPropertyName("is_hidden")]
@@ -226,6 +288,15 @@ public class LarkDocsBaseTableFieldInfo
     /// <inheritdoc />
     public override string ToString()
         => $"{Name ?? "?"} (Type = {FieldType} / {UIType}{(IsHidden ? " / Hidden" : string.Empty)})";
+
+    public static explicit operator LarkDocsBaseTableFieldBasicInfo(LarkDocsBaseTableFieldInfo value)
+        => value is null ? null : new()
+        {
+            Name = value.Name,
+            FieldType = value.FieldType,
+            Description = value.Description,
+            IsHidden = value.IsHidden,
+        };
 }
 
 /// <summary>
@@ -250,7 +321,7 @@ public class LarkDocsBaseTableRecord
         Fields = json.TryGetObjectValue("fields");
         Id = json.TryGetStringTrimmedValue("record_id", true);
         Creator = new(json.TryGetObjectValue("created_by"));
-        CreateDate = json.TryGetDateTimeValue("created_time") ?? DateTime.Now;
+        CreationDate = json.TryGetDateTimeValue("created_time") ?? DateTime.Now;
         LastModifier = new(json.TryGetObjectValue("last_modified_by"));
         LastModificationDate = json.TryGetDateTimeValue("last_modified_time") ?? DateTime.Now;
         SharedUrl = json.TryGetStringTrimmedValue("shared_url");
@@ -285,7 +356,7 @@ public class LarkDocsBaseTableRecord
     [Description("The creation date time.")]
     [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     [JsonPropertyName("created_time")]
-    public DateTime CreateDate { get; set; }
+    public DateTime CreationDate { get; set; }
 
     /// <summary>
     /// Gets or sets the user modified the record.

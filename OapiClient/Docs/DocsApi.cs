@@ -5,6 +5,7 @@ using System.Buffers.Text;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.NetworkInformation;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -111,6 +112,29 @@ public partial class LarkApi
         if (!loadAll) return await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
         var resp = await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
         await LarkApiUtils.LoadAllPagesAsync(resp, paging.Size, GetWikiSpaceNodesAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
+
+    public async Task<LarkResponsePagingBody<LarkDocsNodeInfo>> GetWikiSpaceNodesAsync(LarkDocsNodeInfo node, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(node?.SpaceId)) return new(true, "The space identifier is required");
+        var resp = await GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions
+        {
+            SpaceId = node.SpaceId,
+            ParentNodeToken = node.NodeToken,
+        }, true, cancellationToken);
+        if (node.NodeType == "shortcut")
+        {
+            if (resp is null || resp.Count < 1)
+            {
+                return await GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions()
+                {
+                    SpaceId = node.OriginSpaceId,
+                    ParentNodeToken = node.OriginNodeToken,
+                }, true, cancellationToken);
+            }
+        }
+
         return resp;
     }
 
@@ -586,7 +610,29 @@ public partial class LarkApi
                     if (table?.Data is null || table.IsError) return LarkApiUtils.ErrorLarkDocContent(token, table?.Message ?? "Get base table info failed.");
                     var tables = await ListBaseTableTablesAsync(token, new(50), cancellationToken);
                     await LarkApiUtils.LoadAllPagesAsync(tables, 50, ListBaseTableTablesAsync, cancellationToken).CountAsync(cancellationToken);
-                    return new LarkDocContent<LarkDocsBaseTableFullInfo>(info.Data, new(table.Data, tables?.Data?.ToList()));
+                    if (tables?.Data is null || tables.IsError) return new LarkDocContent(info.Data, new List<LarkDocsBaseTableTableDetailsInfo>());
+                    var tableList = new List<LarkDocsBaseTableTableDetailsInfo>();
+                    foreach (var tableInfo in tables.Data)
+                    {
+                        if (string.IsNullOrWhiteSpace(tableInfo?.Id)) continue;
+                        var tableItem = new LarkDocsBaseTableTableDetailsInfo
+                        {
+                            Id = tableInfo.Id,
+                            Name = tableInfo.Name,
+                            Revision = tableInfo.Revision,
+                        };
+                        tableList.Add(tableItem);
+                        var fields = await ListBaseTableFieldsAsync(token, tableInfo.Id, true, cancellationToken);
+                        if (fields?.Data is null || fields.IsError) continue;
+                        tableItem.Fields = [];
+                        foreach (var field in fields.Data)
+                        {
+                            if (string.IsNullOrWhiteSpace(field.Name)) continue;
+                            tableItem.Fields.Add((LarkDocsBaseTableFieldBasicInfo)field);
+                        }
+                    }
+
+                    return new LarkDocContent<LarkDocsBaseTableFullInfo>(info.Data, new(table.Data, tableList));
                 }
             default:
                 return new LarkDocContent<string>(info.Data, "Unsupported format.");

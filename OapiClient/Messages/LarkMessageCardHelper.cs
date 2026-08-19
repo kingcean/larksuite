@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using Trivial.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.OapiModels;
 
@@ -148,6 +149,44 @@ public static class LarkMessageCardHelper
     {
         var json = CreateButton(buttonType, text, url, iconToken);
         blocks.Add(json);
+    }
+
+    public static JsonObjectNode CreateOverflowButton(string? width = null)
+        => new()
+        {
+            { "tag", "overflow" },
+            { "width", width ?? "default" },
+            { "options", new JsonArrayNode() },
+        };
+
+    public static void AddOverflowButton(IList<JsonObjectNode> blocks, string? width = null)
+    {
+        var json = CreateOverflowButton(width);
+        blocks.Add(json);
+    }
+
+    public static void AddOverflowButtonOption(JsonObjectNode button, string title, string? url = null)
+    {
+        if (button is null) return;
+        var options = button.TryGetArrayValue("options");
+        if (options is null)
+        {
+            options = [];
+            button.SetValue("options", options);
+        }
+
+        var option = new JsonObjectNode
+        {
+            { "text", new JsonObjectNode
+            {
+                { "tag", "plain_text" },
+                { "content", title },
+            } },
+        };
+        if (!string.IsNullOrWhiteSpace(url)) option.SetValue("multi_url", new JsonObjectNode
+        {
+            { "url", url }
+        });
     }
 
     public static T? Deserialize<T>(string answer)

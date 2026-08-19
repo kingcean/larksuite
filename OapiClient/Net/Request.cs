@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Data;
 using Trivial.Maths;
 using Trivial.Net;
 using Trivial.Text;
+using Trivial.Web;
 
 namespace LarkSuite.OapiModels;
 
@@ -224,11 +226,56 @@ public class LarkDocsFilter : IJsonObjectHost
     /// </summary>
     public CriteriaBooleanOperator Conjunction { get; set; }
 
-    public void Add(string name, string op, string value)
+    public void Add(string name, bool isEmpty)
+        => list.Add(new LarkDocsFilterCondition(name, isEmpty));
+
+    public void Add(string name, string? op, string? value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
-    public void Add(string name, string op, List<string> value)
+    public void Add(string name, BasicCompareOperator op, string value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, DbCompareOperator op, string value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, string? op, List<string> value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, string op, bool value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, bool equals, bool value)
+    => list.Add(new LarkDocsFilterCondition(name, equals, value));
+
+    public void Add(string name, string op, int value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, BasicCompareOperator op, int value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, string op, long value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, BasicCompareOperator op, long value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, string op, double value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, BasicCompareOperator op, double value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, string op, DateTime value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, BasicCompareOperator op, DateTime value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, string op, LarkIdNameInfo value)
+        => list.Add(new LarkDocsFilterCondition(name, op, value));
+
+    public void Add(string name, bool equals, LarkIdNameInfo value)
+    => list.Add(new LarkDocsFilterCondition(name, equals, value));
 
     public void Add(LarkDocsFilterCondition item)
     {
@@ -294,10 +341,21 @@ public class LarkDocsFilterCondition : IJsonObjectHost
     /// Initializes a new instance of the LarkDocsFilterCondition class.
     /// </summary>
     /// <param name="name">The name of field.</param>
+    /// <param name="isEmpty">true if the field should be empty; otherwise, false, that should not be empty.</param>
+    public LarkDocsFilterCondition(string name, bool isEmpty)
+    {
+        Name = name;
+        Operation = isEmpty ? "isEmpty" : "isNotEmpty";
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
     /// <param name="op">The operation.</param>
     /// <param name="value">The value of field.</param>
-    public LarkDocsFilterCondition(string name, string op, string? value)
-        : this(name, op, value is null ? [] : [value])
+    public LarkDocsFilterCondition(string name, string? op, string? value)
+        : this(name, op ?? "is", value is null ? [] : [value])
     {
     }
 
@@ -307,11 +365,180 @@ public class LarkDocsFilterCondition : IJsonObjectHost
     /// <param name="name">The name of field.</param>
     /// <param name="op">The operation.</param>
     /// <param name="value">The value of field.</param>
-    public LarkDocsFilterCondition(string name, string op, List<string> value)
+    public LarkDocsFilterCondition(string name, BasicCompareOperator op, string value)
+        : this(name, LarkApiUtils.ToDocsFilterString(op), value is null ? [] : [value])
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, DbCompareOperator op, string value)
+        : this(name, op switch
+        {
+            DbCompareOperator.Equal => "is",
+            DbCompareOperator.NotEqual => "isNot",
+            DbCompareOperator.Greater => "isGreater",
+            DbCompareOperator.GreaterOrEqual => "isGreaterEqual",
+            DbCompareOperator.Less => "isLess",
+            DbCompareOperator.LessOrEqual => "isLessEqual",
+            DbCompareOperator.Contains => "contains",
+            DbCompareOperator.StartsWith or DbCompareOperator.Equal => "contains",
+            _ => "is",
+        }, value is null ? [] : [value])
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string? op, List<string> value)
     {
         Name = name;
-        Operation = op;
+        Operation = op ?? "is";
         Value = value;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string op, bool value)
+        : this(name, op, value ? JsonBooleanNode.TrueString : JsonBooleanNode.FalseString)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="equals">true if equals to the value; otherwise, false, that does not equal to.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, bool equals, bool value)
+        : this(name, equals ? "is" : "isNot", value ? JsonBooleanNode.TrueString : JsonBooleanNode.FalseString)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string op, int value)
+        : this(name, op, value.ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, BasicCompareOperator op, int value)
+        : this(name, op, value.ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string op, long value)
+        : this(name, op, value.ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, BasicCompareOperator op, long value)
+        : this(name, op, value.ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string op, double value)
+        : this(name, op, value.ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, BasicCompareOperator op, double value)
+        : this(name, op, value.ToString())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string op, DateTime value)
+        : this(name, op, new List<string>
+        {
+            "ExactDate",
+            WebFormat.ParseDate(value).ToString()
+        })
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, BasicCompareOperator op, DateTime value)
+        : this(name, LarkApiUtils.ToDocsFilterString(op), value)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="op">The operation.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, string op, LarkIdNameInfo value)
+        : this(name, op, value?.Id)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsFilterCondition class.
+    /// </summary>
+    /// <param name="name">The name of field.</param>
+    /// <param name="equals">true if equals to the value; otherwise, false, that does not equal to.</param>
+    /// <param name="value">The value of field.</param>
+    public LarkDocsFilterCondition(string name, bool equals, LarkIdNameInfo value)
+        : this(name, equals ? "is" : "isNot", value?.Id)
+    {
     }
 
     /// <summary>

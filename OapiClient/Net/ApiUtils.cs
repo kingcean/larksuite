@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using Trivial.Data;
+using Trivial.Maths;
 using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
@@ -250,6 +251,18 @@ public static partial class LarkApiUtils
         if (cache is not null) cache[id] = resp.Data!;
         return resp.Data;
     }
+
+    internal static string ToDocsFilterString(BasicCompareOperator op)
+        => op switch
+        {
+            BasicCompareOperator.Equal => "is",
+            BasicCompareOperator.NotEqual => "isNot",
+            BasicCompareOperator.Greater => "isGreater",
+            BasicCompareOperator.GreaterOrEqual => "isGreaterEqual",
+            BasicCompareOperator.Less => "isLess",
+            BasicCompareOperator.LessOrEqual => "isLessEqual",
+            _ => "is",
+        };
 }
 
 /// <summary>
