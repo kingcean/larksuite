@@ -42,6 +42,9 @@ internal static partial class LarkUrls
     public const string GetDriveFolder = "https://open.feishu.cn/open-apis/drive/explorer/v2/folder/{0}/meta";
     public const string GetDriveFiles = "https://open.feishu.cn/open-apis/drive/v1/files";
     public const string MoveDriveFile = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/move";
+    public const string MoveDriveFileToWiki = "https://open.feishu.cn/open-apis/wiki/v2/spaces/{0}/nodes/move_docs_to_wiki";
+    public const string MoveWikiNodeToDrive = "https://open.feishu.cn/open-apis/wiki/v2/nodes/{0}/move_wiki_to_docs";
+    public const string MoveWikiNode = "https://open.feishu.cn/open-apis/wiki/v2/spaces/{0}/nodes/{1}/move";
     public const string DocsComments = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments";
     public const string DocsReplyComment = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments/{1}/replies";
     public const string DocsWhiteboardNodes = "https://open.feishu.cn/open-apis/board/v1/whiteboards/{0}/nodes";

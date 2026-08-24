@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Net;
 using Trivial.Security;
 using Trivial.Text;
@@ -295,6 +296,9 @@ public class LarkDocsFolderMetaInfo : BaseLarkDocsDriveMetaInfo
 
     [JsonPropertyName("parentId")]
     public string ParentId { get; set; }
+
+    public override string ToString()
+        => $"{Name ?? "?"} ({Token})";
 }
 
 public class LarkDocsDriveShortcutNodeInfo
@@ -303,7 +307,7 @@ public class LarkDocsDriveShortcutNodeInfo
     public string Token { get; set; }
 
     [JsonPropertyName("target_type")]
-    public string NodeType { get; set; }
+    public string DocType { get; set; }
 }
 
 public class LarkDocsDriveNodeInfo
@@ -315,7 +319,7 @@ public class LarkDocsDriveNodeInfo
     public string Name { get; set; }
 
     [JsonPropertyName("type")]
-    public string NodeType { get; set; }
+    public string DocType { get; set; }
 
     [JsonPropertyName("parent_token")]
     public string ParentToken { get; set; }
@@ -336,4 +340,24 @@ public class LarkDocsDriveNodeInfo
 
     [JsonPropertyName("owner_id")]
     public string OwnerUserId { get; set; }
+
+    public override string ToString()
+    {
+        var shortcut = Shortcut;
+        if (string.IsNullOrWhiteSpace(shortcut?.Token))
+            return $"{DocType} | {Name ?? "?"} ({Token})";
+        else
+            return $"{DocType} {shortcut.DocType} | {Name ?? "?"} ({Token} → {shortcut.Token})";
+    }
+}
+
+public class LarkDocsDriveFileMoveTaskInfo : BaseLarkTaskInfo
+{
+    [JsonPropertyName("wiki_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string Token { get; set; }
+
+    [JsonPropertyName("applied")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool ApplyPermission { get; set; }
 }

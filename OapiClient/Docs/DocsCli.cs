@@ -81,7 +81,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         //    foreach (var file in files.Data)
         //    {
         //        if (string.IsNullOrWhiteSpace(file?.Token)) continue;
-        //        list.Add(new($"{file.Name ?? "?"} \t{file.NodeType}", file.Token));
+        //        list.Add(new($"{file.Name ?? "?"} \t{file.DocType}", file.Token));
         //    }
 
         //    LarkCliUtils.WriteOrderedLine(console, list);

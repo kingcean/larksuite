@@ -332,7 +332,7 @@ public class LarkDocsCommentReplyOptions : LarkUserIdTypeRequestOptions, IJsonOb
     }
 }
 
-public class DocsDriveFilesRequest : LarkUserIdTypeRequestOptions
+public class LarkDocsDriveFilesRequest : LarkUserIdTypeRequestOptions
 {
     public string? Token { get; set; }
 
@@ -363,7 +363,7 @@ public class DocsDriveFilesRequest : LarkUserIdTypeRequestOptions
     }
 }
 
-public class DocsDriveFileMoveRequest
+public class LarkDocsDriveFileMoveRequest
 {
     [JsonIgnore]
     public string Token { get; set; }
@@ -371,6 +371,44 @@ public class DocsDriveFileMoveRequest
     [JsonPropertyName("type")]
     public string NodeType { get; set; }
 
+    [JsonPropertyName("folder_token")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string DestinationToken { get; set; }
+}
+
+public class LarkDocsDriveFileMoveToWikiRequest
+{
+    [JsonIgnore]
+    public string SpaceId { get; set; }
+
+    [JsonPropertyName("obj_token")]
+    public string DocToken { get; set; }
+
+    [JsonPropertyName("obj_type")]
+    public string DocType { get; set; }
+
+    [JsonPropertyName("parent_wiki_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string DestinationParentToken { get; set; }
+
+    [JsonPropertyName("apply")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public string ApplyPermission { get; set; }
+}
+
+public class LarkDocsNodeMoveRequest
+{
+    [JsonIgnore]
+    public string SourceSpaceId { get; set; }
+
+    [JsonIgnore]
+    public string SourceToken { get; set; }
+
+    [JsonPropertyName("target_space_id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DestinationSpaceId { get; set; }
+
+    [JsonPropertyName("target_parent_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DestinationToken { get; set; }
 }

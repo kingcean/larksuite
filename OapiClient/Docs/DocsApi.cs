@@ -236,6 +236,9 @@ public partial class LarkApi
     public Task<LarkResponseBody<LarkDocsNodeInfo>> CreateDocsNodeAsync(LarkWikiNodesCreateRequestOptions options, CancellationToken cancellationToken = default)
         => PostAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, options.SpaceId), JsonObjectNode.ConvertFrom(options), json => json?.DeserializeValue<LarkDocsNodeInfo>("node")!, cancellationToken);
 
+    public Task<LarkResponseBody<BaseLarkTaskInfo>> MoveDocsNodeAsync(LarkDocsNodeMoveRequest options, CancellationToken cancellationToken = default)
+        => PostAsync<BaseLarkTaskInfo>(LarkUrls.ToUrl(LarkUrls.MoveWikiNode, options.SourceSpaceId, options.SourceToken), JsonObjectNode.ConvertFrom(options), cancellationToken);
+
     public Task<LarkResponseBody<LarkDocsBaseTableInfo>> GetBaseTableAsync(string baseId, CancellationToken cancellationToken = default)
         => GetAsync<LarkDocsBaseTableInfo>(string.Concat(LarkUrls.GetBaseTable, LarkUrls.GetId(baseId)), "app", cancellationToken);
 

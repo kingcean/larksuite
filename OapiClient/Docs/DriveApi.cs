@@ -21,24 +21,33 @@ public partial class LarkApi
     public Task<LarkResponseBody<LarkDocsFolderMetaInfo>> GetDocsDriveMetaAsync(string token, CancellationToken cancellationToken = default)
         => GetAsync<LarkDocsFolderMetaInfo>(LarkUrls.ToUrl(LarkUrls.GetDriveFolder, token), cancellationToken);
 
-    public Task<LarkResponseBody<LarkDocsDriveMetaInfo>> GetDocsDriveMetaAsync(DocsDriveFilesRequest options, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody<LarkDocsDriveMetaInfo>> GetDocsDriveMetaAsync(LarkDocsDriveFilesRequest options, CancellationToken cancellationToken = default)
         => GetAsync<LarkDocsDriveMetaInfo>(LarkUrls.GetDriveRoot, cancellationToken);
 
-    public Task<LarkResponsePagingBody<LarkDocsDriveNodeInfo>> ListDocsDriveFilesAsync(DocsDriveFilesRequest options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkDocsDriveNodeInfo>> ListDocsDriveFilesAsync(LarkDocsDriveFilesRequest options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkDocsDriveNodeInfo>(LarkUrls.GetDriveFiles, options, "files", paging, null, cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkDocsDriveNodeInfo>> ListDocsDriveFilesAsync(string token, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
-        => ListDocsDriveFilesAsync(new DocsDriveFilesRequest
+        => ListDocsDriveFilesAsync(new LarkDocsDriveFilesRequest
         {
             Token = token,
         }, paging, cancellationToken);
 
     public Task<LarkResponsePagingBody<LarkDocsDriveNodeInfo>> ListDocsDriveFilesAsync(CancellationToken cancellationToken = default)
-        => ListDocsDriveFilesAsync(new DocsDriveFilesRequest(), new LarkPageTokenInfo(), cancellationToken);
+        => ListDocsDriveFilesAsync(new LarkDocsDriveFilesRequest(), new LarkPageTokenInfo(), cancellationToken);
 
-    public Task<IReadOnlyList<LarkDocsDriveNodeInfo>> ListDocsDriveNodesAsync(LarkResponsePagingBody<LarkDocsDriveNodeInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<LarkDocsDriveNodeInfo>> ListDocsDriveFilesAsync(LarkResponsePagingBody<LarkDocsDriveNodeInfo> response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.GetDriveFiles, response, "files", pageSize, cancellationToken);
 
-    public Task<LarkResponseBody<BaseLarkTaskInfo>> MoveDocsDriveFileAsync(DocsDriveFileMoveRequest options, CancellationToken cancellationToken = default)
-        => PostAsync<BaseLarkTaskInfo>(LarkUrls.ToUrl(LarkUrls.GetDriveFolder, options.Token), JsonObjectNode.ConvertFrom(options), cancellationToken);
+    public Task<LarkResponseBody<BaseLarkTaskInfo>> MoveDocsDriveFileAsync(LarkDocsDriveFileMoveRequest options, CancellationToken cancellationToken = default)
+        => PostAsync<BaseLarkTaskInfo>(LarkUrls.ToUrl(LarkUrls.MoveDriveFile, options.Token), JsonObjectNode.ConvertFrom(options), cancellationToken);
+
+    public Task<LarkResponseBody<LarkDocsDriveFileMoveTaskInfo>> MoveDocsDriveFileToWikiAsync(LarkDocsDriveFileMoveToWikiRequest options, CancellationToken cancellationToken = default)
+        => PostAsync<LarkDocsDriveFileMoveTaskInfo>(LarkUrls.ToUrl(LarkUrls.MoveDriveFileToWiki, options.SpaceId), JsonObjectNode.ConvertFrom(options), cancellationToken);
+
+    public Task<LarkResponseBody<BaseLarkTaskInfo>> MoveDocsDriveFileFromWikiAsync(string sourceNodeToken, string? destinationFolderToken = null, CancellationToken cancellationToken = default)
+        => PostAsync<BaseLarkTaskInfo>(LarkUrls.ToUrl(LarkUrls.MoveWikiNodeToDrive, sourceNodeToken), string.IsNullOrWhiteSpace(destinationFolderToken) ? [] : new JsonObjectNode()
+        {
+            { "folder_token", destinationFolderToken },
+        }, cancellationToken);
 }

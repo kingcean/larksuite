@@ -6,7 +6,7 @@
     <RootNamespace>LarkSuite</RootNamespace>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-	<AssemblyName>Lark.OapiClient</AssemblyName>
+    <AssemblyName>Lark.OapiClient</AssemblyName>
     <AssemblyTitle>Lark SDK via OpenAPI</AssemblyTitle>
   </PropertyGroup>
 
