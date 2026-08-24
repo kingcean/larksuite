@@ -69,12 +69,27 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         }
     }
 
-    public Task ShowDocAsync(CancellationToken cancellationToken = default)
+    public async Task ShowDocAsync(CancellationToken cancellationToken = default)
     {
         var console = CurrentConsole;
+        var lark = LarkApi.DefaultInstance;
+
+        //var files = await lark.ListDocsDriveFilesAsync(cancellationToken);
+        //if (files?.Data is not null && !files.IsError && files.Count > 0)
+        //{
+        //    var list = new List<SelectionItem<string>>();
+        //    foreach (var file in files.Data)
+        //    {
+        //        if (string.IsNullOrWhiteSpace(file?.Token)) continue;
+        //        list.Add(new($"{file.Name ?? "?"} \t{file.NodeType}", file.Token));
+        //    }
+
+        //    LarkCliUtils.WriteOrderedLine(console, list);
+        //}
+
         var id = LarkCliUtils.ReadLine(console, "Docs\\Doc");
         cancellationToken.ThrowIfCancellationRequested();
-        return ShowDocAsync(id, cancellationToken);
+        await ShowDocAsync(id, cancellationToken);
     }
 
     public async Task ShowDocAsync(string token, CancellationToken cancellationToken = default)
@@ -116,7 +131,8 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 console.WriteLine();
                 console.WriteLine("Please type the index or the space ID.");
                 var spaceId = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
-                if (LarkCliUtils.IsToExit(spaceId)) return;
+                if (LarkCliUtils.IsToExit(spaceId) || spaceId == "..") return;
+                if (spaceId == "." || spaceId == "~") continue;
                 cancellationToken.ThrowIfCancellationRequested();
                 var info = await lark.GetWikiSpaceInfoAsync(spaceId, cancellationToken);
                 if (string.IsNullOrWhiteSpace(info?.Data?.Id))

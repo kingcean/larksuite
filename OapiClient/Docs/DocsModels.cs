@@ -260,3 +260,80 @@ public static class LarkDocsFieldsHelper
         node.SetValue(key, arr);
     }
 }
+
+public abstract class BaseLarkDocsDriveMetaInfo
+{
+    [JsonPropertyName("token")]
+    public string Token { get; set; }
+
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    public abstract string OwnerUserId { get; set; }
+}
+
+public class LarkDocsDriveMetaInfo : BaseLarkDocsDriveMetaInfo
+{
+
+    [JsonPropertyName("user_id")]
+    public override string OwnerUserId { get; set; }
+}
+
+public class LarkDocsFolderMetaInfo : BaseLarkDocsDriveMetaInfo
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("createUid")]
+    public string CreationUserId { get; set; }
+
+    [JsonPropertyName("editUid")]
+    public string LastModificationUserId { get; set; }
+
+    [JsonPropertyName("ownUid")]
+    public override string OwnerUserId { get; set; }
+
+    [JsonPropertyName("parentId")]
+    public string ParentId { get; set; }
+}
+
+public class LarkDocsDriveShortcutNodeInfo
+{
+    [JsonPropertyName("target_token")]
+    public string Token { get; set; }
+
+    [JsonPropertyName("target_type")]
+    public string NodeType { get; set; }
+}
+
+public class LarkDocsDriveNodeInfo
+{
+    [JsonPropertyName("token")]
+    public string Token { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("type")]
+    public string NodeType { get; set; }
+
+    [JsonPropertyName("parent_token")]
+    public string ParentToken { get; set; }
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    [JsonPropertyName("shortcut_info")]
+    public LarkDocsDriveShortcutNodeInfo Shortcut { get; set; }
+
+    [JsonPropertyName("created_time")]
+    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    public DateTime CreationDate { get; set; }
+
+    [JsonPropertyName("modified_time")]
+    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    public DateTime LastModificationDate { get; set; }
+
+    [JsonPropertyName("owner_id")]
+    public string OwnerUserId { get; set; }
+}

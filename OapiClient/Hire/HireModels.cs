@@ -220,7 +220,7 @@ public class LarkHireInterviewInfo
     public string GetInterviewers(Func<LarkIdNameInfo, string?>? template, string? separator)
     {
         template ??= ele => ele.GetName();
-        var col = GetInterviewers().Select(template).Select(ele => !string.IsNullOrEmpty(ele));
+        var col = GetInterviewers().Select(template).Where(ele => !string.IsNullOrEmpty(ele));
         return string.Join(separator ?? string.Empty, col);
     }
 

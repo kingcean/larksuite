@@ -1,4 +1,4 @@
-The .NET SDK of Lark Open API.
+The third-party open-source .NET SDK of Lark Open API.
 
 ## About
 
@@ -9,9 +9,19 @@ This is .NET implementation to access Lark resources via Open API.
 This repo is the .NET SDK of LarkSuite Open API.
 It helps you to access the resources.
 
+- Docs (and Lark Base)
+- OKR
+- Hire
+- Chat / Messages
+- And more
+
 ### Owner
 
-This is maintained by community (3rd-party) but not offical (Lark or ByteDance) currently now.
+This is a third-party open-source project maintained by the community and developed based on the Feishu/Lark Open Platform documentation.
+It is not an official ByteDance (or Feishu/Lark) project, nor is it affiliated with or endorsed by either company.
+
+Should ByteDance or Feishu/Lark request that the project be discontinued, we will respect their decision and cease its development and maintenance accordingly.
+If Feishu/Lark is willing to take over the project, we would also be happy to transfer its ownership and maintenance responsibilities at any time.
 
 This repo is [MIT licensed](./LICENSE).
 

@@ -432,6 +432,19 @@ public partial class LarkApi : TokenContainer
     /// Sends a request message by GET to get response with collection result.
     /// </summary>
     /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="q">The query info.</param>
+    /// <param name="key">The property key of items.</param>
+    /// <param name="page">The page size and page token.</param>
+    /// <param name="converter">The optional converter of result col.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public async Task<LarkResponsePagingBody<T>> GetItemsAsync<T>(string url, BaseQueryRequestInfo? q, string key, LarkPageTokenInfo? page, Func<JsonObjectNode, T?>? converter = null, CancellationToken cancellationToken = default)
+        => new(q, await GetJsonObjectAsync(url, q, page, cancellationToken), key);
+
+    /// <summary>
+    /// Sends a request message by GET to get response with collection result.
+    /// </summary>
+    /// <param name="url">The URL the request is sent to.</param>
     /// <param name="response">The response of the previous or the first page.</param>
     /// <param name="pageSize">The optional page size.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
@@ -441,6 +454,22 @@ public partial class LarkApi : TokenContainer
         if (!response.HasNextPage || string.IsNullOrWhiteSpace(response.PageToken)) return [];
         var resp = await GetJsonObjectAsync(url, response, pageSize, cancellationToken);
         return response.AddRange(resp);
+    }
+
+    /// <summary>
+    /// Sends a request message by GET to get response with collection result.
+    /// </summary>
+    /// <param name="url">The URL the request is sent to.</param>
+    /// <param name="response">The response of the previous or the first page.</param>
+    /// <param name="key">The property key of items.</param>
+    /// <param name="pageSize">The optional page size.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public async Task<IReadOnlyList<T>> GetItemsAsync<T>(string url, LarkResponsePagingBody<T> response, string key, int? pageSize = null, CancellationToken cancellationToken = default)
+    {
+        if (!response.HasNextPage || string.IsNullOrWhiteSpace(response.PageToken)) return [];
+        var resp = await GetJsonObjectAsync(url, response, pageSize, cancellationToken);
+        return response.AddRange(resp, key);
     }
 
     /// <summary>

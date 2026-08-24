@@ -331,3 +331,46 @@ public class LarkDocsCommentReplyOptions : LarkUserIdTypeRequestOptions, IJsonOb
         q["file_type"] = DocType;
     }
 }
+
+public class DocsDriveFilesRequest : LarkUserIdTypeRequestOptions
+{
+    public string? Token { get; set; }
+
+    public string? OrderBy { get; set; }
+
+    public bool OrderByDesc { get; set; }
+
+    public void SetOrder(string name, bool desc = false)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            OrderBy = null;
+            OrderByDesc = false;
+        }
+        else
+        {
+            OrderBy = name;
+            OrderByDesc = desc;
+        }
+    }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q.SetIfNotEmpty("folder_token", Token);
+        q.SetIfNotEmpty("order_by", OrderBy);
+        q["direction"] = OrderByDesc ? "DESC" : "ASC";
+    }
+}
+
+public class DocsDriveFileMoveRequest
+{
+    [JsonIgnore]
+    public string Token { get; set; }
+
+    [JsonPropertyName("type")]
+    public string NodeType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string DestinationToken { get; set; }
+}

@@ -183,6 +183,7 @@ public static class LarkMessageCardHelper
                 { "content", title },
             } },
         };
+        options.Add(option);
         if (!string.IsNullOrWhiteSpace(url)) option.SetValue("multi_url", new JsonObjectNode
         {
             { "url", url }

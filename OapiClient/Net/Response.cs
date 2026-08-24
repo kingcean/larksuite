@@ -568,7 +568,19 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     /// <param name="raw">The raw package col in JSON.</param>
     /// <param name="converter">The converter of result col.</param>
     public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode? raw, Func<JsonObjectNode, T?>? converter = null)
-        : base(query, raw)
+        : this(query, raw, null as string, converter)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkResponsePagingBody class.
+    /// </summary>
+    /// <param name="query">The query info without page token to list current list.</param>
+    /// <param name="raw">The raw package col in JSON.</param>
+    /// <param name="key">The property key of items.</param>
+    /// <param name="converter">The converter of result col.</param>
+    public LarkResponsePagingBody(BaseQueryRequestInfo? query, JsonObjectNode? raw, string key, Func<JsonObjectNode, T?>? converter = null)
+        : base(query, raw, key)
     {
         col = [];
         Data = col.AsReadOnly();
@@ -636,10 +648,10 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
         }
     }
 
-    internal new List<T> AddRange(JsonObjectNode raw, string? key = null)
+    internal new List<T> AddRange(JsonObjectNode? raw, string? key = null)
         => AddRange(raw, key, out _, out var result) ? result.Cast<T>().ToList() : [];
 
-    internal new List<T> AddRange(JsonObjectNode raw, Func<JsonObjectNode, List<JsonObjectNode>?> items)
+    internal new List<T> AddRange(JsonObjectNode? raw, Func<JsonObjectNode, List<JsonObjectNode>?> items)
         => AddRange(raw, items, out _, out var result) ? result.Cast<T>().ToList() : [];
 
     /// <inheritdoc />
@@ -693,4 +705,10 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
 
         return true;
     }
+}
+
+public class BaseLarkTaskInfo
+{
+    [JsonPropertyName("task_id")]
+    public string Id { get; set; }
 }

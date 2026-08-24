@@ -38,6 +38,10 @@ internal static partial class LarkUrls
     public const string ConvertDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/blocks/convert";
     public const string AddDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/descendant";
     public const string DeleteDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/children/batch_delete";
+    public const string GetDriveRoot = "https://open.feishu.cn/open-apis/drive/explorer/v2/root_folder/meta";
+    public const string GetDriveFolder = "https://open.feishu.cn/open-apis/drive/explorer/v2/folder/{0}/meta";
+    public const string GetDriveFiles = "https://open.feishu.cn/open-apis/drive/v1/files";
+    public const string MoveDriveFile = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/move";
     public const string DocsComments = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments";
     public const string DocsReplyComment = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/comments/{1}/replies";
     public const string DocsWhiteboardNodes = "https://open.feishu.cn/open-apis/board/v1/whiteboards/{0}/nodes";
