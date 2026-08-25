@@ -8,6 +8,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Lark.OapiClient</AssemblyName>
     <AssemblyTitle>Lark SDK via OpenAPI</AssemblyTitle>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <Import Project="..\Tools\Build.props" />

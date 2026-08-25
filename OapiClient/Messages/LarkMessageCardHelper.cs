@@ -1,9 +1,9 @@
-﻿using System;
+﻿using LarkSuite.Docs;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
 using Trivial.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.OapiModels;
 
@@ -83,7 +83,7 @@ public static class LarkMessageCardHelper
         };
     }
 
-    public static int AddBulletLines(IList<JsonObjectNode> blocks, IEnumerable<string> content)
+    public static int AddBulletLines(IList<JsonObjectNode> blocks, IEnumerable<string>? content)
     {
         if (content is null) return 0;
         var lines = content
@@ -151,18 +151,64 @@ public static class LarkMessageCardHelper
         blocks.Add(json);
     }
 
-    public static JsonObjectNode CreateOverflowButton(string? width = null)
-        => new()
+    public static JsonObjectNode CreateOverflowButton(string? width = null, IEnumerable<JsonObjectNode>? options = null)
+        => new ()
         {
             { "tag", "overflow" },
             { "width", width ?? "default" },
-            { "options", new JsonArrayNode() },
+            { "options", options?.Where(ele => ele is not null) ?? [] },
         };
 
-    public static void AddOverflowButton(IList<JsonObjectNode> blocks, string? width = null)
+    public static JsonObjectNode? CreateOverflowButton(ICollection<JsonObjectNode> options, bool checkOptionCount = false, string? width = null)
+        => checkOptionCount && (options is null || options.Count < 1) ? null : CreateOverflowButton(width, options);
+
+    public static JsonObjectNode? CreateOverflowButton(IEnumerable<LarkDocsItemInfo> options, bool checkOptionCount = false, string? width = null)
     {
-        var json = CreateOverflowButton(width);
+        if (options is null) return checkOptionCount ? null : CreateOverflowButton(width);
+        var col = new List<JsonObjectNode>();
+        foreach (var option in options)
+        {
+            if (string.IsNullOrWhiteSpace(option?.Title)) continue;
+            col.Add(CreateOverflowButtonOption(option.Title, option.Url));
+        }
+
+        if (checkOptionCount && col.Count < 1) return null;
+        return CreateOverflowButton(width, col);
+    }
+
+    public static void AddOverflowButton(IList<JsonObjectNode> blocks, string? width = null, IEnumerable<JsonObjectNode>? options = null)
+    {
+        var json = CreateOverflowButton(width, options);
         blocks.Add(json);
+    }
+
+    public static void AddOverflowButton(IList<JsonObjectNode> blocks, ICollection<JsonObjectNode> options, bool checkOptionCount = false, string? width = null)
+    {
+        if (checkOptionCount && (options is null || options.Count < 1)) return;
+        AddOverflowButton(blocks, width, options);
+    }
+
+    public static void AddOverflowButton(IList<JsonObjectNode> blocks, ICollection<LarkDocsItemInfo> options, bool checkOptionCount = false, string? width = null)
+    {
+        var json = CreateOverflowButton(options, checkOptionCount, width);
+        blocks.Add(json);
+    }
+
+    public static JsonObjectNode CreateOverflowButtonOption(string title, string? url = null)
+    {
+        var json = new JsonObjectNode
+        {
+            { "text", new JsonObjectNode
+            {
+                { "tag", "plain_text" },
+                { "content", title },
+            } },
+        };
+        if (!string.IsNullOrWhiteSpace(url)) json.SetValue("multi_url", new JsonObjectNode
+        {
+            { "url", url }
+        });
+        return json;
     }
 
     public static void AddOverflowButtonOption(JsonObjectNode button, string title, string? url = null)
@@ -175,19 +221,146 @@ public static class LarkMessageCardHelper
             button.SetValue("options", options);
         }
 
-        var option = new JsonObjectNode
-        {
-            { "text", new JsonObjectNode
-            {
-                { "tag", "plain_text" },
-                { "content", title },
-            } },
-        };
+        var option = CreateOverflowButtonOption(title, url);
         options.Add(option);
-        if (!string.IsNullOrWhiteSpace(url)) option.SetValue("multi_url", new JsonObjectNode
+    }
+
+    public static JsonObjectNode CreateColumn(string? width, string? verticalAlign, string? horizontalAlign, string? background = null, IEnumerable<JsonObjectNode>? elements = null)
+    {
+        var json = new JsonObjectNode
         {
-            { "url", url }
-        });
+            { "tag", "column" }
+        };
+        if (string.IsNullOrWhiteSpace(width))
+        {
+            json.SetValue("width", "weighted");
+            json.SetValue("weight", 1);
+        }
+        else
+        {
+            json.SetValue("width", width);
+        };
+
+        json.SetValueIfNotEmpty("vertical_align", verticalAlign);
+        json.SetValueIfNotEmpty("horizontal_align", horizontalAlign);
+        json.SetValueIfNotEmpty("background_style", background);
+        if (elements is not null) json.SetValue("elements", elements.Where(ele => ele is not null));
+        return json;
+    }
+
+    public static JsonObjectNode CreateColumn(int width, bool isWeighted, string? verticalAlign, string? horizontalAlign, string? background = null, IEnumerable<JsonObjectNode>? elements = null)
+    {
+        var json = new JsonObjectNode
+        {
+            { "tag", "column" }
+        };
+        if (isWeighted)
+        {
+            json.SetValue("width", "weighted");
+            json.SetValue("weight", isWeighted);
+        }
+        else
+        {
+            json.SetValue("width", $"{width}px");
+        }
+
+        json.SetValueIfNotEmpty("vertical_align", verticalAlign);
+        json.SetValueIfNotEmpty("horizontal_align", horizontalAlign);
+        json.SetValueIfNotEmpty("background_style", background);
+        if (elements is not null) json.SetValue("elements", elements.Where(ele => ele is not null));
+        return json;
+    }
+
+    public static JsonObjectNode CreateColumn(string? width, string? verticalAlign, string? horizontalAlign, string? background, string text, string? textSize = null)
+        => CreateColumn(width, verticalAlign, horizontalAlign, background, [CreateText(text, textSize)]);
+
+    public static JsonObjectNode CreateColumn(int width, bool isWeighted, string? verticalAlign, string? horizontalAlign, string? background, string text, string? textSize = null)
+        => CreateColumn(width, isWeighted, verticalAlign, horizontalAlign, background, [CreateText(text, textSize)]);
+
+    public static JsonObjectNode CreateColumn(string? width, IEnumerable<JsonObjectNode>? elements = null)
+        => CreateColumn(width, null, null, null, elements);
+
+    public static JsonObjectNode CreateColumn(int width, bool isWeighted, IEnumerable<JsonObjectNode>? elements = null)
+        => CreateColumn(width, isWeighted, null, null, null, elements);
+
+    public static JsonObjectNode CreateColumn(string? width, string text)
+        => CreateColumn(width, null, null, null, [CreateText(text)]);
+
+    public static JsonObjectNode CreateColumn(int width, bool isWeighted, string text)
+        => CreateColumn(width, isWeighted, null, null, null, [CreateText(text)]);
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, string? width, string? verticalAlign, string? horizontalAlign, string? background = null, IEnumerable<JsonObjectNode>? elements = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, verticalAlign, horizontalAlign, background, elements));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, int width, bool isWeighted, string? verticalAlign, string? horizontalAlign, string? background = null, IEnumerable<JsonObjectNode>? elements = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, isWeighted, verticalAlign, horizontalAlign, background, elements));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, string? width, string? verticalAlign, string? horizontalAlign, string? background, string text, string? textSize = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, verticalAlign, horizontalAlign, background, text, textSize));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, int width, bool isWeighted, string? verticalAlign, string? horizontalAlign, string? background, string text, string? textSize = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, isWeighted, verticalAlign, horizontalAlign, background, text, textSize));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, string? width, IEnumerable<JsonObjectNode>? elements = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, elements));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, int width, bool isWeighted, IEnumerable<JsonObjectNode>? elements = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, isWeighted, elements));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, string? width, string text)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, text));
+    }
+
+    public static void AddColumn(IList<JsonObjectNode> blocks, int width, bool isWeighted, string text)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumn(width, isWeighted, text));
+    }
+
+    public static JsonObjectNode CreateColumnSet(string? horizontalAlign, IEnumerable<JsonObjectNode>? columns = null)
+    {
+        var json = new JsonObjectNode
+        {
+            { "tag", "column_set" }
+        };
+        json.SetValueIfNotEmpty("horizontal_align", horizontalAlign);
+        if (columns is not null) json.SetValue("columns", columns);
+        return json;
+    }
+
+    public static JsonObjectNode CreateColumnSet(IEnumerable<JsonObjectNode>? columns = null)
+        => CreateColumnSet(null, columns);
+
+    public static void AddColumnSet(IList<JsonObjectNode> blocks, string? horizontalAlign, IEnumerable<JsonObjectNode>? columns = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumnSet(horizontalAlign, columns));
+    }
+
+    public static void AddColumnSet(IList<JsonObjectNode> blocks, IEnumerable<JsonObjectNode>? columns = null)
+    {
+        if (blocks is null) return;
+        blocks.Add(CreateColumnSet(columns));
     }
 
     public static T? Deserialize<T>(string answer)

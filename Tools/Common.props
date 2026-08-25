@@ -10,8 +10,12 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/kingcean/larksuite</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
     <LangVersion>13.0</LangVersion>
     <SignAssembly>True</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\LarkSuite.snk</AssemblyOriginatorKeyFile>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

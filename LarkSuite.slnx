@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/解决方案项/">
     <File Path="Directory.Packages.props" />
+    <File Path="LarkSuite.snk" />
     <File Path="LICENSE" />
     <File Path="README.md" />
     <File Path="Tools/Build.props" />
