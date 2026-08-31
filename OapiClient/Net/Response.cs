@@ -121,6 +121,16 @@ public class LarkResponseBody
         if (!IsError) return;
         throw new InvalidOperationException(Message ?? "Unknown error.");
     }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+    {
+        if (IsError) return $"Error {Code} | {Message}";
+        return $"Data with props {Data?.Count ?? 0} | {Message}";
+    }
 }
 
 /// <summary>
@@ -221,6 +231,16 @@ public class LarkResponseBody<T> : LarkResponseBody
     /// </summary>
     [JsonPropertyName("data")]
     public new T? Data { get; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+    {
+        if (IsError) return $"Error {Code} | {Message}";
+        return Data?.ToString() ?? $"null | {Message}";
+    }
 }
 
 /// <summary>
@@ -511,6 +531,16 @@ public class LarkResponsePagingBody : LarkResponseBody
         PageToken = raw.TryGetStringValue("page_token") ?? data.TryGetStringValue("page_token");
         HasNextPage = raw.TryGetBooleanValue("has_more") ?? data.TryGetBooleanValue("has_more") ?? false;
         var record = new LarkResponsePagingStatusInfo(DateTime.Now, raw.TryGetStringValue("msg") ?? data.TryGetStringValue("msg"), count);
+    }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+    {
+        if (IsError) return $"Error {Code} | {Message}";
+        return $"Count {Data?.Count ?? 0}{(HasNextPage ? "+" : string.Empty)} | {Message}";
     }
 }
 

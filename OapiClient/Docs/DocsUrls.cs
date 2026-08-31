@@ -37,10 +37,11 @@ internal static partial class LarkUrls
     public const string ConvertDocsFileFormatState = "https://open.feishu.cn/open-apis/drive/v1/import_tasks/";
     public const string ConvertDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/blocks/convert";
     public const string AddDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/descendant";
+    public const string AddDocsBlocksSimple = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/children/";
     public const string DeleteDocsBlocks = "https://open.feishu.cn/open-apis/docx/v1/documents/{0}/blocks/{1}/children/batch_delete";
     public const string GetDriveRoot = "https://open.feishu.cn/open-apis/drive/explorer/v2/root_folder/meta";
     public const string GetDriveFolder = "https://open.feishu.cn/open-apis/drive/explorer/v2/folder/{0}/meta";
-    public const string GetDriveFiles = "https://open.feishu.cn/open-apis/drive/v1/files";
+    public const string GetDriveFiles = "https://open.feishu.cn/open-apis/drive/v1/files/";
     public const string MoveDriveFile = "https://open.feishu.cn/open-apis/drive/v1/files/{0}/move";
     public const string MoveDriveFileToWiki = "https://open.feishu.cn/open-apis/wiki/v2/spaces/{0}/nodes/move_docs_to_wiki";
     public const string MoveWikiNodeToDrive = "https://open.feishu.cn/open-apis/wiki/v2/nodes/{0}/move_wiki_to_docs";

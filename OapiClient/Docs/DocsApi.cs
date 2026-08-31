@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.NetworkInformation;
 using System.Reflection.Metadata;
+using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -254,11 +255,23 @@ public partial class LarkApi
     public Task<LarkResponseBody> ReplyDocsComment(LarkDocsCommentReplyOptions options, CancellationToken cancellationToken = default)
         => PostAsync(LarkUrls.ToUrl(LarkUrls.DocsReplyComment, options, options.DocToken, options.CommentId), options.ToJson(), cancellationToken);
 
-    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+        => UploadDocsFileAsync(name, file, false, parentToken, mime, cancellationToken);
+
+    public Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, Stream file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+        => UploadDocsFileAsync(name, file, false, parentToken, mime, cancellationToken);
+
+    public Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+        => UploadDocsFileAsync(token, name, file, false, parentToken, mime, cancellationToken);
+
+    public Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, Stream file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+        => UploadDocsFileAsync(token, name, file, false, parentToken, mime, cancellationToken);
+
+    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, FileInfo file, bool isDriver, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();
         content.Add("file_name", name);
-        content.Add("parent_type", "wiki");
+        content.Add("parent_type", isDriver ? "explorer" : "wiki");
         content.Add("parent_node", LarkUrls.GetId(parentToken));
         content.Add("size", file.Length);
         content.Add("file", file, name, mime);
@@ -270,11 +283,11 @@ public partial class LarkApi
         });
     }
 
-    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, Stream file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, Stream file, bool isDriver, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();
         content.Add("file_name", name);
-        content.Add("parent_type", "wiki");
+        content.Add("parent_type", isDriver ? "explorer" : "wiki");
         content.Add("parent_node", LarkUrls.GetId(parentToken));
         content.Add("size", file.Length);
         content.Add("file", file, name, mime);
@@ -286,12 +299,12 @@ public partial class LarkApi
         });
     }
 
-    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, FileInfo file, bool isDriver, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();
         content.Add("file_token", token);
         content.Add("file_name", name);
-        content.Add("parent_type", "wiki");
+        content.Add("parent_type", isDriver ? "explorer" : "wiki");
         content.Add("parent_node", LarkUrls.GetId(parentToken));
         content.Add("size", file.Length);
         content.Add("file", file, name, mime);
@@ -303,12 +316,12 @@ public partial class LarkApi
         });
     }
 
-    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, Stream file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<string>> UploadDocsFileAsync(string token, string name, Stream file, bool isDriver, string parentToken, string? mime = null, CancellationToken cancellationToken = default)
     {
         using var content = new MultipartFormDataContent();
         content.Add("file_token", token);
         content.Add("file_name", name);
-        content.Add("parent_type", "wiki");
+        content.Add("parent_type", isDriver ? "explorer" : "wiki");
         content.Add("parent_node", LarkUrls.GetId(parentToken));
         content.Add("size", file.Length);
         content.Add("file", file, name, mime);
@@ -317,6 +330,173 @@ public partial class LarkApi
         return new(json, json =>
         {
             return json.TryGetStringTrimmedValue("file_token");
+        });
+    }
+
+    public Task<LarkResponseBody<string>> UploadDocsMarkdownAsync(string name, string markdown, LarkDocsNodeInfo container, CancellationToken cancellationToken = default)
+        => UploadDocsMarkdownAsync(name, markdown, container?.NodeToken, container?.SpaceId, cancellationToken);
+
+    public async Task<LarkResponseBody<string>> UploadDocsMarkdownAsync(string name, string? markdown, string? containerToken, string? spaceId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(containerToken)) return new(true, "The contaner (parent) should not be empty.");
+        string? docToken = null;
+        string? docNodeToken = null;
+        if (string.IsNullOrWhiteSpace(name)) name = DateTime.Now.ToString("Doc yyMMdd HHmmss");
+        if (string.IsNullOrWhiteSpace(markdown))
+        {
+            if (string.IsNullOrWhiteSpace(spaceId)) return new(true, "The space identifier or the markdown content should not be null");
+            var doc = await CreateDocsNodeAsync(new LarkWikiNodesCreateRequestOptions
+            {
+                ParentNodeToken = containerToken,
+                SpaceId = spaceId,
+                DocType = "docx",
+                NodeType = "origin",
+                Title = name,
+            }, cancellationToken);
+            if (doc is null) return new(true, "Create empty node failed.");
+            if (doc.Data?.NodeToken is null || doc.IsError) return new(true, doc.Message ?? "Create empty node failed.");
+            return new(0, "OK", doc.Data.NodeToken, new()
+            {
+                { "node_token", doc.Data.NodeToken }
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(spaceId))
+        {
+            try
+            {
+                var convert = await ConvertDocsBlocksAsync(null, markdown, null, cancellationToken);
+                var isError = convert?.Data is null || convert.IsError;
+                if (!isError)
+                {
+                    var doc = await CreateDocsNodeAsync(new LarkWikiNodesCreateRequestOptions
+                    {
+                        ParentNodeToken = containerToken,
+                        SpaceId = spaceId,
+                        DocType = "docx",
+                        NodeType = "origin",
+                        Title = name,
+                    }, cancellationToken);
+                    isError = string.IsNullOrWhiteSpace(doc?.Data?.DocToken) || doc.IsError;
+                    if (!isError)
+                    {
+                        docToken = doc!.Data!.DocToken;
+                        docNodeToken = doc.Data.NodeToken;
+                        var blocks = await AddDocsBlocksAsync(docToken, null, convert!.Data!, 0, cancellationToken);
+                        isError = blocks?.Data is null || blocks.IsError;
+                        if (!isError) return new(0, "OK", docNodeToken, new()
+                        {
+                            { "node_token", docNodeToken }
+                        });
+                    }
+                }
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (FailedHttpException)
+            {
+            }
+            catch (JsonException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (SecurityException)
+            {
+            }
+        }
+
+        using var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(markdown);
+        writer.Flush();
+        stream.Seek(0, SeekOrigin.Begin);
+        var resp = await UploadDocsFileAsync(
+            name.EndsWith(".md") ? name : string.Concat(name, ".md"),
+            stream,
+            containerToken,
+            null,
+            cancellationToken);
+        if (resp is null) return new(true, "Upload file failed.");
+        if (string.IsNullOrWhiteSpace(resp.Data) || resp.IsError) return resp;
+        if (docToken is not null)
+        {
+            var blockId = Guid.NewGuid().ToString();
+            var block = new JsonObjectNode
+            {
+                { "block_id", blockId },
+                { "block_type", 2 },
+                { "text", new JsonObjectNode()
+                {
+                    { "elements", new JsonArrayNode
+                    {
+                        new JsonObjectNode
+                        {
+                            { "text_run", new JsonObjectNode
+                            {
+                                { "content", name },
+                            }
+                            }
+                        },
+                        new JsonObjectNode
+                        {
+                            { "mention_doc", new JsonObjectNode
+                            {
+                                { "token", resp.Data },
+                                { "obj_type", 12 },
+                            }
+                            }
+                        },
+                    }
+                    }
+                }
+                }
+            };
+            await AddDocsBlocksAsync(docToken, null, [blockId], -1, [block], cancellationToken);
+        }
+
+        var fileNode = await GetWikiNodeAsync(resp.Data, "file", cancellationToken);
+        if (string.IsNullOrWhiteSpace(fileNode?.Data?.NodeToken) || fileNode.IsError) return new(true, fileNode?.Message ?? "Cannot get the node info of the new markdown file uploaded.");
+        if (docToken is not null && !string.IsNullOrWhiteSpace(spaceId) && !string.IsNullOrWhiteSpace(docNodeToken))
+        {
+            try
+            {
+                await MoveDocsNodeAsync(new()
+                {
+                    SourceSpaceId = spaceId,
+                    SourceToken = docNodeToken,
+                    DestinationSpaceId = spaceId,
+                    DestinationToken = fileNode.Data.NodeToken,
+                }, cancellationToken);
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (FailedHttpException)
+            {
+            }
+            catch (JsonException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (SecurityException)
+            {
+            }
+        }
+
+        return new(0, "OK", fileNode.Data.NodeToken, new()
+        {
+            { "node_token", fileNode.Data.NodeToken }
         });
     }
 
@@ -496,10 +676,13 @@ public partial class LarkApi
     public Task<LarkResponseBody> AddDocsBlocksAsync(string documentId, string? blockId, List<string> blockChildrenIds, List<JsonObjectNode> descendants, CancellationToken cancellationToken = default)
         => AddDocsBlocksAsync(documentId, blockId, blockChildrenIds, -1, descendants, cancellationToken);
 
-    public Task<LarkResponseBody> AddDocsBlocksAsync(string documentId, string? blockId, LarkDocsMarkdownConvertResponse markdown, int blockIndex = 0, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> AddDocsBlocksAsync(string documentId, string? blockId, LarkDocsMarkdownConvertResponse markdown, int blockIndex, CancellationToken cancellationToken = default)
         => AddDocsBlocksAsync(documentId, blockId, markdown.TopBlockIds, blockIndex, markdown.Blocks, cancellationToken);
+ 
+    public Task<LarkResponseBody> AddDocsBlocksAsync(string documentId, string? blockId, LarkDocsMarkdownConvertResponse markdown, CancellationToken cancellationToken = default)
+        => AddDocsBlocksAsync(documentId, blockId, markdown.TopBlockIds, -1, markdown.Blocks, cancellationToken);
 
-    public async Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, int blockIndex, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(markdown)) return new(true, "The markdown is empty.");
         var blocksTask = ConvertDocsBlocksAsync("markdown", markdown, null, cancellationToken);
@@ -509,9 +692,12 @@ public partial class LarkApi
             return new(true, nodeInfo?.Message);
         if (blocks?.Data is null || blocks.IsError)
             return new(true, blocks?.Message);
-        var resp = await AddDocsBlocksAsync(nodeInfo.Data.DocToken, nodeInfo.Data.DocToken, blocks.Data.TopBlockIds, 0, blocks.Data.Blocks, cancellationToken);
+        var resp = await AddDocsBlocksAsync(nodeInfo.Data.DocToken, nodeInfo.Data.DocToken, blocks.Data.TopBlockIds, blockIndex, blocks.Data.Blocks, cancellationToken);
         return resp;
     }
+
+    public Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, CancellationToken cancellationToken = default)
+        => UpdateDocsAsync(nodeToken, markdown, -1, cancellationToken);
 
     public async Task<LarkResponseBody> DeleteDocsBlocksAsync(string documentId, string blockId, CancellationToken cancellationToken = default)
     {

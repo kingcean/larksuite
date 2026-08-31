@@ -50,4 +50,17 @@ public partial class LarkApi
         {
             { "folder_token", destinationFolderToken },
         }, cancellationToken);
+
+    public async Task<LarkResponseBody<BaseLarkTaskInfo>> DeleteDocsDriveFileAsync(string? type, string token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return new(true, "The node token should not be empty.");
+        var http = CreateJsonHttpClient();
+        var q = new QueryData
+        {
+            { "type", type ?? "file" },
+        };
+        var url = q.ToString(string.Concat(LarkUrls.GetDriveFiles, token));
+        var resp = await http.SendAsync(HttpMethod.Delete, url, cancellationToken);
+        return new(resp);
+    }
 }

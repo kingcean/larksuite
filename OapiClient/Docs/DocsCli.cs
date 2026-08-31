@@ -12,6 +12,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Collection;
 using Trivial.CommandLine;
 using Trivial.Tasks;
