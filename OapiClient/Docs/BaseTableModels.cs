@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
+using Trivial.Data;
 using Trivial.Maths;
 using Trivial.Net;
 using Trivial.Security;
@@ -140,10 +141,31 @@ public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
     public void SetFilter(LarkDocsFilterCondition condition)
         => Filter = new(CriteriaBooleanOperator.Or, [condition]);
 
-    public void SetFilter(string name, string op, string? value)
+    public void SetFilter(string name, string? op, string? value)
         => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
 
-    public void SetFilter(string name, string op, List<string> value)
+    public void SetFilter(string name, string? op, List<string> value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, BasicCompareOperator op, string? value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, DbCompareOperator op, string? value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, BasicCompareOperator op, int value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, BasicCompareOperator op, long value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, BasicCompareOperator op, double value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, BasicCompareOperator op, DateTime value)
+        => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
+
+    public void SetFilter(string name, string? op, LarkIdNameInfo value)
         => Filter = new(CriteriaBooleanOperator.Or, [new(name, op, value)]);
 
     /// <inheritdoc />

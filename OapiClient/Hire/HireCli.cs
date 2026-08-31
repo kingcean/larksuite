@@ -66,10 +66,9 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
         if (string.IsNullOrEmpty(verbStr))
         {
-
             LarkCliUtils.WriteOrderedLine(console, list);
-            console.Write("Please type above command to continue; or ");
-            console.Write(ConsoleColor.Yellow, "quit");
+            console.Append("Please type above command to continue; or ");
+            console.Append(ConsoleColor.Yellow, "quit");
             console.WriteLine(" to exit.");
             verbStr = LarkCliUtils.ReadLine(console, "Hire\\Command")?.Trim()?.ToLowerInvariant();
             if (string.IsNullOrEmpty(verbStr)) return;
@@ -119,6 +118,12 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
             if (string.IsNullOrEmpty(selection?.Data))
             {
+                if (verbStr == "test")
+                {
+                    await TestAsync(cancellationToken);
+                    return;
+                }
+
                 console.WriteLine("Not supported command.");
                 console.WriteLine();
                 return;
@@ -172,7 +177,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                     }
                     else
                     {
-                        console.Write(ConsoleColor.Red, "Error");
+                        console.Append(ConsoleColor.Red, "Error");
                         console.WriteLine(" \tParse date failed.");
                         console.WriteLine();
                     }
@@ -188,6 +193,14 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 break;
         }
     }
+
+    /// <summary>
+    /// Processes for test only.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation id to observe while waiting for the task to complete.</param>
+    /// <returns>The async task.</returns>
+    protected virtual Task TestAsync(CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
 
     /// <summary>
     /// Processes on evaluation.
@@ -275,8 +288,8 @@ public class LarkHireCommandVerb : BaseCommandVerb
         WriteInterviewResultLine(interviewInfo);
         while (true)
         {
-            console.Write("Select action: Get [J]ob info, interview [M]inutes, ");
-            if (IsEvaluationEnabled) console.Write("[E]valuation, ");
+            console.Append("Select action: Get [J]ob info, interview [M]inutes, ");
+            if (IsEvaluationEnabled) console.Append("[E]valuation, ");
             console.Write("or [Q]uit. ");
             var key = console.ReadKey();
             console.WriteLine();
@@ -417,23 +430,23 @@ public class LarkHireCommandVerb : BaseCommandVerb
         console.WriteLine(LarkCliUtils.ItalicText(), "Interview records");
         foreach (var record in records)
         {
-            console.Write(ConsoleColor.Blue, "· ");
-            console.Write(ConsoleColor.DarkGray, record.Id);
-            console.Write(" \t");
+            console.Append(ConsoleColor.Blue, "· ");
+            console.Append(ConsoleColor.DarkGray, record.Id);
+            console.Append(" \t");
             console.WriteLine(record.Interviewer.GetName() ?? "?");
             var score = record.Score ?? [];
             var scoreText = score.TryGetStringTrimmedValue("zh_description", true) ?? score.TryGetStringTrimmedValue("en_description", true) ?? score.TryGetStringTrimmedValue("zh_name", true) ?? score.TryGetStringTrimmedValue("en_name", true);
             if (scoreText is not null)
             {
-                console.Write("  ");
+                console.Append("  ");
                 console.WriteLine(scoreText);
             }
 
             var scoreLevel = score.TryGetInt32Value("level");
             if (scoreLevel.HasValue)
             {
-                console.Write("  Score level: ");
-                console.Write(ConsoleColor.Green, scoreLevel.Value);
+                console.Append("  Score level: ");
+                console.Append(ConsoleColor.Green, scoreLevel.Value);
                 console.WriteLine('.');
             }
         }
@@ -655,8 +668,8 @@ public static partial class LarkCliUtils
     {
         foreach (var record in col)
         {
-            console.Write(ConsoleColor.Blue, "· ");
-            console.Write(record.SpeakerName ?? "?");
+            console.Append(ConsoleColor.Blue, "· ");
+            console.Append(record.SpeakerName ?? "?");
             console.Write(ConsoleColor.Green, record.SpeakerRole switch
             {
                 LarkInterviewRole.Interviewer => " (interviewer) ",
@@ -737,11 +750,11 @@ public static partial class LarkCliUtils
             console.WriteLine(ItalicText(), "Education");
             foreach (var xp in edu)
             {
-                console.Write(ConsoleColor.Blue, "· ");
+                console.Append(ConsoleColor.Blue, "· ");
                 console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
-                console.Write(ConsoleColor.Blue, "  ");
-                console.Write(xp.Name ?? "?");
-                console.Write(" \t ");
+                console.Append(ConsoleColor.Blue, "  ");
+                console.Append(xp.Name ?? "?");
+                console.Append(" \t ");
                 console.WriteLine(xp.Major);
             }
 
@@ -754,21 +767,21 @@ public static partial class LarkCliUtils
         if (string.IsNullOrWhiteSpace(xp?.Id) && string.IsNullOrWhiteSpace(xp?.Name)) return;
         if (bullet)
         {
-            console.Write(ConsoleColor.Blue, "· ");
+            console.Append(ConsoleColor.Blue, "· ");
             console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
-            console.Write(ConsoleColor.Blue, "  ");
-            console.Write(xp.Name ?? "?");
-            console.Write(" \t ");
+            console.Append(ConsoleColor.Blue, "  ");
+            console.Append(xp.Name ?? "?");
+            console.Append(" \t ");
             console.WriteLine(xp.JobTitle);
         }
         else
         {
             console.WriteLine(BoldText(), xp.Name ?? "?");
-            console.Write(' ');
+            console.Append(' ');
             console.WriteLine($"{xp.StartDate ?? "?"} → {xp.EndDate ?? "?"}");
             if (!string.IsNullOrWhiteSpace(xp.JobTitle))
             {
-                console.Write(' ');
+                console.Append(' ');
                 console.WriteLine(xp.JobTitle);
             }
 

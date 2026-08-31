@@ -2,8 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Security;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using Trivial.Security;
 using Trivial.Text;
 
 namespace LarkSuite.Docs;
@@ -220,6 +223,80 @@ public class LarkDocContent(string nodeToken, string? name, string? docToken, st
     [JsonPropertyName("content")]
     [Description("The content.")]
     public object Content { get; } = content;
+
+    public virtual Type? GetContentType()
+        => Content?.GetType();
+
+    public bool SetToProperty(JsonObjectNode json, string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        if (Content is null)
+        {
+            json.SetNullValue(key);
+            return true;
+        }
+
+        if (Content is string s)
+        {
+            json.SetValue(key, s);
+            return true;
+        }
+
+        if (Content is JsonObjectNode jsonObj)
+        {
+            json.SetValue(key, jsonObj);
+            return true;
+        }
+
+        if (Content is JsonArrayNode jsonArr)
+        {
+            json.SetValue(key, jsonArr);
+            return true;
+        }
+
+        if (Content is StringBuilder sb)
+        {
+            json.SetValue(key, sb);
+            return true;
+        }
+
+        if (Content is SecureString ss)
+        {
+            json.SetValue(key, ss);
+            return true;
+        }
+
+        try
+        {
+            var obj = JsonObjectNode.ConvertFrom(Content);
+            if (obj is not null) json.SetValue(key, obj);
+        }
+        catch (JsonException)
+        {
+        }
+        catch (NotSupportedException)
+        {
+        }
+
+        if (!Content.GetType().IsValueType)
+        {
+            if (Content is Uri uri) json.SetValue(key, uri.OriginalString);
+            else if (Content is Guid guid) json.SetValue(key, guid);
+            else if (Content is IEnumerable<string> strArr) json.SetValue(key, strArr);
+            else return false;
+        }
+
+        if (Content is int i1) json.SetValue(key, i1);
+        else if (Content is long i2) json.SetValue(key, i2);
+        else if (Content is float i5) json.SetValue(key, i5);
+        else if (Content is double i6) json.SetValue(key, i6);
+        else if (Content is decimal i7) json.SetValue(key, i7);
+        else if (Content is bool b) json.SetValue(key, b);
+        else if (Content is DateTime dt) json.SetValue(key, dt);
+        else if (Content is DateTimeOffset dto) json.SetValue(key, dto);
+        else return false;
+        return true;
+    }
 }
 
 public class LarkDocContent<T>(string nodeToken, string? name, string? docToken, string docType, T content)
@@ -236,4 +313,25 @@ public class LarkDocContent<T>(string nodeToken, string? name, string? docToken,
     [JsonPropertyName("content")]
     [Description("The content.")]
     public new T Content { get; } = content;
+
+    public override Type GetContentType()
+        => Content?.GetType() ?? typeof(T);
+}
+
+public class LarkDocContentError
+{
+    public LarkDocContentError()
+    {
+    }
+
+    public LarkDocContentError(string message)
+    {
+        Message = message;
+    }
+
+    [JsonPropertyName("error")]
+    public bool IsError { get; set; } = true;
+
+    [JsonPropertyName("message")]
+    public string? Message { get; set; }
 }

@@ -55,7 +55,8 @@ public class LarkResponseBody
     {
         Code = code;
         Message = message;
-        Data = data;
+        Data = data ?? [];
+        IsError = data is null && Code != 0;
     }
 
     /// <summary>
@@ -78,6 +79,7 @@ public class LarkResponseBody
         if (!string.IsNullOrWhiteSpace(key) && data is not null) data = data.TryGetObjectValue(key);
         Data = data ?? [];
         Code = raw.TryGetInt32Value("code") ?? (data is null ? -1 : 0);
+        IsError = data is null && Code != 0;
     }
 
     /// <summary>

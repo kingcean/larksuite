@@ -16,6 +16,69 @@ namespace LarkSuite.OapiModels;
 public static partial class LarkApiUtils
 {
     /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="larkApi">The Lark API instance.</param>
+    /// <param name="info">The doc node response.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The doc content.</returns>
+    public static async Task<LarkDocContent> GetDocsNodeContentAsync(this LarkApi larkApi, LarkResponseBody<LarkDocsNodeInfo> info, CancellationToken cancellationToken = default)
+    {
+        if (info is null) return ErrorLarkDocContent(null, "The doc node should not be null.");
+        var token = info.Data?.NodeToken;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(info.Data!.DocType) || info.IsError) return ErrorLarkDocContent(token, info.Message ?? "Get node failed.");
+        larkApi ??= LarkApi.DefaultInstance;
+        switch (info.Data.DocType)
+        {
+            case "doc":
+            case "docx":
+            case "docs":
+                {
+                    var doc = await larkApi.GetDocsBlocksAsync(token, true, cancellationToken);
+                    if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.");
+                    var tree = doc.Data.ToTree();
+                    return new LarkDocContent<LarkContentBlockTree>(token, info.Data.Name, info.Data.DocToken, "docx", tree);
+                }
+            case "file":
+                {
+                    var file = await larkApi.ReadDocsTextFileAsync(info, cancellationToken);
+                    return ToDocContent(file, info.Data, "Load file text error.", input => new LarkDocsTextContent(input));
+                }
+            case "bitable":
+                {
+                    var table = await larkApi.GetBaseTableAsync(token, cancellationToken);
+                    if (table?.Data is null || table.IsError) return ErrorLarkDocContent(token, table?.Message ?? "Get base table info failed.");
+                    var tables = await larkApi.ListBaseTableTablesAsync(token, true, cancellationToken);
+                    if (tables?.Data is null || tables.IsError) return new LarkDocContent(info.Data, new List<LarkDocsBaseTableTableDetailsInfo>());
+                    var tableList = new List<LarkDocsBaseTableTableDetailsInfo>();
+                    foreach (var tableInfo in tables.Data)
+                    {
+                        if (string.IsNullOrWhiteSpace(tableInfo?.Id)) continue;
+                        var tableItem = new LarkDocsBaseTableTableDetailsInfo
+                        {
+                            Id = tableInfo.Id,
+                            Name = tableInfo.Name,
+                            Revision = tableInfo.Revision,
+                        };
+                        tableList.Add(tableItem);
+                        var fields = await larkApi.ListBaseTableFieldsAsync(token, tableInfo.Id, true, cancellationToken);
+                        if (fields?.Data is null || fields.IsError) continue;
+                        tableItem.Fields = [];
+                        foreach (var field in fields.Data)
+                        {
+                            if (string.IsNullOrWhiteSpace(field.Name)) continue;
+                            tableItem.Fields.Add((LarkDocsBaseTableFieldBasicInfo)field);
+                        }
+                    }
+
+                    return new LarkDocContent<LarkDocsBaseTableFullInfo>(info.Data, new(table.Data, tableList));
+                }
+            default:
+                return new LarkDocContent<LarkDocContentError>(info.Data, new("Unsupported format."));
+        }
+    }
+
+    /// <summary>
     /// Gets the content block by identifier.
     /// </summary>
     /// <param name="col">The content block collection.</param>
@@ -513,10 +576,17 @@ public static partial class LarkApiUtils
     internal static LarkDocContent ToDocContent<T>(LarkResponseBody<T>? body, LarkDocsNodeInfo node, string errorMessage)
     {
         if (body is null) return ErrorLarkDocContent(node.NodeToken, errorMessage ?? "Load content failed.");
-        if (body.Data is null || body.IsError) return new LarkDocContent<string>(node.NodeToken, "Error", node.DocToken, "error", errorMessage ?? "Load content failed.");
+        if (body.Data is null || body.IsError) return new LarkDocContent<LarkDocContentError>(node.NodeToken, null, node.DocToken, "error", new(errorMessage ?? "Load content failed."));
         return new LarkDocContent<T>(node, body.Data);
     }
 
-    internal static LarkDocContent<string> ErrorLarkDocContent(string? nodeToken, string message)
-        => new(nodeToken, "Error", null, "error", message);
+    internal static LarkDocContent ToDocContent<TInput, TResult>(LarkResponseBody<TInput>? body, LarkDocsNodeInfo node, string errorMessage, Func<TInput, TResult> convert)
+    {
+        if (body is null) return ErrorLarkDocContent(node.NodeToken, errorMessage ?? "Load content failed.");
+        if (body.Data is null || body.IsError) return new LarkDocContent<LarkDocContentError>(node.NodeToken, null, node.DocToken, "error", new(errorMessage ?? "Load content failed."));
+        return new LarkDocContent<TResult>(node, convert(body.Data));
+    }
+
+    internal static LarkDocContent<LarkDocContentError> ErrorLarkDocContent(string? nodeToken, string message)
+        => new(nodeToken, null, null, "error", new(message));
 }

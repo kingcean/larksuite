@@ -184,82 +184,26 @@ public class LarkDocsFileTextResponse(LarkDocsNodeInfo node, string value)
     public string Value { get; } = value;
 }
 
-public static class LarkDocsFieldsHelper
+public class LarkDocsImageUrlMappingResponse
 {
-    public static void SetUser(JsonObjectNode node, string key, string id)
-    {
-        if (string.IsNullOrWhiteSpace(id)) return;
-        node.SetValue(key, new JsonArrayNode
-        {
-            new JsonObjectNode
-            {
-                { "id", id },
-            }
-        });
-    }
+    [JsonPropertyName("block_id")]
+    public string BlockId { get; set; }
 
-    public static void SetUser(JsonObjectNode node, string key, IEnumerable<string> id)
-    {
-        if (id is null) return;
-        var arr = new JsonArrayNode();
-        arr.AddRange(id.Where(ele => !string.IsNullOrWhiteSpace(ele)).Select(ele => new JsonObjectNode
-        {
-            { "id", ele },
-        }));
-        node.SetValue(key, arr);
-    }
+    [JsonPropertyName("image_url")]
+    public string ImageUrl { get; set; }
+}
 
-    public static void SetDate(JsonObjectNode node, string key, DateTime value)
-        => node.SetValue(key, WebFormat.ParseDate(value));
+public class LarkDocsMarkdownConvertResponse
+{
+    [JsonPropertyName("first_level_block_ids")]
+    public List<string> TopBlockIds { get; set; }
 
-    public static void SetDate(JsonObjectNode node, string key, DateTime? value)
-    {
-        if (value.HasValue) SetDate(node, key, value.Value);
-    }
+    [JsonPropertyName("blocks")]
+    public List<JsonObjectNode> Blocks { get; set; }
 
-    public static void SetLink(JsonObjectNode node, string key, string url, string? title = null)
-    {
-        if (string.IsNullOrWhiteSpace(url)) return;
-        var obj = new JsonObjectNode
-        {
-            { "link", url }
-        };
-        if (!string.IsNullOrWhiteSpace(title)) obj.SetValue("text", title);
-        node.SetValue(key, obj);
-    }
+    [JsonPropertyName("block_id_to_image_urls")]
+    public List<LarkDocsImageUrlMappingResponse> ImageMapping { get; set; }
 
-    public static void SetLink(JsonObjectNode node, string key, Uri uri, string? title = null)
-    {
-        if (uri is null) return;
-        var obj = new JsonObjectNode
-        {
-            { "link", uri?.OriginalString }
-        };
-        if (!string.IsNullOrWhiteSpace(title)) obj.SetValue("text", title);
-        node.SetValue(key, obj);
-    }
-
-    public static void SetFile(JsonObjectNode node, string key, string fileToken)
-    {
-        if (string.IsNullOrWhiteSpace(fileToken)) return;
-        node.SetValue(key, new JsonArrayNode
-        {
-            new JsonObjectNode
-            {
-                { "file_token", fileToken },
-            }
-        });
-    }
-
-    public static void SetFile(JsonObjectNode node, string key, IEnumerable<string> fileToken)
-    {
-        if (fileToken is null) return;
-        var arr = fileToken.Where(ele => !string.IsNullOrWhiteSpace(ele)).Select(ele => new JsonObjectNode
-        {
-            { "file_token", fileToken },
-        });
-        node.SetValue(key, arr);
-    }
 }
 
 public abstract class BaseLarkDocsDriveMetaInfo

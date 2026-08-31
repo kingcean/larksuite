@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Text;
+using Trivial.Web;
 
 namespace LarkSuite.OapiModels;
 
@@ -431,6 +432,45 @@ public class LarkContentDocInfo
     /// <inheritdoc />
     public override string ToString()
         => string.IsNullOrWhiteSpace(Name) ? (Url ?? Token ?? string.Empty) : $"[{Name}]({Url ?? Token})";
+}
+
+public class LarkDocsTextContent
+{
+    public LarkDocsTextContent()
+    {
+    }
+
+    public LarkDocsTextContent(string content, string? message = null)
+    {
+        Content = content;
+        Message = message;
+    }
+
+    public LarkDocsTextContent(LarkDocsFileTextResponse file)
+    {
+        if (file?.Value is null) return;
+        Content = file.Value;
+        var name = file.Node?.Name?.Trim()?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(name)) return;
+        if (name.EndsWith(".md") || name.EndsWith(".markdown")) Message = "Markdown format (text/markdown)";
+        else if (name.EndsWith(".txt") || name.EndsWith(".text")) Message = "Plaintext format (text/plain)";
+        else if (name.EndsWith(".json") || name.EndsWith(".map") || name.EndsWith(".jsonc")) Message = "JSON format (application/json)";
+        else if (name.EndsWith(".jsonl")) Message = "JSONL format (application/jsonl)";
+        else if (name.EndsWith(".yaml") || name.EndsWith(".yml")) Message = "YAML format (application/x-yaml)";
+        else if (name.EndsWith(".xml") || name.EndsWith(".xsl") || name.EndsWith(".xsf") || name.EndsWith(".xsd") || name.EndsWith(".config")) Message = "XML format (application/xml)";
+        else if (name.EndsWith(".csv")) Message = "CSV (text/csv)";
+        else if (name.EndsWith(".tsv")) Message = "TSV (text/tsv)";
+        else if (name.EndsWith(".mml")) Message = "Maths Mark Language format (text/mathml)";
+        else if (name.EndsWith(".diff") || name.EndsWith(".patch")) Message = "Diff (text/x-diff)";
+        else if (name.EndsWith(".pem")) Message = "PEM (application/x-x509-ca-cert)";
+    }
+
+    [JsonPropertyName("message")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Message { get; set; }
+
+    [JsonPropertyName("content")]
+    public string Content { get; set; }
 }
 
 public class LarkDocsAccessUserInfo

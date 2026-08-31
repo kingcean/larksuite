@@ -183,10 +183,10 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                     console.WriteLine("Please type the index or node token to get the child details;");
                     if (path.Count > 0)
                     {
-                        console.Write("Or, type: ");
-                        console.Write(ConsoleColor.Yellow, ".");
-                        console.Write(" to read content; ");
-                        console.Write(ConsoleColor.Yellow, "..");
+                        console.Append("Or, type: ");
+                        console.Append(ConsoleColor.Yellow, ".");
+                        console.Append(" to read content; ");
+                        console.Append(ConsoleColor.Yellow, "..");
                         console.WriteLine(" to turn back parent node.");
                     }
                 }
@@ -228,7 +228,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         var console = CurrentConsole;
         if (string.IsNullOrWhiteSpace(node?.DocToken))
         {
-            console.Write(ConsoleColor.Red, "Error");
+            console.Append(ConsoleColor.Red, "Error");
             console.WriteLine(node is null ? " \tNo node given." : "Unknown type.");
             return;
         }
@@ -254,7 +254,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         }
 
         if (!pressKey) return;
-        console.Write(ConsoleColor.DarkGray, "--- * THE END * ---");
+        console.Append(ConsoleColor.DarkGray, "--- * THE END * ---");
         console.Write("  (Press any key to continue...)  ");
         console.ReadKey(true);
         console.Clear(StyleConsole.RelativeAreas.Line);
@@ -309,7 +309,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         console.WriteLine(ConsoleColor.Yellow, t.Data.Token);
         console.WriteLine();
         console.WriteLine(LarkCliUtils.ItalicText(), "Tables");
-        var tables = await lark.ListBaseTableTablesAsync(token, new(50), cancellationToken);
+        var tables = await lark.ListBaseTableTablesAsync(token, new LarkPageTokenInfo(50), cancellationToken);
         if (LarkCliUtils.WriteEmpty(console, tables)) return null;
         var col = tables.Data.ToSelectionStringItems().ToList();
         if (col.Count < 1)
@@ -332,9 +332,9 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             console.WriteLine(LarkCliUtils.ItalicText(), "Fields");
             foreach (var field in fields.Data)
             {
-                console.Write(ConsoleColor.Blue, "· ");
-                console.Write(field.Name ?? "?");
-                console.Write(" \t");
+                console.Append(ConsoleColor.Blue, "· ");
+                console.Append(field.Name ?? "?");
+                console.Append(" \t");
                 console.WriteLine(field.FieldType.ToString());
             }
 
@@ -351,11 +351,11 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             console.WriteLine(LarkCliUtils.ItalicText(), "Views");
             foreach (var view in views.Data)
             {
-                console.Write(ConsoleColor.Blue, "· ");
-                console.Write(view.Name ?? "?");
-                console.Write(" \t");
-                console.Write(view.ViewType ?? "?");
-                console.Write(" \t");
+                console.Append(ConsoleColor.Blue, "· ");
+                console.Append(view.Name ?? "?");
+                console.Append(" \t");
+                console.Append(view.ViewType ?? "?");
+                console.Append(" \t");
                 console.WriteLine(ConsoleColor.DarkGray, view.Id);
             }
 
@@ -525,67 +525,67 @@ public static partial class LarkCliUtils
                 if (string.IsNullOrWhiteSpace(text))
                 {
                     if (tree.BlockType == LarkContentBlockType.Separator)
-                        console.Write(ConsoleColor.DarkGray, "----------");
+                        console.Append(ConsoleColor.DarkGray, "----------");
                     continue;
                 }
 
                 switch (tree.BlockType)
                 {
                     case LarkContentBlockType.Bullet:
-                        console.Write(ConsoleColor.Blue, "· ");
-                        console.Write(text);
+                        console.Append(ConsoleColor.Blue, "· ");
+                        console.Append(text);
                         break;
                     case LarkContentBlockType.Ordered:
-                        console.Write(ConsoleColor.Blue, "· ");
-                        console.Write(text);
+                        console.Append(ConsoleColor.Blue, "· ");
+                        console.Append(text);
                         break;
                     case LarkContentBlockType.Heading1:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "#  ");
-                        console.Write(BoldText(ConsoleColor.Yellow, 240, 240, 48, true), text);
+                        console.Append(ConsoleColor.DarkGray, "#  ");
+                        console.Append(BoldText(ConsoleColor.Yellow, 240, 240, 48, true), text);
                         break;
                     case LarkContentBlockType.Heading2:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "## ");
-                        console.Write(BoldText(ConsoleColor.Yellow, 200, 200, 48, true), text);
+                        console.Append(ConsoleColor.DarkGray, "## ");
+                        console.Append(BoldText(ConsoleColor.Yellow, 200, 200, 48, true), text);
                         break;
                     case LarkContentBlockType.Heading3:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "### ");
-                        console.Write(BoldText(ConsoleColor.Yellow, 180, 180, 32, true), text);
+                        console.Append(ConsoleColor.DarkGray, "### ");
+                        console.Append(BoldText(ConsoleColor.Yellow, 180, 180, 32, true), text);
                         break;
                     case LarkContentBlockType.Heading4:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "#### ");
-                        console.Write(BoldText(ConsoleColor.Green, 48, 240, 48, true), text);
+                        console.Append(ConsoleColor.DarkGray, "#### ");
+                        console.Append(BoldText(ConsoleColor.Green, 48, 240, 48, true), text);
                         break;
                     case LarkContentBlockType.Heading5:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "##### ");
-                        console.Write(BoldText(ConsoleColor.Green, 48, 200, 48, true), text);
+                        console.Append(ConsoleColor.DarkGray, "##### ");
+                        console.Append(BoldText(ConsoleColor.Green, 48, 200, 48, true), text);
                         break;
                     case LarkContentBlockType.Heading6:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "###### ");
-                        console.Write(BoldText(ConsoleColor.Green, 32, 180, 32, true), text);
+                        console.Append(ConsoleColor.DarkGray, "###### ");
+                        console.Append(BoldText(ConsoleColor.Green, 32, 180, 32, true), text);
                         break;
                     case LarkContentBlockType.Heading7:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "####### ");
-                        console.Write(BoldText(), text);
+                        console.Append(ConsoleColor.DarkGray, "####### ");
+                        console.Append(BoldText(), text);
                         break;
                     case LarkContentBlockType.Heading8:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "######## ");
-                        console.Write(BoldText(), text);
+                        console.Append(ConsoleColor.DarkGray, "######## ");
+                        console.Append(BoldText(), text);
                         break;
                     case LarkContentBlockType.Heading9:
                         console.WriteLine();
-                        console.Write(ConsoleColor.DarkGray, "######### ");
-                        console.Write(BoldText(), text);
+                        console.Append(ConsoleColor.DarkGray, "######### ");
+                        console.Append(BoldText(), text);
                         break;
                     default:
-                        console.Write(text);
+                        console.Append(text);
                         break;
                 }
 
@@ -593,6 +593,7 @@ public static partial class LarkCliUtils
             }
 
             if (i > 0) console.WriteLine();
+            else console.Flush();
         }
 
         if (tree.Children is not null)

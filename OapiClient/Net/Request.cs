@@ -525,7 +525,7 @@ public class LarkDocsFilterCondition : IJsonObjectHost
     /// <param name="name">The name of field.</param>
     /// <param name="op">The operation.</param>
     /// <param name="value">The value of field.</param>
-    public LarkDocsFilterCondition(string name, string op, LarkIdNameInfo value)
+    public LarkDocsFilterCondition(string name, string? op, LarkIdNameInfo value)
         : this(name, op, value?.Id)
     {
     }

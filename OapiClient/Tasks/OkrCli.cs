@@ -33,8 +33,8 @@ public class LarkOkrCommandVerb : BaseCommandVerb
 
         var okr = await larkApi.GetOkrsAsync(id, cancellationToken);
         var col = await LarkCliUtils.WriteLineAsync(console, okr);
-        console.Write($"Total objective: ");
-        console.Write(ConsoleColor.Green, col.Count);
+        console.Append($"Total objective: ");
+        console.Append(ConsoleColor.Green, col.Count);
         console.WriteLine('.');
         if (col.Count < 1) return;
         console.Write("Please type O?KR? to get details: ");
@@ -105,9 +105,9 @@ public class LarkOkrCommandVerb : BaseCommandVerb
         foreach (var item in progress.Data)
         {
             if (item is null) continue;
-            console.Write(ConsoleColor.Blue, "· ");
-            console.Write(item.Progress?.Value.ToString("P0") ?? "-");
-            console.Write(" \t");
+            console.Append(ConsoleColor.Blue, "· ");
+            console.Append(item.Progress?.Value.ToString("P0") ?? "-");
+            console.Append(" \t");
             console.WriteLine(ConsoleColor.DarkGray, item.LastModificationDate.ToShortDateString());
         }
     }
@@ -151,7 +151,7 @@ public static partial class LarkCliUtils
     {
         console ??= StyleConsole.Default;
         if (objective?.Text is null) return;
-        console.Write(ConsoleColor.Blue, $"O{i}. ");
+        console.Append(ConsoleColor.Blue, $"O{i}. ");
         console.WriteLine(BoldText(), string.Join(Environment.NewLine, objective.Text));
         var keyResults = objective.KeyResults;
         if (keyResults is null) return;
@@ -169,7 +169,7 @@ public static partial class LarkCliUtils
     {
         console ??= StyleConsole.Default;
         if (objective?.Text is null) return;
-        console.Write(ConsoleColor.Blue, $"KR{i}. ");
+        console.Append(ConsoleColor.Blue, $"KR{i}. ");
         console.WriteLine(string.Join(Environment.NewLine, objective.Text));
     }
 
@@ -204,26 +204,26 @@ public static partial class LarkCliUtils
         console.WriteLine(ItalicText(), "Users mentioned");
         foreach (var user in response.Data)
         {
-            console.Write(ConsoleColor.Blue, "· ");
+            console.Append(ConsoleColor.Blue, "· ");
             var nickname = user.TryGetStringValue("nickname");
             var name = user.TryGetStringValue("name");
             var enName = user.TryGetStringValue("en_name");
             if (string.IsNullOrWhiteSpace(nickname) || nickname == name)
             {
-                console.Write(name);
+                console.Append(name);
                 if (!string.IsNullOrWhiteSpace(enName) && enName != name)
-                    console.Write(ConsoleColor.DarkGray, $"  ({enName})");
+                    console.Append(ConsoleColor.DarkGray, $"  ({enName})");
             }
             else
             {
-                console.Write(nickname);
+                console.Append(nickname);
                 if (!string.IsNullOrWhiteSpace(enName) && enName != name && enName != nickname)
-                    console.Write(ConsoleColor.DarkGray, $"  ({name} | {nickname})");
+                    console.Append(ConsoleColor.DarkGray, $"  ({name} | {nickname})");
                 else
-                    console.Write(ConsoleColor.DarkGray, $"  ({name})");
+                    console.Append(ConsoleColor.DarkGray, $"  ({name})");
             }
 
-            console.Write(" \t");
+            console.Append(" \t");
             console.WriteLine(ConsoleColor.DarkGray, user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true));
         }
     }
