@@ -762,6 +762,20 @@ public partial class LarkApi
         return new(resp);
     }
 
+    public async Task<LarkResponseBody> DeleteDocsContentAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var nodeToken = GetWikiNodeAsync(token, cancellationToken);
+        var blocks = await GetDocsBlocksAsync(token, true, cancellationToken);
+        var node = await nodeToken;
+        if (blocks?.Data is null || blocks.IsError) return blocks ?? new(true, "Cannot get the blocks of the doc.");
+        if (string.IsNullOrWhiteSpace(node?.Data?.DocToken) || node.IsError) return node ?? new(true, "Cannot get the doc node info.");
+        var pageBlock = blocks.Data.GetPageOrFirst();
+        if (string.IsNullOrWhiteSpace(pageBlock?.Id)) return new(true, "Cannot get the page block.");
+        if (pageBlock.ChildIds is null || pageBlock.ChildIds.Count < 1) return new(false, "Empty.");
+        var resp = await DeleteDocsBlocksAsync(node.Data.DocToken, pageBlock.Id, 0, pageBlock.ChildIds.Count, cancellationToken);
+        return resp;
+    }
+
     /// <summary>
     /// Reads the content of the specific online doc.
     /// </summary>
@@ -777,4 +791,23 @@ public partial class LarkApi
         if (string.IsNullOrWhiteSpace(info?.Data?.NodeToken) || info.IsError) return LarkApiUtils.ErrorLarkDocContent(token, info?.Message ?? "Get node failed.");
         return await LarkApiUtils.GetDocsNodeContentAsync(this, info, cancellationToken);
     }
+
+    public Task<LarkResponseBody> AddDocsFileVersion(string docToken, string docType, string? name = null, CancellationToken cancellationToken = default)
+    {
+        var json = new JsonObjectNode
+        {
+            { "obj_type", docType }
+        };
+        json.SetValueIfNotEmpty("name", name);
+        return PostAsync(LarkUrls.ToUrl(LarkUrls.DocsVersions, docToken), json, cancellationToken);
+    }
+
+    public Task<LarkResponsePagingBody> ListDocsFileVersion(LarkDocsDocTokenRequest options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsVersions, options.DocToken), options, paging, cancellationToken);
+
+    public Task<LarkResponsePagingBody> ListDocsFileVersion(string docToken, string docType, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsVersions, docToken), new LarkDocsDocTokenRequest(docToken, docType), paging, cancellationToken);
+
+    public Task<IReadOnlyList<JsonObjectNode>> ListDocsFileVersion(LarkResponsePagingBody resp, int pageSize, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsVersions, (resp.Query as LarkDocsDocTokenRequest)?.DocToken), resp, pageSize, cancellationToken);
 }

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Collection;
 using Trivial.Net;
 using Trivial.Security;
 using Trivial.Text;
@@ -411,4 +412,29 @@ public class LarkDocsNodeMoveRequest
     [JsonPropertyName("target_parent_token")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? DestinationToken { get; set; }
+}
+
+public class LarkDocsDocTokenRequest : LarkUserIdTypeRequestOptions
+{
+    public LarkDocsDocTokenRequest()
+    {
+    }
+
+    public LarkDocsDocTokenRequest(string token, string type)
+    {
+        DocToken = token;
+        DocType = type;
+    }
+
+    [JsonIgnore]
+    public string DocToken { get; set; }
+
+    [JsonIgnore]
+    public string DocType { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q.SetIfNotEmpty("obj_type", DocType);
+    }
 }

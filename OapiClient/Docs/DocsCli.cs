@@ -319,14 +319,14 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             }
         }
 
-        if (writer.IdsMentioned.Whiteboards.Count > 0)
-        {
-            var whiteboards = larkApi.GetDocsWhiteboardNodesAsync(writer.IdsMentioned.Whiteboards, null, cancellationToken);
-            await foreach (var whiteboard in whiteboards)
-            {
-                if (whiteboard is null) continue;
-            }
-        }
+        //if (writer.IdsMentioned.Whiteboards.Count > 0)
+        //{
+        //    var whiteboards = larkApi.GetDocsWhiteboardNodesAsync(writer.IdsMentioned.Whiteboards, null, cancellationToken);
+        //    await foreach (var whiteboard in whiteboards)
+        //    {
+        //        if (whiteboard is null) continue;
+        //    }
+        //}
 
         return blocks;
     }
