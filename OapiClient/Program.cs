@@ -6,10 +6,12 @@ using System.Drawing;
 using System.Text;
 using Trivial.Collection;
 using Trivial.CommandLine;
-using static System.Collections.Specialized.BitVector32;
 
 var console = StyleConsole.Default;
-LinearGradientConsoleStyle linear = new(ConsoleColor.Cyan, Color.FromArgb(0x36, 0x70, 0xfa), Color.FromArgb(0x3d, 0xd4, 0xb9));
+LinearGradientConsoleStyle linear = new(ConsoleColor.Cyan, Color.FromArgb(0x36, 0x70, 0xfa), Color.FromArgb(0x3d, 0xd4, 0xb9))
+{
+    Bold = true
+};
 console.WriteLine(linear, "LarkSuite");
 console.WriteLine();
 

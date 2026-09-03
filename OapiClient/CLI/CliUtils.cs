@@ -351,7 +351,7 @@ public static partial class LarkCliUtils
             Prefix = "· ",
             SelectedPrefix = "→ ",
             SelectedForegroundConsoleColor = ConsoleColor.Cyan,
-            SelectedForegroundRgbColor = Color.FromArgb(0x3d, 0xd4, 0xb9),
+            SelectedForegroundRgbColor = Color.FromArgb(0x4e, 0x83, 0xfd),
             SelectedBackgroundConsoleColor = null,
             SelectedBackgroundRgbColor = null,
             MaxRow = 20,
