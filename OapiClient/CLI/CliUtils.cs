@@ -13,6 +13,9 @@ namespace LarkSuite.CommandLine;
 
 public static partial class LarkCliUtils
 {
+    public static SelectionConsoleOptions MenuSelectionOptions { get; set; }
+    public static SelectionConsoleOptions ItemSelectionOptions { get; set; }
+
     public static async Task<LarkResponsePagingBody<TItem>> WritePagesAsync<TItem>(
         StyleConsole console,
         Task<LarkResponsePagingBody<TItem>> firstPage,
@@ -335,4 +338,22 @@ public static partial class LarkCliUtils
         if (name.Length < 21) return string.Concat(parent, name);
         return string.Concat(parent, name[0..19], "…");
     }
+
+    internal static SelectionConsoleOptions GetMenuSelectionOptions()
+        => MenuSelectionOptions ?? GetDefaultSelectionOptions();
+
+    internal static SelectionConsoleOptions GetItemSelectionOptions()
+        => ItemSelectionOptions ?? GetDefaultSelectionOptions();
+
+    private static SelectionConsoleOptions GetDefaultSelectionOptions()
+        => new()
+        {
+            Prefix = "· ",
+            SelectedPrefix = "→ ",
+            SelectedForegroundConsoleColor = ConsoleColor.Cyan,
+            SelectedForegroundRgbColor = Color.FromArgb(0x3d, 0xd4, 0xb9),
+            SelectedBackgroundConsoleColor = null,
+            SelectedBackgroundRgbColor = null,
+            MaxRow = 20,
+        };
 }

@@ -603,7 +603,17 @@ public partial class LarkApi
     public async IAsyncEnumerable<LarkDocWhiteboardInstanceInfo> GetDocsWhiteboardNodesAsync(IEnumerable<string> ids, LarkContentBlockTree? doc, LarkUserIdTypeRequestOptions? options, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (ids is null) yield break;
-        var dict = doc?.Resources?.Whiteboards ?? [];
+        var dict = doc?.Resources?.Whiteboards;
+        if (dict is null)
+        {
+            dict = [];
+            if (doc is not null)
+            {
+                doc.Resources ??= new();
+                doc.Resources.Whiteboards = dict;
+            }
+        }
+
         foreach (var id in ids)
         {
             if (string.IsNullOrWhiteSpace(id) || dict.ContainsKey(id)) continue;

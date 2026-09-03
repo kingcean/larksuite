@@ -40,7 +40,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                     { 's', "space\tGet the information of the specific space.", "space" },
                     { 'o', "open\tGet the text content of the specific node token of the doc.", "open" },
                     { 'q', "search\tSearch docs.", "search" },
-                });
+                }, LarkCliUtils.GetMenuSelectionOptions());
                 s = result.Data ?? result.Value;
             }
 
@@ -132,10 +132,11 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 if (LarkCliUtils.WriteEmpty(console, spaces)) return;
                 path.Clear();
                 var list = spaces.Data.ToSelectionStringItems().ToList();
-                LarkCliUtils.WriteOrderedLine(console, list);
-                console.WriteLine();
-                console.WriteLine("Please type the index or the space ID.");
-                var spaceId = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
+                var spaceSelect = console.Select(spaces.Data.Select(ele =>
+                {
+                    return new SelectionItem<string>($"{ele.Id}\t{ele.Name}", ele.Id);
+                }), LarkCliUtils.GetItemSelectionOptions());
+                var spaceId = spaceSelect.Data ?? spaceSelect.Value;
                 if (LarkCliUtils.IsToExit(spaceId) || spaceId == "..") return;
                 if (spaceId == "." || spaceId == "~") continue;
                 cancellationToken.ThrowIfCancellationRequested();

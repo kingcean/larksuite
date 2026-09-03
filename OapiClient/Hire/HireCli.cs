@@ -67,7 +67,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
 
         if (string.IsNullOrEmpty(verbStr))
         {
-            var result = console.Select(list);
+            var result = console.Select(list, LarkCliUtils.GetMenuSelectionOptions());
             verbStr = result.Data ?? result.Value;
             if (string.IsNullOrEmpty(verbStr)) return;
         }
@@ -231,11 +231,11 @@ public class LarkHireCommandVerb : BaseCommandVerb
             return [];
         }
 
-        resp = resp.Take(99).ToList();
-        var ids = LarkCliUtils.WriteLine(console, resp);
-        console.WriteLine();
-        console.WriteLine("Please type the index of interview ID to get interview minutes.");
-        var id = ReadInterviewId(ids);
+        var interviewSel = console.Select(resp.Select(ele =>
+        {
+            return new SelectionItem<string>($"{ele.Id}\t{LarkCliUtils.GetName(ele)}", ele.Id);
+        }), LarkCliUtils.GetItemSelectionOptions());
+        var id = interviewSel.Data ?? interviewSel.Value;
         if (LarkCliUtils.IsToExit(id)) return resp;
         var interviewInfo = GetInterviewInfo(id, resp);
         await GetInterviewAsync(interviewInfo, cancellationToken);
@@ -622,41 +622,8 @@ public static partial class LarkCliUtils
             if (interviewId is null) continue;
             var i = ids.Count;
             ids.Add(interviewId);
-            var sb = new StringBuilder();
-            var start = interviewItem!.BeginDate;
-            if (start.HasValue)
-            {
-                sb.Append(start.Value.ToString("f"));
-                var end = interviewItem.EndDate;
-                if (end.HasValue)
-                {
-                    sb.Append(" → ");
-                    sb.Append(start.Value.Date == end.Value.Date
-                        ? end.Value.ToShortTimeString()
-                        : end.Value.ToString("f"));
-                }
-
-                sb.Append(" ");
-            }
-
-            var stageName = interviewItem.Stage?.GetName();
-            if (stageName is not null)
-            {
-                sb.Append(stageName);
-                sb.Append(" ");
-            }
-
-            var contact = interviewItem.GetInterviewers().FirstOrDefault()?.GetName() ?? interviewItem.ContactUser?.GetName();
-            if (!string.IsNullOrWhiteSpace(contact))
-            {
-                sb.Append("by ");
-                sb.Append(contact);
-                sb.Append(" ");
-            }
-
-            sb.Append("| ");
-            sb.Append(interviewItem.GetStateString());
-            WriteOrderedLine(console, i, hideId ? string.Empty : interviewId, sb.ToString(), true);
+            var name = GetName(interviewItem!);
+            WriteOrderedLine(console, i, hideId ? string.Empty : interviewId, name, true);
         }
 
         return ids;
@@ -668,13 +635,13 @@ public static partial class LarkCliUtils
         {
             console.Append(ConsoleColor.Blue, "· ");
             console.Append(record.SpeakerName ?? "?");
-            console.Write(ConsoleColor.Green, record.SpeakerRole switch
+            console.Write(ConsoleColor.DarkGray, record.SpeakerRole switch
             {
                 LarkInterviewRole.Interviewer => " (interviewer) ",
                 LarkInterviewRole.Interviewee => " (interviewee) ",
                 _ => " ",
             });
-            console.WriteLine(ConsoleColor.Green, record.Time.ToString("f"));
+            console.WriteLine(ConsoleColor.DarkGray, record.Time.ToString("f"));
             console.WriteLine(record.Message);
             console.WriteLine();
         }
@@ -785,5 +752,44 @@ public static partial class LarkCliUtils
 
             if (!string.IsNullOrWhiteSpace(xp.Description)) console.WriteLine(xp.Description);
         }
+    }
+
+    internal static string GetName(LarkHireInterviewInfo info)
+    {
+        var sb = new StringBuilder();
+        var start = info!.BeginDate;
+        if (start.HasValue)
+        {
+            sb.Append(start.Value.ToString("f"));
+            var end = info.EndDate;
+            if (end.HasValue)
+            {
+                sb.Append(" → ");
+                sb.Append(start.Value.Date == end.Value.Date
+                    ? end.Value.ToShortTimeString()
+                    : end.Value.ToString("f"));
+            }
+
+            sb.Append(" ");
+        }
+
+        var stageName = info.Stage?.GetName();
+        if (stageName is not null)
+        {
+            sb.Append(stageName);
+            sb.Append(" ");
+        }
+
+        var contact = info.GetInterviewers().FirstOrDefault()?.GetName() ?? info.ContactUser?.GetName();
+        if (!string.IsNullOrWhiteSpace(contact))
+        {
+            sb.Append("by ");
+            sb.Append(contact);
+            sb.Append(" ");
+        }
+
+        sb.Append("| ");
+        sb.Append(info.GetStateString());
+        return sb.ToString();
     }
 }
