@@ -15,12 +15,12 @@ public abstract class BaseLarkOkrRecordItem
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime CreationDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("update_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime LastModificationDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -48,7 +48,7 @@ public class BaseLarkOkrItem : BaseLarkOkrRecordItem
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("deadline")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime? Deadline { get; set; }
 }
 
@@ -64,12 +64,12 @@ public class LarkOkrCycleItem : BaseLarkOkrRecordItem
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("start_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime StartDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("end_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime EndDate { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

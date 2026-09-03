@@ -34,11 +34,11 @@ public class LarkMessageResponse
     public string MessageType { get; set; }
 
     [JsonPropertyName("create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime CreationDate { get; set; }
 
     [JsonPropertyName("update_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime LastModificationDate { get; set; }
 
     [JsonPropertyName("deleted")]
@@ -240,7 +240,7 @@ public class LarkEventMessageHeader
     public string VerificationToken { get; set; }
 
     [JsonPropertyName("create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime CreationDate { get; set; } = DateTime.Now;
 
     [JsonPropertyName("app_id")]

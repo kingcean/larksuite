@@ -118,10 +118,10 @@ public class LarkHireApplicationSearchOptions : BaseQueryRequestInfo
 
     //public List<int>? LockStatus { get; set; }
 
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime? UpdateStartDate { get; set; }
 
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime? UpdateEndDate { get; set; }
 
     protected override void OnQueryDataFill(QueryData q)

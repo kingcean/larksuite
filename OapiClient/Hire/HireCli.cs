@@ -431,21 +431,24 @@ public class LarkHireCommandVerb : BaseCommandVerb
             console.Append(ConsoleColor.Blue, "· ");
             console.Append(ConsoleColor.DarkGray, record.Id);
             console.Append(" \t");
-            console.WriteLine(record.Interviewer.GetName() ?? "?");
+            console.Append(record.Interviewer!.GetName() ?? "?");
+            console.Append(" \t");
+            console.WriteLine(record.Conclusion.ToString());
             var score = record.Score ?? [];
             var scoreText = score.TryGetStringTrimmedValue("zh_description", true) ?? score.TryGetStringTrimmedValue("en_description", true) ?? score.TryGetStringTrimmedValue("zh_name", true) ?? score.TryGetStringTrimmedValue("en_name", true);
-            if (scoreText is not null)
+            var scoreLevel = score.TryGetInt32Value("level");
+            if (scoreLevel.HasValue || scoreText is not null)
             {
                 console.Append("  ");
-                console.WriteLine(scoreText);
-            }
+                if (scoreLevel.HasValue)
+                {
+                    console.Append("Score level ");
+                    console.Append(ConsoleColor.Green, scoreLevel.Value);
+                    console.Append(".  ");
+                }
 
-            var scoreLevel = score.TryGetInt32Value("level");
-            if (scoreLevel.HasValue)
-            {
-                console.Append("  Score level: ");
-                console.Append(ConsoleColor.Green, scoreLevel.Value);
-                console.WriteLine('.');
+                if (scoreText is not null) console.Append(scoreText);
+                console.WriteLine();
             }
         }
 

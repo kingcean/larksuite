@@ -420,11 +420,11 @@ public class LarkHireApplicationStageTimingInfo
     public string Id { get; set; }
 
     [JsonPropertyName("enter_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime EnterDate { get; set; }
 
     [JsonPropertyName("exit_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime ExitDate { get; set; }
 }
 
@@ -461,11 +461,11 @@ public class LarkHireApplicationEvaluationInfo
     public string Content { get; set; }
 
     [JsonPropertyName("create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime CreationDate { get; set; }
 
     [JsonPropertyName("update_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime LastModificationDate { get; set; }
 }
 
@@ -555,11 +555,11 @@ public class LarkHireApplicationBasicInfo
     public string TerminatorId { get; set; }
 
     [JsonPropertyName("create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime CreationDate { get; set; }
 
     [JsonPropertyName("modify_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime LastModificationDate { get; set; }
 
     [JsonPropertyName("lock_status")]

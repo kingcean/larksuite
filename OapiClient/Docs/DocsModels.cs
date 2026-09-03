@@ -69,7 +69,7 @@ public class LarkDocsNodeInfo
     public bool HasChild { get; set; }
 
     [JsonPropertyName("node_create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime NodeCreationTime { get; set; }
 
     [JsonPropertyName("node_token")]
@@ -85,11 +85,11 @@ public class LarkDocsNodeInfo
     public string SpaceId { get; set; }
 
     [JsonPropertyName("obj_create_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime DocCreationTime { get; set; }
 
     [JsonPropertyName("obj_edit_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime DocLastModificationTime { get; set; }
 
     [JsonPropertyName("obj_token")]
@@ -275,11 +275,11 @@ public class LarkDocsDriveNodeInfo
     public LarkDocsDriveShortcutNodeInfo Shortcut { get; set; }
 
     [JsonPropertyName("created_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime CreationDate { get; set; }
 
     [JsonPropertyName("modified_time")]
-    [JsonConverter(typeof(JsonDateTimeTickStringConverter))]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
     public DateTime LastModificationDate { get; set; }
 
     [JsonPropertyName("owner_id")]
