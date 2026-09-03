@@ -54,23 +54,21 @@ public class LarkHireCommandVerb : BaseCommandVerb
         var verb = Arguments.Verb;
         var verbStr = verb.Count > 0 ? verb[0]?.Trim()?.ToLowerInvariant() : null;
 
+        console.WriteLine(ConsoleColor.Magenta, Description);
         var list = new List<SelectionItem<string>>();
-        PrintDefaultMenu(list, "latest", "List interviews started from latest days.");
-        PrintDefaultMenu(list, "day", "List interviews started from the specific day (YYYY-MM-DD).");
-        PrintDefaultMenu(list, "talent", "Get details of a specific talent.");
+        PrintDefaultMenu(list, "latest", "List interviews started from latest days.", 'l');
+        PrintDefaultMenu(list, "day", "List interviews started from the specific day (YYYY-MM-DD).", 'd');
+        PrintDefaultMenu(list, "talent", "Get details of a specific talent.", 't');
         foreach (var item in caps)
         {
             if (string.IsNullOrWhiteSpace(item.Key)) continue;
-            list.Add(new(item.Value, item.Key));
+            list.Add(new($"{item.Key}\t{item.Value}", item.Key));
         }
 
         if (string.IsNullOrEmpty(verbStr))
         {
-            LarkCliUtils.WriteOrderedLine(console, list);
-            console.Append("Please type above command to continue; or ");
-            console.Append(ConsoleColor.Yellow, "quit");
-            console.WriteLine(" to exit.");
-            verbStr = LarkCliUtils.ReadLine(console, "Hire\\Command")?.Trim()?.ToLowerInvariant();
+            var result = console.Select(list);
+            verbStr = result.Data ?? result.Value;
             if (string.IsNullOrEmpty(verbStr)) return;
         }
 
@@ -156,7 +154,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
             case "day":
                 {
                     console.WriteLine("Please type the date in YYYY-MM-DD format.");
-                    var s = LarkCliUtils.ReadLine(console, "Date")!;
+                    var s = LarkCliUtils.ReadLine(console, "Hire\\Date")!;
                     if (LarkCliUtils.IsToExit(s)) break;
                     var date = WebFormat.ParseDate(s);
                     if (!date.HasValue && !string.IsNullOrWhiteSpace(s) && s.Length < 6)
@@ -415,10 +413,10 @@ public class LarkHireCommandVerb : BaseCommandVerb
     private LarkHireInterviewInfo? GetInterviewInfo(string? id, IEnumerable<LarkHireInterviewInfo> arr)
         => GetInterviewInfo(CurrentConsole, id, arr);
 
-    private void PrintDefaultMenu(List<SelectionItem<string>> source, string key, string description)
+    private void PrintDefaultMenu(List<SelectionItem<string>> source, string key, string description, char? hotkey)
     {
         if (caps.TryGetValue(key, out _)) return;
-        source.Add(new(description, key));
+        source.Add(hotkey.HasValue ? new(hotkey.Value, $"{key}\t{description}", key) : new($"{key}\t{description}", key));
     }
 
     private void WriteInterviewResultLine(LarkHireInterviewInfo? item)

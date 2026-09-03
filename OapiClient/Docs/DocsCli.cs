@@ -30,17 +30,18 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         var console = CurrentConsole;
         var verb = Arguments.Verb;
         var s = verb.Count > 0 ? verb[0]?.Trim()?.ToLowerInvariant() : null;
+        console.WriteLine(ConsoleColor.Magenta, Description);
         while (true)
         {
             if (string.IsNullOrEmpty(s))
             {
-                LarkCliUtils.WriteOrderedLine(console,
-                [
-                    new("Get the information of the specific space.", "space"),
-                    new("Get the text content of the specific doc ID.", "open"),
-                    new("Search docs.", "search"),
-                ]);
-                s = LarkCliUtils.ReadLine(console, "Docs")?.Trim()?.ToLowerInvariant();
+                var result = console.Select(new SelectionData<string>
+                {
+                    { 's', "space\tGet the information of the specific space.", "space" },
+                    { 'o', "open\tGet the text content of the specific node token of the doc.", "open" },
+                    { 'q', "search\tSearch docs.", "search" },
+                });
+                s = result.Data ?? result.Value;
             }
 
             console.WriteLine();
@@ -48,15 +49,18 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             switch (s)
             {
                 case "space":
+                case "s":
                 case "1":
                     await ShowSpaceAsync(cancellationToken);
                     break;
                 case "doc":
                 case "open":
+                case "o":
                 case "2":
                     await ShowDocAsync(cancellationToken);
                     break;
                 case "search":
+                case "q":
                 case "3":
                     await SearchWikiAsync(cancellationToken);
                     break;
@@ -140,7 +144,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 {
                     console.WriteLine(ConsoleColor.Red, "Not found.");
                     spaceId = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
-                    if (LarkCliUtils.IsToExit(spaceId)) return;
+                    if (LarkCliUtils.IsToExit(spaceId) || spaceId == "." || spaceId == "..") return;
                     cancellationToken.ThrowIfCancellationRequested();
                     info = await lark.GetWikiSpaceInfoAsync(spaceId, cancellationToken);
                     if (info?.Data is null)
@@ -297,6 +301,33 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             null,
             cancellationToken);
         console.WriteLine();
+        if (writer.IdsMentioned.Users.Count > 0)
+        {
+            var users = await larkApi.GetUserInfoAsync(writer.IdsMentioned.Users, cancellationToken);
+            var userError = users?.Data is null || users.IsError;
+            if (!userError)
+            {
+                console.WriteLine();
+                foreach (var user in users!.Data!)
+                {
+                    if (user is null) continue;
+                    var userId = user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true);
+                    var userName = user.TryGetStringValue("name");
+                    if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userName)) continue;
+                    console.WriteLine($"· {userId} \t{userName}");
+                }
+            }
+        }
+
+        if (writer.IdsMentioned.Whiteboards.Count > 0)
+        {
+            var whiteboards = larkApi.GetDocsWhiteboardNodesAsync(writer.IdsMentioned.Whiteboards, null, cancellationToken);
+            await foreach (var whiteboard in whiteboards)
+            {
+                if (whiteboard is null) continue;
+            }
+        }
+
         return blocks;
     }
 
@@ -442,10 +473,12 @@ public class InternalLarkDocsContentCliWriter
 {
     private LarkContentBlock? root;
 
+    public LarkContentBlockResourceIds IdsMentioned { get; } = new();
+
     public void WriteLine(StyleConsole console, IEnumerable<LarkContentBlock?>? col)
     {
         console ??= StyleConsole.Default;
-        var tree = col?.ToTree(root);
+        var tree = col?.ToTree(root, IdsMentioned);
         if (tree is null)
         {
             LarkCliUtils.WriteEmpty(console);

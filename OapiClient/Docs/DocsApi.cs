@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net.NetworkInformation;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
 using System.Text.Json;
@@ -578,7 +579,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The whiteboard nodes.</returns>
     [Description("Get the whiteboard nodes.")]
-    public Task<LarkResponseBody> GetDocsWhiteboardNodes([Description("The whiteboard identifier, or the whiteboard reference token in docs tree block.")] string id, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> GetDocsWhiteboardNodesAsync([Description("The whiteboard identifier, or the whiteboard reference token in docs tree block.")] string id, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.DocsWhiteboardNodes, id), cancellationToken);
 
     /// <summary>
@@ -588,8 +589,52 @@ public partial class LarkApi
     /// <param name="options">The additional options.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The whiteboard nodes.</returns>
-    public Task<LarkResponseBody> GetDocsWhiteboardNodes(string id, LarkUserIdTypeRequestOptions options, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> GetDocsWhiteboardNodesAsync(string id, LarkUserIdTypeRequestOptions? options, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.DocsWhiteboardNodes, options, id), cancellationToken);
+
+    /// <summary>
+    /// Gets the whiteboard nodes.
+    /// </summary>
+    /// <param name="ids">The whiteboard identifiers, or the whiteboard reference tokens in docs tree block.</param>
+    /// <param name="doc">The docs tree block.</param>
+    /// <param name="options">The additional options.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The whiteboard nodes.</returns>
+    public async IAsyncEnumerable<LarkDocWhiteboardInstanceInfo> GetDocsWhiteboardNodesAsync(IEnumerable<string> ids, LarkContentBlockTree? doc, LarkUserIdTypeRequestOptions? options, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (ids is null) yield break;
+        var dict = doc?.Resources?.Whiteboards ?? [];
+        foreach (var id in ids)
+        {
+            if (string.IsNullOrWhiteSpace(id) || dict.ContainsKey(id)) continue;
+            var nodes = await GetDocsWhiteboardNodesAsync(id, options, cancellationToken);
+            if (nodes?.Data is null || nodes.IsError) continue;
+            var col = nodes.Data.TryGetObjectListValue("nodes", true);
+            if (col is null || col.Count < 1) continue;
+            var info = new LarkDocWhiteboardInstanceInfo
+            {
+                Id = id,
+                Nodes = [],
+            };
+            foreach (var item in col)
+            {
+                info.Nodes.Add(LarkApiUtils.SimplifyWhiteboard(item));
+            }
+
+            dict[id] = info;
+            yield return info;
+        }
+    }
+
+    /// <summary>
+    /// Gets the whiteboard nodes.
+    /// </summary>
+    /// <param name="ids">The whiteboard identifiers, or the whiteboard reference tokens in docs tree block.</param>
+    /// <param name="options">The additional options.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The whiteboard nodes.</returns>
+    public IAsyncEnumerable<LarkDocWhiteboardInstanceInfo> GetDocsWhiteboardNodesAsync(IEnumerable<string> ids, LarkUserIdTypeRequestOptions? options, CancellationToken cancellationToken = default)
+        => GetDocsWhiteboardNodesAsync(ids, null, options, cancellationToken);
 
     /// <summary>
     /// Gets the whiteboard as image.
@@ -598,7 +643,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The whiteboard screenshot.</returns>
     [Description("Get the whiteboard as an image.")]
-    public async Task<Stream> GetDocsWhiteboardAsImage([Description("The whiteboard identifier, or the whiteboard reference token in docs tree block..")] string id, CancellationToken cancellationToken = default)
+    public async Task<Stream> GetDocsWhiteboardAsImageAsync([Description("The whiteboard identifier, or the whiteboard reference token in docs tree block..")] string id, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient<Stream>();
         var resp = await http.GetAsync(LarkUrls.ToUrl(LarkUrls.DocsWhiteboardImage, id), cancellationToken);
@@ -699,10 +744,21 @@ public partial class LarkApi
     public Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, CancellationToken cancellationToken = default)
         => UpdateDocsAsync(nodeToken, markdown, -1, cancellationToken);
 
-    public async Task<LarkResponseBody> DeleteDocsBlocksAsync(string documentId, string blockId, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> DeleteDocsBlocksAsync(string documentId, string blockId, int start, int end, CancellationToken cancellationToken = default)
+        => DeleteDocsBlocksAsync(documentId, blockId, null, start, end, cancellationToken);
+
+    public async Task<LarkResponseBody> DeleteDocsBlocksAsync(string documentId, string blockId, string? clientToken, int start, int end, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
-        var resp = await http.SendAsync(HttpMethod.Delete, LarkUrls.ToUrl(LarkUrls.DeleteDocsBlocks, documentId, blockId), cancellationToken);
+        var query = string.IsNullOrEmpty(clientToken) ? null : new QueryData
+        {
+            { "client_token", clientToken },
+        };
+        var resp = await http.SendJsonAsync(HttpMethod.Delete, LarkUrls.ToUrl(LarkUrls.DeleteDocsBlocks, query, documentId, blockId), new JsonObjectNode
+        {
+            { "start_index", start },
+            { "end_index", end },
+        }, cancellationToken);
         return new(resp);
     }
 

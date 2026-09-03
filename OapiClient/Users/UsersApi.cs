@@ -1,4 +1,5 @@
-﻿using LarkSuite.OapiModels;
+﻿using LarkSuite.Docs;
+using LarkSuite.OapiModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,14 +13,55 @@ namespace LarkSuite;
 public partial class LarkApi
 {
     [Description("Get the users information.")]
-    public Task<LarkResponsePagingBody> GetUserInfoAsync([Description("The user identifier list to get information.")] IEnumerable<string> ids, CancellationToken cancellationToken = default)
-        => ids is null ? Task.FromResult(new LarkResponsePagingBody(true, "ids should not be null or empty.")) : GetItemsAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
+    public async Task<LarkResponseBody<List<JsonObjectNode>>> GetUserInfoAsync([Description("The user identifier list to get information.")] IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    {
+        if (ids is null) return new(true, "ids should not be null or empty.");
+        var col = ids.ToList();
+        var paging = col.Count > 50;
+        var first = await GetAsync<List<JsonObjectNode>>(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
         {
-            UserIds = ids.ToList(),
-        }), cancellationToken);
+            UserIds = paging ? col.Take(50).ToList() : col,
+        }), "items", cancellationToken);
+        if (first is null) return new(true, "Get users info failed because of no response.");
+        if (first.Data is null || first.IsError) return first;
+        if (!paging) return first;
+        for (var i = 50; i < col.Count; i += 50)
+        {
+            var next = await GetAsync<List<JsonObjectNode>>(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
+            {
+                UserIds = col.Skip(i).Take(50).ToList(),
+            }), "items", cancellationToken);
+            if (next?.Data is null || next.IsError) break;
+            first.Data.AddRange(next.Data);
+        }
+
+        return first;
+    }
 
     public Task<LarkResponsePagingBody> GetUserInfoAsync(LarkUserInfoRequest options, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, options), cancellationToken);
+
+    public async Task<LarkResponseBody<List<JsonObjectNode>>> GetUserInfoAsync(IEnumerable<string> ids, LarkContentBlockTree docs, CancellationToken cancellationToken = default)
+    {
+        var users = await GetUserInfoAsync(ids, cancellationToken);
+        if (users is null) return new(true, "Get users info failed.");
+        if (users.Data is null || users.IsError) return users;
+        docs.Resources ??= new()
+        {
+            Users = [],
+            Whiteboards = [],
+        };
+        foreach (var user in users!.Data!)
+        {
+            if (user is null) continue;
+            var userId = user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true);
+            var userName = user.TryGetStringValue("name");
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userName)) continue;
+            docs.Resources.Users![userId] = userName;
+        }
+
+        return users;
+    }
 
     public Task<LarkResponsePagingBody> SearchUserAsync(LarkSearchOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.SearchUser, options, paging, "users", cancellationToken);

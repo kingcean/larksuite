@@ -36,7 +36,10 @@ public static partial class LarkApiUtils
                 {
                     var doc = await larkApi.GetDocsBlocksAsync(token, true, cancellationToken);
                     if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.");
-                    var tree = doc.Data.ToTree();
+                    var refIds = new LarkContentBlockResourceIds();
+                    var tree = doc.Data.ToTree(null, refIds);
+                    if (refIds.Users.Count > 0) await larkApi.GetUserInfoAsync(refIds.Users, tree, cancellationToken);
+                    if (refIds.Whiteboards.Count > 0) await larkApi.GetDocsWhiteboardNodesAsync(refIds.Whiteboards, tree, null, cancellationToken).CountAsync(cancellationToken);
                     return new LarkDocContent<LarkContentBlockTree>(token, info.Data.Name, info.Data.DocToken, "docx", tree);
                 }
             case "file":
@@ -224,10 +227,12 @@ public static partial class LarkApiUtils
     /// </summary>
     /// <param name="col">The content block collection.</param>
     /// <param name="root">The optional root content block to build the tree.</param>
+    /// <param name="userIds">The user identifiers to get.</param>
     /// <returns>The content block tree.</returns>
-    public static LarkContentBlockTree ToTree(this IEnumerable<LarkContentBlock?> col, LarkContentBlock? root = null)
+    public static LarkContentBlockTree ToTree(this IEnumerable<LarkContentBlock?> col, LarkContentBlock? root = null, LarkContentBlockResourceIds? ids = null)
     {
         root ??= GetPageOrFirst(col);
+        ids ??= new();
         if (root is null) return new()
         {
             BlockType = LarkContentBlockType.Unsupported,
@@ -238,6 +243,12 @@ public static partial class LarkApiUtils
             BlockType = root.BlockType,
             ResourceToken = root.ResourceToken,
         };
+        if (!string.IsNullOrWhiteSpace(root.ResourceToken))
+        {
+            if (root.BlockType == LarkContentBlockType.Whiteboard)
+                ids.Whiteboards.Add(root.ResourceToken);
+        }
+
         if (root.Elements is not null)
         {
             foreach (var element in root.Elements)
@@ -256,22 +267,30 @@ public static partial class LarkApiUtils
                     Text = text,
                 };
                 if (!string.IsNullOrWhiteSpace(element.DocMentioned?.Url))
+                {
                     content.Information = new LarkContentBlockLinkReference
                     {
                         Url = element.DocMentioned.Url,
                         Title = element.DocMentioned.Name,
                     };
+                }
                 else if (!string.IsNullOrWhiteSpace(element.UserMentioned?.Id))
+                {
                     content.Information = new LarkContentBlockUserReference
                     {
                         Id = element.UserMentioned.Id
                     };
+                    if (!ids.Users.Contains(element.UserMentioned.Id)) ids.Users.Add(element.UserMentioned.Id);
+                }
                 else if (!string.IsNullOrWhiteSpace(element.Text?.Style?.Link?.Url))
+                {
                     content.Information = new LarkContentBlockLinkReference
                     {
                         Url = element.Text.Style.Link.Url,
                         Title = text,
                     };
+                }
+
                 tree.Content ??= [];
                 tree.Content.Add(content);
             }
@@ -283,7 +302,7 @@ public static partial class LarkApiUtils
             {
                 var child = GetById(col!, id);
                 if (child is null) continue;
-                var sub = ToTree(col, child);
+                var sub = ToTree(col, child, ids);
                 if (sub is null) continue;
                 if (sub.Content is null
                     && sub.BlockType == LarkContentBlockType.TableCell
@@ -571,6 +590,78 @@ public static partial class LarkApiUtils
         var token = response.Data.NodeToken;
         if (string.IsNullOrWhiteSpace(token)) return null;
         return token;
+    }
+
+    internal static LarkDocWhiteboardNodeInfo SimplifyWhiteboard(JsonObjectNode json)
+    {
+        if (json is null) return new();
+        var text = json.TryGetObjectValue("text")?.TryGetStringTrimmedValue("text", true);
+        LarkDocWhiteboardNodeConnectorInfo? connector = null;
+        var connectorJson = json.TryGetObjectValue("connector");
+        if (connectorJson is not null)
+        {
+            connector = new()
+            {
+                StartConnector = connectorJson.TryGetObjectValue("start"),
+                EndConnector = connectorJson.TryGetObjectValue("end"),
+                LineType = connectorJson.TryGetStringTrimmedValue("shape", true),
+            };
+            var captions = connectorJson.TryGetObjectValue("captions")?.TryGetObjectListValue("data", true);
+            if (captions is not null && captions.Count > 0)
+            {
+                connector.Caption = [];
+                foreach (var caption in captions)
+                {
+                    var captionText = caption?.TryGetStringTrimmedValue("text", true);
+                    if (captionText is null) continue;
+                    connector.Caption.Add(captionText);
+                }
+            }
+        }
+
+        List<LarkDocWhiteboardNodeCellInfo>? table = null;
+        var tableJson = json.TryGetObjectValue("table");
+        if (tableJson is not null)
+        {
+            text ??= tableJson.TryGetStringTrimmedValue("title", true);
+            var cells = tableJson.TryGetObjectListValue("cells");
+            if (cells is not null && cells.Count > 0)
+            {
+                table = [];
+                foreach (var cell in cells)
+                {
+                    if (cell is null) continue;
+                    var merge = cell.TryGetObjectValue("merge_info") ?? [];
+                    table.Add(new()
+                    {
+                        RowIndex = cell.TryGetInt32Value("row_index") ?? 0,
+                        ColumnIndex = cell.TryGetInt32Value("col_index") ?? 0,
+                        RowSpan = merge.TryGetInt32Value("row_span") ?? 1,
+                        ColumnSpan = merge.TryGetInt32Value("col_span") ?? 1,
+                        Text = cell.TryGetObjectValue("text")?.TryGetStringTrimmedValue("text"),
+                    });
+                }
+            }
+        }
+
+        return new()
+        {
+            Id = json.TryGetStringTrimmedValue("id", true),
+            ShapeType = json.TryGetStringTrimmedValue("type", true),
+            ParentNode = json.TryGetStringTrimmedValue("parent_id", true),
+            ChildNodes = json.TryGetStringListValue("children", true),
+            Position = new()
+            {
+                X = json.TryGetDoubleValue("x") ?? 0d,
+                Y = json.TryGetDoubleValue("y") ?? 0d,
+                Width = json.TryGetDoubleValue("width") ?? 0d,
+                Height = json.TryGetDoubleValue("height") ?? 0d,
+                Rotation = json.TryGetDoubleValue("angle") ?? 0d,
+            },
+            Text = text,
+            Connector = connector,
+            Table = table,
+        };
     }
 
     internal static LarkDocContent ToDocContent<T>(LarkResponseBody<T>? body, LarkDocsNodeInfo node, string errorMessage)

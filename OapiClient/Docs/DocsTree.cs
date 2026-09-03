@@ -30,6 +30,35 @@ public class LarkDocsItemInfo
 }
 
 /// <summary>
+/// The resources mentioned in the content block of Lark docs.
+/// </summary>
+public class LarkContentBlockResourcesInfo
+{
+    /// <summary>
+    /// Gets or sets the users mentioned.
+    /// </summary>
+    [JsonPropertyName("users")]
+    [Description("The users mentioned. The key is the user identifier, the value is the user name.")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, string>? Users { get; set; }
+
+    /// <summary>
+    /// Gets or sets the users mentioned.
+    /// </summary>
+    [JsonPropertyName("whiteboards")]
+    [Description("The whiteboards referenced in the content. The key is the user identifier, the value is the data.")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<string, LarkDocWhiteboardInstanceInfo>? Whiteboards { get; set; }
+}
+
+public class LarkContentBlockResourceIds
+{
+    public List<string> Users { get; } = [];
+
+    public List<string> Whiteboards { get; } = [];
+}
+
+/// <summary>
 /// The block content, key properties and child blocks.
 /// </summary>
 public class LarkContentBlockTree
@@ -68,11 +97,23 @@ public class LarkContentBlockTree
     /// <summary>
     /// Gets or sets the resource token if the block is a kind of other node reference.
     /// </summary>
-    [JsonPropertyName("resouce_token")]
+    [JsonPropertyName("resouceToken")]
     [Description("The resource token if the block is a kind of other node reference.")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ResourceToken { get; set; }
 
+    /// <summary>
+    /// Gets or sets the users mentioned.
+    /// </summary>
+    [JsonPropertyName("resources")]
+    [Description("The resources mentioned.")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkContentBlockResourcesInfo? Resources { get; set; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -334,4 +375,113 @@ public class LarkDocContentError
 
     [JsonPropertyName("message")]
     public string? Message { get; set; }
+}
+
+public class LarkDocWhiteboardNodePositionInfo
+{
+    [JsonPropertyName("x")]
+    public double X { get; set; }
+
+    [JsonPropertyName("y")]
+    public double Y { get; set; }
+
+    [JsonPropertyName("width")]
+    public double Width { get; set; }
+
+    [JsonPropertyName("height")]
+    public double Height { get; set; }
+
+    [JsonPropertyName("rotation")]
+    public double Rotation { get; set; }
+
+    public override string ToString()
+        => $"X = {X} & Y = {Y} & Width = {Width} & Height = {Height} & Rotation = {Rotation}";
+}
+
+public class LarkDocWhiteboardNodeConnectorInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("startConnector")]
+    public JsonObjectNode? StartConnector { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("endConnector")]
+    public JsonObjectNode? EndConnector { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("caption")]
+    public List<string>? Caption { get; set; }
+
+    [JsonPropertyName("lineType")]
+    public string LineType { get; set; }
+}
+
+public class LarkDocWhiteboardNodeCellInfo
+{
+    [JsonPropertyName("rowIndex")]
+    public int RowIndex { get; set; }
+
+    [JsonPropertyName("columnIndex")]
+    public int ColumnIndex { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("rowSpan")]
+    public int RowSpan { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("columnSpan")]
+    public int ColumnSpan { get; set; }
+
+    [JsonPropertyName("text")]
+    public string? Text { get; set; }
+
+    public override string ToString()
+        => $"{Text} & Row = {RowIndex} (span {RowSpan}) & Column = {ColumnIndex} (span {ColumnSpan})";
+}
+
+public class LarkDocWhiteboardInstanceInfo
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("nodes")]
+    public List<LarkDocWhiteboardNodeInfo>? Nodes { get; set; }
+
+    public override string ToString()
+        => $"{Id} & Node count = {Nodes?.Count ?? 0}";
+}
+
+public class LarkDocWhiteboardNodeInfo
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("shapeType")]
+    public string ShapeType { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("parentNode")]
+    public string? ParentNode { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("childNodes")]
+    public List<string>? ChildNodes { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("position")]
+    public LarkDocWhiteboardNodePositionInfo? Position { get; set; }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("connector")]
+    public LarkDocWhiteboardNodeConnectorInfo? Connector { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("table")]
+    public List<LarkDocWhiteboardNodeCellInfo>? Table { get; set; }
+
+    public override string ToString()
+        => $"[{ShapeType ?? "?"}] {Text} ({Id}) {(Connector is not null ? "with connector" : "without connector")}";
 }

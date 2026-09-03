@@ -4,7 +4,9 @@ using LarkSuite.OapiModels;
 using System.Buffers.Text;
 using System.Drawing;
 using System.Text;
+using Trivial.Collection;
 using Trivial.CommandLine;
+using static System.Collections.Specialized.BitVector32;
 
 var console = StyleConsole.Default;
 LinearGradientConsoleStyle linear = new(ConsoleColor.Cyan, Color.FromArgb(0x36, 0x70, 0xfa), Color.FromArgb(0x3d, 0xd4, 0xb9));
@@ -55,4 +57,4 @@ dispatcher.Register<LarkHireCommandVerb>("hire");
 dispatcher.Register<LarkUsersCommandVerb>("users");
 dispatcher.Register<LarkOkrCommandVerb>("okr");
 
-await dispatcher.ProcessAsync();
+await dispatcher.ProcessOrSelectAsync();

@@ -32,6 +32,7 @@ public class LarkUsersCommandVerb : BaseCommandVerb
             Phones = [q],
         });
         var users = col.Data.TryGetObjectListValue("user_list");
+        if (users is null) return [];
         var i = 0;
         foreach (var user in users)
         {
