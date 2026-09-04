@@ -652,6 +652,8 @@ public class LarkHireTalentInfo
                 var simple = item?.Simplify();
                 if (simple is not null) arr.Add(simple);
             }
+
+            if (arr.Count > 0) json.SetValue("working", arr);
         }
 
         if (EducationInfo is not null && EducationInfo.Count > 0)
@@ -662,6 +664,8 @@ public class LarkHireTalentInfo
                 var simple = item?.Simplify();
                 if (simple is not null) arr.Add(simple);
             }
+
+            if (arr.Count > 0) json.SetValue("education", arr);
         }
 
         if (Projects is not null && Projects.Count > 0)
@@ -672,6 +676,8 @@ public class LarkHireTalentInfo
                 var simple = item?.Simplify();
                 if (simple is not null) arr.Add(simple);
             }
+
+            if (arr.Count > 0) json.SetValue("projects", arr);
         }
 
         return json;
