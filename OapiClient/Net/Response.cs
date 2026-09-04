@@ -129,7 +129,12 @@ public class LarkResponseBody
     public override string ToString()
     {
         if (IsError) return $"Error {Code} | {Message}";
-        return $"Data with props {Data?.Count ?? 0} | {Message}";
+        if (Data is null) return $"Data is null | {Message}";
+        var id = Data.TryGetId(out _)?.Trim();
+        var name = Data.TryGetStringTrimmedValue("name", true);
+        return string.IsNullOrEmpty(id) && name is null
+            ? $"Props count {Data?.Count ?? 0} | {Message}"
+            : $"{name ?? "?"} ({id}) | Props count {Data?.Count ?? 0} | {Message}";
     }
 }
 

@@ -3,6 +3,7 @@ using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.Json.Serialization;
 using Trivial.Collection;
@@ -81,5 +82,19 @@ public static partial class LarkApiUtils
         }
 
         return null;
+    }
+
+    public static bool Add(IList<LarkIdNameInfo> list, LarkIdNameInfo? item)
+    {
+        if (list is null) return false;
+        var id = item?.Id?.Trim();
+        if (string.IsNullOrEmpty(id)) return false;
+        foreach (var ele in list)
+        {
+            if (ele?.Id == id) return false;
+        }
+
+        list.Add(item!);
+        return true;
     }
 }

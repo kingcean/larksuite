@@ -277,8 +277,8 @@ public class LarkHireCommandVerb : BaseCommandVerb
             if (jobInfo is not null)
             {
                 console.WriteLine(LarkCliUtils.ItalicText(), "Job Info");
-                console.WriteLine(LarkCliUtils.BoldText(), jobInfo.TryGetStringTrimmedValue("name"));
-                console.WriteLine(ConsoleColor.Yellow, jobInfo.TryGetStringTrimmedValue("id"));
+                console.WriteLine(LarkCliUtils.BoldText(), jobInfo.TryGetStringTrimmedValue("name", true));
+                console.WriteLine(ConsoleColor.Yellow, jobInfo.TryGetStringTrimmedValue("id", true));
                 console.WriteLine();
             }
         }

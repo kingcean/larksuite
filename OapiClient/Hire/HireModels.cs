@@ -210,8 +210,7 @@ public class LarkHireInterviewInfo
         if (records is null) return list;
         foreach (var record in records)
         {
-            var interviewer = record?.Interviewer;
-            if (interviewer is not null) list.Add(interviewer);
+            LarkApiUtils.Add(list, record?.Interviewer);
         }
 
         return list;
@@ -283,6 +282,9 @@ public class LarkHireInterviewInfo
             _ => "Unknown state"
         };
     }
+
+    public override string ToString()
+        => $"Id = {Id} & Appication Id = {ApplicationId} & State = {GetStateString()} & Date = {GetBeginEndDateString()}";
 }
 
 public class LarkHireApplicationInterviewInfo
@@ -412,6 +414,15 @@ public class LarkHireApplicationInfo
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
+
+    [JsonIgnore]
+    public string Id => Info?.Id;
+
+    [JsonIgnore]
+    public string JobId => Info?.JobId ?? Job?.TryGetStringTrimmedValue("id");
+
+    [JsonIgnore]
+    public string TalentId => Info?.TalentId ?? Talent?.Id;
 }
 
 public class LarkHireApplicationStageTimingInfo
