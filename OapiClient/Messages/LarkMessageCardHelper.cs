@@ -257,7 +257,7 @@ public static class LarkMessageCardHelper
         if (isWeighted)
         {
             json.SetValue("width", "weighted");
-            json.SetValue("weight", isWeighted);
+            json.SetValue("weight", width);
         }
         else
         {
