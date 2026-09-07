@@ -247,13 +247,16 @@ public partial class LarkApi
     public Task<LarkResponseBody<BaseLarkTaskInfo>> MoveDocsNodeAsync(LarkDocsNodeMoveRequest options, CancellationToken cancellationToken = default)
         => PostAsync<BaseLarkTaskInfo>(LarkUrls.ToUrl(LarkUrls.MoveWikiNode, options.SourceSpaceId, options.SourceToken), JsonObjectNode.ConvertFrom(options), cancellationToken);
 
-    public Task<LarkResponsePagingBody> ListDocsComments(LarkDocsCommentListOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody> ListDocsCommentsAsync(LarkDocsCommentListOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsComments, options.DocToken), options, paging, cancellationToken);
 
-    public Task<IReadOnlyList<JsonObjectNode>> ListDocsComments(LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<JsonObjectNode>> ListDocsCommentsAsync(LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsComments, (response.Query as LarkDocsCommentListOptions)?.DocToken), response, pageSize, cancellationToken);
 
-    public Task<LarkResponseBody> ReplyDocsComment(LarkDocsCommentReplyOptions options, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> AddDocsCommentAsync(LarkDocsCommentAddOptions options, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.DocsAddComment, options, options.DocToken), options.ToJson(), cancellationToken);
+
+    public Task<LarkResponseBody> ReplyDocsCommentAsync(LarkDocsCommentReplyOptions options, CancellationToken cancellationToken = default)
         => PostAsync(LarkUrls.ToUrl(LarkUrls.DocsReplyComment, options, options.DocToken, options.CommentId), options.ToJson(), cancellationToken);
 
     public Task<LarkResponseBody<string>> UploadDocsFileAsync(string name, FileInfo file, string parentToken, string? mime = null, CancellationToken cancellationToken = default)

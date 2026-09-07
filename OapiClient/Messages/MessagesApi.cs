@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using Trivial.Net;
 using Trivial.Text;
+using static Trivial.Reflection.ExceptionHandler;
 
 namespace LarkSuite;
 
@@ -253,6 +254,53 @@ public partial class LarkApi
             var resp = await SendMessageAsync(user.Id, req, cancellationToken);
             if (resp?.Data is null || resp.IsError) continue;
             yield return user;
+        }
+    }
+
+    public async Task<Stream?> DownloadMessageImageAsync(string id, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        var http = CreateJsonHttpClient<Stream>();
+        var resp = await http.GetAsync(string.Concat(LarkUrls.DownloadMessageImageUploaded, id), cancellationToken);
+        return resp;
+    }
+
+    public async Task<Stream?> DownloadMessageFileAsync(string id, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return null;
+        var http = CreateJsonHttpClient<Stream>();
+        var resp = await http.GetAsync(string.Concat(LarkUrls.DownloadMessageFileUploaded, id), cancellationToken);
+        return resp;
+    }
+
+    public async Task<Stream?> DownloadMessageFileAsync(string messageId, string fileId, string fileType, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrWhiteSpace(fileId)) return null;
+        var http = CreateJsonHttpClient<Stream>();
+        var resp = await http.GetAsync(LarkUrls.ToUrl(LarkUrls.DownloadMessageFile, new QueryData
+        {
+            { "type", fileType ?? "file" },
+        }, messageId, fileId), cancellationToken);
+        return resp;
+    }
+
+    public async Task<Stream?> DownloadMessageFileAsync(LarkMessageResponse message, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(message.MessageType)) return null;
+        var content = message.Content?.Content;
+        if (content is null) return null;
+        switch (message.MessageType)
+        {
+            case "image":
+                return await DownloadMessageFileAsync(message.Id, content.TryGetStringTrimmedValue("image_key", true), "image", cancellationToken);
+            case "file":
+            case "folder":
+            case "audio":
+            case "media":
+            case "sticker":
+                return await DownloadMessageFileAsync(message.Id, content.TryGetStringTrimmedValue("file_key", true), "file", cancellationToken);
+            default:
+                return null;
         }
     }
 

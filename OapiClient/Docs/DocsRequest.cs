@@ -210,6 +210,118 @@ public class LarkDocsCommentListOptions : LarkUserIdTypeRequestOptions
     }
 }
 
+public class LarkDocsCommentAddOptions : LarkUserIdTypeRequestOptions, IJsonObjectHost
+{
+    private readonly List<JsonObjectNode> content = new();
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsCommentAddOptions class.
+    /// </summary>
+    public LarkDocsCommentAddOptions()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkDocsCommentReplyOptions class.
+    /// </summary>
+    /// <param name="docType">The doc type.</param>
+    /// <param name="docToken">The doc token.</param>
+    /// <param name="blockId">The block identifier.</param>
+    public LarkDocsCommentAddOptions(string docType, string docToken, string blockId)
+    {
+        DocToken = docToken;
+        BlockId = blockId;
+        DocType = docType;
+    }
+
+    /// <summary>
+    /// Gets or sets the doc type.
+    /// </summary>
+    public string DocToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the comment identifier.
+    /// </summary>
+    public string BlockId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the doc type.
+    /// </summary>
+    public string DocType { get; set; }
+
+    /// <summary>
+    /// Adds the comment content.
+    /// </summary>
+    /// <param name="type">The content type: text_run, docs_link, person.</param>
+    /// <param name="value">The content.</param>
+    public void AddContent(string type, string value)
+    {
+        if (string.IsNullOrEmpty(value)) return;
+        switch (type ?? "text_run")
+        {
+            case "text_run":
+            case "text":
+            case "string":
+            case "":
+                content.Add(new()
+                {
+                    { "type", "text" },
+                    { "text", value },
+                });
+                break;
+            case "docs_link":
+            case "docs":
+            case "link":
+            case "url":
+                content.Add(new()
+                {
+                    { "type", "link" },
+                    { "link", value },
+                });
+                break;
+            case "person":
+            case "user":
+            case "at":
+            case "@":
+                content.Add(new()
+                {
+                    { "type", "mention_user" },
+                    { "mention_user", value },
+                });
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Clears the comment content.
+    /// </summary>
+    public void ClearContent()
+        => content.Clear();
+
+    /// <inheritdoc />
+    public JsonObjectNode ToJson()
+    {
+        var arr = new JsonArrayNode();
+        arr.AddRange(content);
+        return new JsonObjectNode
+        {
+            { "file_type", DocType },
+            { "anchor", new JsonObjectNode
+            {
+                { "block_id", BlockId },
+            }
+            },
+            { "reply_elements", arr },
+        };
+    }
+
+    /// <inheritdoc />
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+    }
+}
+
 public class LarkDocsCommentReplyOptions : LarkUserIdTypeRequestOptions, IJsonObjectHost
 {
     private readonly List<JsonObjectNode> content = new();
