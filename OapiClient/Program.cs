@@ -59,4 +59,4 @@ dispatcher.Register<LarkHireCommandVerb>("hire");
 dispatcher.Register<LarkUsersCommandVerb>("users");
 dispatcher.Register<LarkOkrCommandVerb>("okr");
 
-await dispatcher.ProcessOrSelectAsync();
+await dispatcher.ProcessOrSelectAsync(LarkCliUtils.GetMenuSelectionOptions());

@@ -49,6 +49,24 @@ public static partial class LarkApiUtils
         return args;
     }
 
+    public static async IAsyncEnumerable<LarkMessageSendResult> WhereSuccessAsync(IAsyncEnumerable<LarkMessageSendResult> response)
+    {
+        if (response is null) yield break;
+        await foreach (var item in response)
+        {
+            if (item?.IsError == false) yield return item;
+        }
+    }
+
+    public static async IAsyncEnumerable<LarkMessageSendResult> WhereFailedAsync(IAsyncEnumerable<LarkMessageSendResult> response)
+    {
+        if (response is null) yield break;
+        await foreach (var item in response)
+        {
+            if (item?.IsError == true) yield return item;
+        }
+    }
+
     internal static string GetRichMessageText(string title, JsonArrayNode? content)
     {
         var col = new List<string>();

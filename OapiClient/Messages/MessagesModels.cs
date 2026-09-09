@@ -249,3 +249,51 @@ public class LarkEventMessageHeader
     [JsonPropertyName("tenant_key")]
     public string TenantKey { get; set; }
 }
+
+public class LarkMessageSendResult
+{
+    public LarkMessageSendResult()
+    {
+    }
+
+    public LarkMessageSendResult(string id, LarkIdNameInfo recipient, string? message = null)
+    {
+        MessageId = id;
+        Recipient = recipient;
+        ResultMessage = message;
+    }
+
+    public LarkMessageSendResult(bool isError, string? message = null)
+    {
+        IsError = isError;
+        ResultMessage = message;
+    }
+
+    public LarkMessageSendResult(string id, bool isError, string? message = null)
+        : this(isError, message)
+    {
+        MessageId = id;
+    }
+
+    public LarkMessageSendResult(string? id, bool isError, LarkIdNameInfo? recipient, string? message = null)
+        : this(isError, message)
+    {
+        MessageId = id;
+        Recipient = recipient;
+    }
+
+    [JsonPropertyName("id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MessageId { get; set; }
+
+    [JsonPropertyName("recipient")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkIdNameInfo? Recipient { get; set; }
+
+    [JsonPropertyName("message")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ResultMessage { get; set; }
+
+    [JsonPropertyName("error")]
+    public bool IsError { get; set; }
+}

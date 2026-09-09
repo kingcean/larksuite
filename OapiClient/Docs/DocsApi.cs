@@ -179,7 +179,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The content of the doc.</returns>
     [Description("Get the content of the specific identifier. The result is in a collection of block.")]
-    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token of the online doc.")] string token, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkContentBlock>(LarkUrls.ToUrl(LarkUrls.DocsBlocks, LarkUrls.GetId(token), true), new LarkResourceIdRequest(LarkUrls.GetId(token)), null, json => new(json), cancellationToken);
 
     /// <summary>
@@ -190,7 +190,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The content of the doc.</returns>
     [Description("Get the content of the specific identifier. The result is in a collection of block.")]
-    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token of the online doc.")] string token, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkContentBlock>(LarkUrls.ToUrl(LarkUrls.DocsBlocks, LarkUrls.GetId(token), true), new LarkResourceIdRequest(LarkUrls.GetId(token)), paging, json => new(json), cancellationToken);
 
     /// <summary>
@@ -201,7 +201,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The content of the doc.</returns>
     [Description("Get the content of the specific identifier. The result is in a collection of block.")]
-    public async Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token of the online doc.")] string token, [Description("A flag to control if need load all the blocks once; or false, if load the ones of the first page only.")] bool loadAllPages, CancellationToken cancellationToken = default)
+    public async Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, [Description("A flag to control if need load all the blocks once; or false, if load the ones of the first page only.")] bool loadAllPages, CancellationToken cancellationToken = default)
     {
         var resp = await GetDocsBlocksAsync(token, new LarkPageTokenInfo(50), cancellationToken);
         if (loadAllPages) await LarkApiUtils.LoadAllPagesAsync(resp, 50, GetDocsBlocksAsync, cancellationToken).CountAsync(cancellationToken);
@@ -539,7 +539,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The file text and doc node information.</returns>
     [Description("Get the text content of an onine file in wiki.")]
-    public async Task<LarkResponseBody<LarkDocsFileTextResponse>> ReadDocsTextFileAsync([Description("The node token of the file.")] string token, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<LarkDocsFileTextResponse>> ReadDocsTextFileAsync([Description("The node token (not the doc token nor file token) of the file.")] string token, CancellationToken cancellationToken = default)
     {
         var node = await GetWikiNodeAsync(token, cancellationToken);
         return await ReadDocsTextFileAsync(node, cancellationToken);
@@ -796,7 +796,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The doc content.</returns>
     [Description("Read the content of the specific online doc.")]
-    public async Task<LarkDocContent> GetDocsNodeContentAsync([Description("The URL or node token of the online doc.")] string token, CancellationToken cancellationToken = default)
+    public async Task<LarkDocContent> GetDocsNodeContentAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(token)) return LarkApiUtils.ErrorLarkDocContent(null, "The node token is null.");
         token = LarkUrls.GetId(token)!;

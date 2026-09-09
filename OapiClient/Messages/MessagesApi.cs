@@ -231,7 +231,7 @@ public partial class LarkApi
         return resp;
     }
 
-    public async IAsyncEnumerable<string> SendMessageAsync(IEnumerable<string> userOpenIds, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<string> userOpenIds, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
     {
         var ids = new List<string>();
         foreach (var userId in userOpenIds)
@@ -239,12 +239,12 @@ public partial class LarkApi
             if (string.IsNullOrWhiteSpace(userId) || ids.Contains(userId)) continue;
             ids.Add(userId);
             var resp = await SendMessageAsync(userId, req, cancellationToken);
-            if (resp?.Data is null || resp.IsError) continue;
-            yield return userId;
+            if (resp?.Data is null) yield return new(null, true, new(userId), resp?.Message ?? "Send message failed.");
+            else yield return new(resp.Data.Id, resp.IsError, new(userId), resp.Message ?? (resp.IsError ? "Send message failed." : "Send message succeeded."));
         }
     }
 
-    public async IAsyncEnumerable<LarkIdNameInfo> SendMessageAsync(IEnumerable<LarkIdNameInfo> users, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<LarkIdNameInfo> users, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
     {
         var ids = new List<string>();
         foreach (var user in users)
@@ -252,8 +252,8 @@ public partial class LarkApi
             if (string.IsNullOrWhiteSpace(user?.Id) || ids.Contains(user.Id)) continue;
             ids.Add(user.Id);
             var resp = await SendMessageAsync(user.Id, req, cancellationToken);
-            if (resp?.Data is null || resp.IsError) continue;
-            yield return user;
+            if (resp?.Data is null) yield return new(null, true, user, resp?.Message ?? "Send message failed.");
+            else yield return new(resp.Data.Id, resp.IsError, user, resp.Message ?? (resp.IsError ? "Send message failed." : "Send message succeeded."));
         }
     }
 

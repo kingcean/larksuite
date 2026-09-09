@@ -928,6 +928,23 @@ public class LarkHireTalentSnsInfo
 public class LarkIdNameInfo
 {
     /// <summary>
+    /// Initializes a new instance of the LarkIdNameInfo class.
+    /// </summary>
+    public LarkIdNameInfo()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the LarkIdNameInfo class.
+    /// </summary>
+    /// <param name="id">The identifier.</param>
+    public LarkIdNameInfo(string id)
+    {
+        Id = id;
+        Name = [];
+    }
+
+    /// <summary>
     /// Gets or sets the identifier.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
