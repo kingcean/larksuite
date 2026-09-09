@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
+using Trivial.Collection;
 using Trivial.Data;
 using Trivial.Maths;
 using Trivial.Net;
@@ -39,7 +40,7 @@ public enum LarkDocsBaseTableFieldType
     AutoIndex = 1005,
 }
 
-public class LarkDocsBaseTableInfo
+public class LarkDocsBaseTableInfo : INamePropertyModel
 {
     [JsonPropertyName("app_token")]
     public string Token { get; set; }
@@ -197,7 +198,7 @@ public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
     }
 }
 
-public class LarkDocsBaseTableTableInfo
+public class LarkDocsBaseTableTableInfo : IIdPropertyModel
 {
     [JsonPropertyName("table_id")]
     public string Id { get; set; }
@@ -220,7 +221,7 @@ public class LarkDocsBaseTableTableDetailsInfo : LarkDocsBaseTableTableInfo
     public List<LarkDocsBaseTableFieldBasicInfo> Fields { get; set; }
 }
 
-public class LarkDocsBaseTableViewInfo
+public class LarkDocsBaseTableViewInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonPropertyName("view_id")]
     public string Id { get; set; }
@@ -248,7 +249,7 @@ public class LarkDocsBaseTableViewInfo
         => $"{Name ?? "?"} (View ID = {Id} & Type = {ViewType})";
 }
 
-public class LarkDocsBaseTableFieldBasicInfo
+public class LarkDocsBaseTableFieldBasicInfo : INamePropertyModel
 {
     [JsonPropertyName("field_name")]
     public string Name { get; set; }
@@ -278,7 +279,7 @@ public class LarkDocsBaseTableFieldBasicInfo
         };
 }
 
-public class LarkDocsBaseTableFieldInfo
+public class LarkDocsBaseTableFieldInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonPropertyName("field_id")]
     public string Id { get; set; }
@@ -324,7 +325,7 @@ public class LarkDocsBaseTableFieldInfo
 /// <summary>
 /// The table record of Lark Base.
 /// </summary>
-public class LarkDocsBaseTableRecord
+public class LarkDocsBaseTableRecord : IIdPropertyModel
 {
     /// <summary>
     /// Initializes a new instance of the LarkDocsBaseTableRecord class.
@@ -631,7 +632,7 @@ public class LarkDocsBaseTableRecord
 /// </summary>
 /// <param name="source">The source record.</param>
 /// <param name="data">The data.</param>
-public class LarkDocsBaseTableRecord<T>(LarkDocsBaseTableRecord? source, T? data)
+public class LarkDocsBaseTableRecord<T>(LarkDocsBaseTableRecord? source, T? data) : IIdPropertyModel
 {
     /// <summary>
     /// Gets the record identifier.

@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
+using Trivial.Data;
 using Trivial.Net;
 using Trivial.Security;
 using Trivial.Text;
@@ -13,7 +14,7 @@ using Trivial.Web;
 
 namespace LarkSuite.OapiModels;
 
-public class LarkWikiSpaceInfo
+public class LarkWikiSpaceInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("name")]
@@ -47,7 +48,7 @@ public class LarkWikiSpaceInfo
         => $"{Name ?? "?"} (Space ID = {Id} & Type = {SpaceType})";
 }
 
-public class LarkDocsNodeInfo
+public class LarkDocsNodeInfo : INamePropertyModel
 {
     [JsonPropertyName("title")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -117,7 +118,7 @@ public class LarkDocsNodeInfo
         => $"{Name ?? "?"} (Doc Type = {DocType} & Node Token = {NodeToken} & Doc Token = {DocToken} & Space ID = {SpaceId} & {(HasChild ? "Has Child" : "No Child")})";
 }
 
-public class LarkDocsDocInfo
+public class LarkDocsDocInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("display_settings")]
@@ -206,7 +207,7 @@ public class LarkDocsMarkdownConvertResponse
 
 }
 
-public abstract class BaseLarkDocsDriveMetaInfo
+public abstract class BaseLarkDocsDriveMetaInfo : IIdPropertyModel
 {
     [JsonPropertyName("token")]
     public string Token { get; set; }
@@ -224,7 +225,7 @@ public class LarkDocsDriveMetaInfo : BaseLarkDocsDriveMetaInfo
     public override string OwnerUserId { get; set; }
 }
 
-public class LarkDocsFolderMetaInfo : BaseLarkDocsDriveMetaInfo
+public class LarkDocsFolderMetaInfo : BaseLarkDocsDriveMetaInfo, INamePropertyModel
 {
     [JsonPropertyName("name")]
     public string Name { get; set; }
@@ -254,7 +255,7 @@ public class LarkDocsDriveShortcutNodeInfo
     public string DocType { get; set; }
 }
 
-public class LarkDocsDriveNodeInfo
+public class LarkDocsDriveNodeInfo : INamePropertyModel
 {
     [JsonPropertyName("token")]
     public string Token { get; set; }

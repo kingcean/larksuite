@@ -6,6 +6,7 @@ using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Trivial.Data;
 using Trivial.Security;
 using Trivial.Text;
 
@@ -14,7 +15,7 @@ namespace LarkSuite.Docs;
 /// <summary>
 /// The item info of the docs.
 /// </summary>
-public class LarkDocsItemInfo
+public class LarkDocsItemInfo : IIdPropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("id")]
@@ -61,7 +62,7 @@ public class LarkContentBlockResourceIds
 /// <summary>
 /// The block content, key properties and child blocks.
 /// </summary>
-public class LarkContentBlockTree
+public class LarkContentBlockTree : IIdPropertyModel
 {
     /// <summary>
     /// Gets or sets the block identifier.
@@ -174,7 +175,7 @@ public abstract class BaseLarkContentBlockTreeContentReference
     public virtual string DisplayName { get; }
 }
 
-public class LarkContentBlockUserReference : BaseLarkContentBlockTreeContentReference
+public class LarkContentBlockUserReference : BaseLarkContentBlockTreeContentReference, IIdPropertyModel
 {
     [JsonIgnore]
     public override string ReferenceType => "user";
@@ -219,7 +220,7 @@ public class LarkContentBlockLinkReference : BaseLarkContentBlockTreeContentRefe
     public override string DisplayName => string.IsNullOrWhiteSpace(Title) ? Url : $"{Title} ({Url})";
 }
 
-public class LarkDocLinkItem(string nodeToken, string? name)
+public class LarkDocLinkItem(string nodeToken, string? name) : INamePropertyModel
 {
     /// <summary>
     /// Gets the doc title.
@@ -439,7 +440,7 @@ public class LarkDocWhiteboardNodeCellInfo
         => $"{Text} & Row = {RowIndex} (span {RowSpan}) & Column = {ColumnIndex} (span {ColumnSpan})";
 }
 
-public class LarkDocWhiteboardInstanceInfo
+public class LarkDocWhiteboardInstanceInfo : IIdPropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -451,7 +452,7 @@ public class LarkDocWhiteboardInstanceInfo
         => $"{Id} & Node count = {Nodes?.Count ?? 0}";
 }
 
-public class LarkDocWhiteboardNodeInfo
+public class LarkDocWhiteboardNodeInfo : IIdPropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }

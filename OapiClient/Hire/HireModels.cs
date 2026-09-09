@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Trivial.Collection;
+using Trivial.Data;
 using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
@@ -89,7 +90,7 @@ public class LarkInterviewMinuteInfo
     }
 }
 
-public class LarkHireInterviewInfo
+public class LarkHireInterviewInfo : IIdPropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("id")]
@@ -287,7 +288,7 @@ public class LarkHireInterviewInfo
         => $"Id = {Id} & Appication Id = {ApplicationId} & State = {GetStateString()} & Date = {GetBeginEndDateString()}";
 }
 
-public class LarkHireApplicationInterviewInfo
+public class LarkHireApplicationInterviewInfo : IIdPropertyModel
 {
     [JsonPropertyName("application_id")]
     public string Id { get; set; }
@@ -296,7 +297,7 @@ public class LarkHireApplicationInterviewInfo
     public List<LarkHireInterviewInfo> List { get; set; }
 }
 
-public class LarkHireInterviewRecordInfo
+public class LarkHireInterviewRecordInfo : IIdPropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("id")]
@@ -327,7 +328,7 @@ public class LarkHireInterviewRecordInfo
     public LarkIdNameInfo? Interviewer { get; set; }
 }
 
-public class LarkInterviewMeetingRoomInfo
+public class LarkInterviewMeetingRoomInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("room_id")]
@@ -359,7 +360,7 @@ public class LarkHireResumeSourceInfo : LarkIdNameInfo
     public int SourceType { get; set; }
 }
 
-public class LarkHireWebResumeSourceInfo
+public class LarkHireWebResumeSourceInfo : IIdPropertyModel
 {
     [JsonPropertyName("website_id")]
     public string Id { get; set; }
@@ -371,7 +372,7 @@ public class LarkHireWebResumeSourceInfo
     public JsonObjectNode Channel { get; set; }
 }
 
-public class LarkHireApplicationInfo
+public class LarkHireApplicationInfo : IIdPropertyModel
 {
     [JsonPropertyName("basic_info")]
     public LarkHireApplicationBasicInfo Info { get; set; }
@@ -425,7 +426,7 @@ public class LarkHireApplicationInfo
     public string TalentId => Info?.TalentId ?? Talent?.Id;
 }
 
-public class LarkHireApplicationStageTimingInfo
+public class LarkHireApplicationStageTimingInfo : IIdPropertyModel
 {
     [JsonPropertyName("stage_id")]
     public string Id { get; set; }
@@ -445,7 +446,7 @@ public class LarkHireApplicationTerminationInfo : LarkIdNameInfo
     public List<LarkIdNameInfo> Children { get; set; }
 }
 
-public class LarkHireApplicationEvaluationInfo
+public class LarkHireApplicationEvaluationInfo : IIdPropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -492,7 +493,7 @@ public class LarkHireApplicationPortalInfo
     public LarkHireApplicationCampusVolunteerInfo CampusVolunteer { get; set; }
 }
 
-public class LarkHireApplicationStageInfo
+public class LarkHireApplicationStageInfo : IIdPropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -510,7 +511,7 @@ public class LarkHireApplicationStageInfo
     public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
 }
 
-public class LarkHireApplicationBasicInfo
+public class LarkHireApplicationBasicInfo : IIdPropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -581,7 +582,7 @@ public class LarkHireApplicationBasicInfo
     public string? TerminationReasonNote { get; set; }
 }
 
-public class LarkHireTalentInfo
+public class LarkHireTalentInfo : IIdPropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("talent_id")]
@@ -684,7 +685,7 @@ public class LarkHireTalentInfo
     }
 }
 
-public class LarkHireTalentBasicInfo
+public class LarkHireTalentBasicInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("id")]
@@ -839,7 +840,7 @@ public class LarkHireTalentWorkingInfo
     }
 }
 
-public class LarkHireTalentProjectInfo
+public class LarkHireTalentProjectInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -878,7 +879,7 @@ public class LarkHireTalentProjectInfo
     }
 }
 
-public class LarkHireTalentWorkInfo
+public class LarkHireTalentWorkInfo : IIdPropertyModel
 {
     [JsonPropertyName("id")]
     public string Id { get; set; }
@@ -894,7 +895,7 @@ public class LarkHireTalentWorkInfo
     public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
 }
 
-public class LarkHireTalentAwardInfo
+public class LarkHireTalentAwardInfo : INamePropertyModel
 {
     [JsonPropertyName("award_name")]
     public string Name { get; set; }
@@ -925,7 +926,7 @@ public class LarkHireTalentSnsInfo
 /// <summary>
 /// The information with identifier and name.
 /// </summary>
-public class LarkIdNameInfo
+public class LarkIdNameInfo : IIdPropertyModel
 {
     /// <summary>
     /// Initializes a new instance of the LarkIdNameInfo class.
@@ -1007,7 +1008,7 @@ public class LarkCodeAndNameInfo
     }
 }
 
-public class LarkAttachmentInfo
+public class LarkAttachmentInfo : IIdPropertyModel, INamePropertyModel
 {
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("id")]

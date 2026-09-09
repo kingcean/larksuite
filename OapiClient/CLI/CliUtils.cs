@@ -171,6 +171,24 @@ public static partial class LarkCliUtils
         console.WriteLine();
     }
 
+    public static SelectionResult<LarkDocsBaseTableRecord<JsonObjectNode>> Select(this StyleConsole console, IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> records, Func<JsonObjectNode, string> title, SelectionConsoleOptions? options = null)
+    {
+        var selection = LarkApiUtils.ToSelection(records, title);
+        return console.Select(selection, options);
+    }
+
+    public static SelectionResult<LarkDocsBaseTableRecord<JsonObjectNode>> Select(this StyleConsole console, IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> records, string titleKey, SelectionConsoleOptions? options = null)
+    {
+        var selection = LarkApiUtils.ToSelection(records, titleKey);
+        return console.Select(selection, options);
+    }
+
+    public static SelectionResult<LarkDocsBaseTableRecord<T>> Select<T>(this StyleConsole console, IEnumerable<LarkDocsBaseTableRecord<T>> records, Func<T, string> title, SelectionConsoleOptions? options = null)
+    {
+        var selection = LarkApiUtils.ToSelection(records, title);
+        return console.Select(selection, options);
+    }
+
     internal static string? GetName(JsonObjectNode? json)
         => LarkApiUtils.GetName(json);
 

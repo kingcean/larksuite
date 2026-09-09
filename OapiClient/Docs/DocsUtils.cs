@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
 using Trivial.Collection;
+using Trivial.Data;
 using Trivial.Text;
 
 namespace LarkSuite.OapiModels;
@@ -227,7 +228,7 @@ public static partial class LarkApiUtils
     /// </summary>
     /// <param name="col">The content block collection.</param>
     /// <param name="root">The optional root content block to build the tree.</param>
-    /// <param name="userIds">The user identifiers to get.</param>
+    /// <param name="ids">The user identifiers to get.</param>
     /// <returns>The content block tree.</returns>
     public static LarkContentBlockTree ToTree(this IEnumerable<LarkContentBlock?> col, LarkContentBlock? root = null, LarkContentBlockResourceIds? ids = null)
     {
@@ -582,6 +583,94 @@ public static partial class LarkApiUtils
         var result = await task;
         if (result is null) return default;
         return result.Data ?? default;
+    }
+
+    public static SelectionData<LarkDocsBaseTableRecord<JsonObjectNode>> ToSelection(this IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> col, Func<JsonObjectNode, string>? title)
+    {
+        if (col is null) return new();
+        var selection = new SelectionData<LarkDocsBaseTableRecord<JsonObjectNode>>();
+        title ??= info =>
+        {
+            if (info is null) return null;
+            return info.TryGetStringTrimmedValue("name", true) ?? info.TryGetStringTrimmedValue("title", true) ?? info.TryGetId(out _);
+        };
+        foreach (var item in col)
+        {
+            if (item is null) continue;
+            selection.Add(new(title(item.Data), item));
+        }
+
+        return selection;
+    }
+
+    public static SelectionData<string> ToIdSelection(this IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> col, Func<JsonObjectNode, string>? title)
+    {
+        if (col is null) return new();
+        var selection = new SelectionData<string>();
+        title ??= info =>
+        {
+            if (info is null) return null;
+            return info.TryGetStringTrimmedValue("name", true) ?? info.TryGetStringTrimmedValue("title", true) ?? info.TryGetId(out _);
+        };
+        foreach (var item in col)
+        {
+            if (item is null) continue;
+            selection.Add(new(title(item.Data), item.Id));
+        }
+
+        return selection;
+    }
+
+    public static SelectionData<LarkDocsBaseTableRecord<JsonObjectNode>> ToSelection(this IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> col, string titleKey)
+        => ToSelection(col, string.IsNullOrWhiteSpace(titleKey) ? null : info =>
+        {
+            if (info is null) return null;
+            return info.TryGetStringTrimmedValue(titleKey, true) ?? info.TryGetStringTrimmedValue("name", true) ?? info.TryGetStringTrimmedValue("title", true) ?? info.TryGetId(out _);
+        });
+
+    public static SelectionData<string> ToIdSelection(this IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> col, string titleKey)
+        => ToIdSelection(col, string.IsNullOrWhiteSpace(titleKey) ? null : info =>
+        {
+            if (info is null) return null;
+            return info.TryGetStringTrimmedValue(titleKey, true) ?? info.TryGetStringTrimmedValue("name", true) ?? info.TryGetStringTrimmedValue("title", true) ?? info.TryGetId(out _);
+        });
+
+    public static SelectionData<LarkDocsBaseTableRecord<T>> ToSelection<T>(this IEnumerable<LarkDocsBaseTableRecord<T>> col, Func<T, string> title)
+    {
+        if (col is null) return new();
+        var selection = new SelectionData<LarkDocsBaseTableRecord<T>>();
+        title ??= info =>
+        {
+            if (info is null) return null;
+            if (info is INamePropertyModel name) return name.Name;
+            return info.ToString();
+        };
+        foreach (var item in col)
+        {
+            if (item is null) continue;
+            selection.Add(new(title(item.Data), item));
+        }
+
+        return selection;
+    }
+
+    public static SelectionData<string> ToIdSelection<T>(this IEnumerable<LarkDocsBaseTableRecord<T>> col, Func<T, string> title)
+    {
+        if (col is null) return new();
+        var selection = new SelectionData<string>();
+        title ??= info =>
+        {
+            if (info is null) return null;
+            if (info is INamePropertyModel name) return name.Name;
+            return info.ToString();
+        };
+        foreach (var item in col)
+        {
+            if (item is null) continue;
+            selection.Add(new(title(item.Data), item.Id));
+        }
+
+        return selection;
     }
 
     public static string? GetNodeToken(this LarkResponseBody<LarkDocsNodeInfo>? response)
