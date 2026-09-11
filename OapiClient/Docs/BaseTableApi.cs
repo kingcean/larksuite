@@ -239,7 +239,7 @@ public partial class LarkApi
     /// <param name="filter">The optional simple filter.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The records of the base table.</returns>
-    [Description("List the records in Lark Base (former named Bitable). Return 100 records at most.")]
+    [Description("List the records in Lark Base (former named Bitable). Return 200 records at most; or the value specified in the `filter.MaxCount` property.")]
     public async Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(
     [Description("The Lark Base instance identifier (token node).")] string baseId,
     [Description("The table (sheet) identifier. A Lark Base instance may include one or more table instance.")] string tableId,
