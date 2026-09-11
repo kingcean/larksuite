@@ -249,7 +249,7 @@ public partial class LarkApi
         LarkResponsePagingBody<LarkDocsBaseTableRecord> resp;
         if (string.IsNullOrWhiteSpace(filter?.FilterPropertyValue) && string.IsNullOrWhiteSpace(filter?.SortPropertyName))
         {
-            resp = await ReadBaseTableAsync(baseId, tableId, new LarkPageTokenInfo(100), cancellationToken);
+            resp = await ReadBaseTableAsync(baseId, tableId, new LarkPageTokenInfo(filter.MaxCount ?? 200), cancellationToken);
         }
         else
         {

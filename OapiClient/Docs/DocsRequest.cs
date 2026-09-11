@@ -176,6 +176,14 @@ public class LarkBaseTableSimpleFilter
     [JsonPropertyName("sortDesc")]
     [Description("The optional value indicating whether need order by desc (available only when sort property name is given).")]
     public bool SortByDesc { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optional maximum count of records to return. Should be less than 500. Default (null) is 200.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("maxCount")]
+    [Description("The optional maximum count of records to return. Should be less than 500. Default is 200.")]
+    public int? MaxCount { get; set; }
 }
 
 /// <summary>

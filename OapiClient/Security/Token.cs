@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
+using Trivial.Data;
 using Trivial.Security;
 using Trivial.Text;
 
@@ -65,6 +66,27 @@ public class LarkTenantTokenInfo : TokenInfo
     }
 
     public LarkTenantToken OriginalToken { get; }
+}
+
+public class LarkBotInfo : INamePropertyModel, IIdPropertyModel
+{
+    [JsonPropertyName("activate_status")]
+    public int Status { get; set; }
+
+    [JsonPropertyName("app_name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("avatar_url")]
+    public string AvatarUrl { get; set; }
+
+    [JsonPropertyName("ip_white_list")]
+    public List<string>? IpAllowList { get; set; }
+
+    [JsonPropertyName("open_id")]
+    public string OpenId { get; set; }
+
+    [JsonIgnore]
+    string IIdPropertyModel.Id => OpenId;
 }
 
 internal class CodeTokenRequest(CodeTokenRequestBody body, AppAccessingKey appKey, IEnumerable<string>? scope = null) : TokenRequest<CodeTokenRequestBody>(body, appKey, scope)

@@ -9,6 +9,7 @@ internal partial class LarkUrls
 {
     public static readonly Uri tenantTokenUri = new("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal");
     public static readonly Uri userTokenUri = new("https://open.feishu.cn/open-apis/authen/v2/oauth/token");
+    public static readonly Uri botInfoUri = new("https://open.feishu.cn/open-apis/bot/v3/info");
 
     public static string GetAppKeyId()
         => Environment.GetEnvironmentVariable("LARK_OAPI_APP_ID");

@@ -81,6 +81,11 @@ public partial class LarkApi : TokenContainer
     protected AppAccessingKey AppKey { get; }
 
     /// <summary>
+    /// Gets the identifier of the app key.
+    /// </summary>
+    public string? AppKeyId => AppKey?.Id;
+
+    /// <summary>
     /// Gets the source kind of Lark access token.
     /// </summary>
     public LarkApiTokenSourceKind TokenKind { get; private set; }
@@ -166,6 +171,21 @@ public partial class LarkApi : TokenContainer
     /// Sends a request message by GET to get response result.
     /// </summary>
     /// <typeparam name="T">The type of resposne.</typeparam>
+    /// <param name="uri">The URI the request is sent to.</param>
+    /// <param name="converter">The converter.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result deserialized.</returns>
+    public async Task<LarkResponseBody<T>> GetAsync<T>(Uri uri, Func<JsonObjectNode, T> converter, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var json = await http.GetAsync(uri, cancellationToken);
+        return new(json, converter);
+    }
+
+    /// <summary>
+    /// Sends a request message by GET to get response result.
+    /// </summary>
+    /// <typeparam name="T">The type of resposne.</typeparam>
     /// <param name="url">The URL the request is sent to.</param>
     /// <param name="converter">The converter.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
@@ -175,6 +195,21 @@ public partial class LarkApi : TokenContainer
         var http = CreateJsonHttpClient();
         var json = await http.GetAsync(url, cancellationToken);
         return new(json, converter);
+    }
+
+    /// <summary>
+    /// Sends a request message by GET to get response result.
+    /// </summary>
+    /// <typeparam name="T">The type of resposne.</typeparam>
+    /// <param name="uri">The URI the request is sent to.</param>
+    /// <param name="key">The property key to resolve result col.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response result deserialized.</returns>
+    public async Task<LarkResponseBody<T>> GetAsync<T>(Uri uri, string key, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var json = await http.GetAsync(uri, cancellationToken);
+        return new(json, key);
     }
 
     /// <summary>
@@ -731,6 +766,25 @@ public partial class LarkApi : TokenContainer
         if (expired is null || Token!.IsEmpty) return true;
         var diff = DateTime.Now - TokenResolved;
         return diff.TotalMilliseconds > expired.Value.TotalMilliseconds / 4 * 3;
+    }
+
+    /// <summary>
+    /// Gets the bot information.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The bot information.</returns>
+    public async Task<LarkResponseBody<LarkBotInfo>> GetBotInfoAsync(CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var json = await http.GetAsync(LarkUrls.botInfoUri, cancellationToken);
+        var info = json.TryGetObjectValue("bot");
+        if (info is not null)
+        {
+            json.SetValue("data", info);
+            json.Remove("bot");
+        }
+
+        return new(json);
     }
 
     /// <summary>

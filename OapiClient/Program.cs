@@ -15,7 +15,8 @@ LinearGradientConsoleStyle linear = new(ConsoleColor.Cyan, Color.FromArgb(0x36, 
 console.WriteLine(linear, "LarkSuite");
 console.WriteLine();
 
-if (LarkApi.DefaultInstance.IsAppKeyEmpty)
+var larkApi = LarkApi.DefaultInstance;
+if (larkApi.IsAppKeyEmpty)
 {
     console.WriteLine("Need use an app key to access the resource.");
     console.Write("App ID: \t");
@@ -36,12 +37,13 @@ if (LarkApi.DefaultInstance.IsAppKeyEmpty)
         if (string.IsNullOrWhiteSpace(s)) return;
     }
 
-    LarkApiUtils.ReplaceDefaultInstance(new(s, secret));
+    larkApi = new(s, secret);
+    LarkApiUtils.ReplaceDefaultInstance(larkApi);
     console.WriteLine();
 }
 
 console.Write(ConsoleColor.DarkGray, "Loading…");
-var token = await LarkApi.DefaultInstance.GetTenantTokenAsync();
+var token = await larkApi.GetTenantTokenAsync();
 console.Clear(StyleConsole.RelativeAreas.Line);
 console.BackspaceToBeginning();
 if (token is null || token.IsEmpty)
@@ -51,6 +53,15 @@ if (token is null || token.IsEmpty)
     console.WriteLine(token?.Message);
     console.WriteLine();
     return;
+}
+
+var info = await larkApi.GetBotInfoAsync();
+if (!(info?.Data?.Name is null || info.IsError))
+{
+    console.Append(info.Data.Name);
+    console.Append(" \t");
+    console.WriteLine(ConsoleColor.DarkGray, info.Data.OpenId);
+    console.WriteLine();
 }
 
 var dispatcher = new CommandDispatcher();
