@@ -39,7 +39,7 @@ public partial class LarkApi
     }
 
     /// <summary>
-    /// Lists a page of interviews matching the specified query options.
+    /// Gets interviews matching the specified query options.
     /// </summary>
     /// <param name="options">The interview identifier, application identifier, and time range query options.</param>
     /// <param name="paging">The optional page size and page token.</param>
@@ -197,7 +197,7 @@ public partial class LarkApi
         => GetAsync<LarkHireApplicationInfo>(LarkUrls.ToUrl(LarkUrls.ApplicationDetails, options, id), "application_detail", cancellationToken);
 
     /// <summary>
-    /// Lists a page of job application identifiers matching the specified query options.
+    /// Gets job application identifiers matching the specified query options.
     /// </summary>
     /// <param name="options">The job application search options.</param>
     /// <param name="paging">The page size and page token.</param>

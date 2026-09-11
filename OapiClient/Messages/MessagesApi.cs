@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Json;
 using Trivial.Net;
 using Trivial.Text;
-using static Trivial.Reflection.ExceptionHandler;
 
 namespace LarkSuite;
 
@@ -114,25 +113,52 @@ public partial class LarkApi
             { "sequence", sequence },
         }, json => json?.TryGetStringTrimmedValue("card_id", true)!, cancellationToken);
 
+    /// <summary>
+    /// Updates an element in a message card.
+    /// </summary>
+    /// <param name="options">The card identifier, element identifier, and updated element value.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response of the card element update request.</returns>
     public Task<LarkResponseBody> UpdateCardMessageAsync(LarkMessageElementUpdateRequest options, CancellationToken cancellationToken = default)
         => PutAsync(LarkUrls.ToUrl(LarkUrls.UpdateMessageCard, options.CardId, options.ElementId), JsonObjectNode.ConvertFrom(options), cancellationToken);
 
+    /// <summary>
+    /// Updates the text content of a streaming message card.
+    /// </summary>
+    /// <param name="request">The streaming message request to update.</param>
+    /// <param name="textContent">The updated text content.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response of the card element update request.</returns>
     public Task<LarkResponseBody> UpdateCardMessageAsync(LarkMessageStreamingRequest request, string textContent, CancellationToken cancellationToken = default)
         => UpdateCardMessageAsync(request.Update(textContent), cancellationToken);
 
+    /// <summary>
+    /// Updates the text content of a streaming message card.
+    /// </summary>
+    /// <param name="request">The streaming message request to update.</param>
+    /// <param name="textContent">The updated text content.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response of the card element update request.</returns>
     public Task<LarkResponseBody> UpdateCardMessageAsync(LarkMessageStreamingRequest request, StringBuilder textContent, CancellationToken cancellationToken = default)
         => UpdateCardMessageAsync(request.Update(textContent), cancellationToken);
 
+    /// <summary>
+    /// Updates an element in a streaming message card.
+    /// </summary>
+    /// <param name="request">The streaming message request to update.</param>
+    /// <param name="elementValue">The updated element value.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response of the card element update request.</returns>
     public Task<LarkResponseBody> UpdateCardMessageAsync(LarkMessageStreamingRequest request, JsonObjectNode elementValue, CancellationToken cancellationToken = default)
         => UpdateCardMessageAsync(request.Update(elementValue), cancellationToken);
 
     /// <summary>
-    /// </summary>
+    /// Creates a streaming interactive message request after creating its card.
     /// </summary>
     /// <param name="receiveIdType">The user identifier type, e.g. open_id, union_id, user_id, email, chat_id.</param>
     /// <param name="receiveId">The identifier of the receive user or chat group.</param>
     /// <param name="callback">A handler called on the initialized card message request options is generated.</param>
-    /// <param name="options">The additional options.
+    /// <param name="options">The additional options.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>An instance to generate the request options to update message.</returns>
     public async Task<LarkMessageStreamingRequest?> CreateStreamingMessageRequestAsync(string receiveIdType, string receiveId, Action<LarkMessageJsonCardRequest>? callback, LarkSimpleStreamingMessageOptions? options = null, CancellationToken cancellationToken = default)
@@ -201,12 +227,18 @@ public partial class LarkApi
     /// </summary>
     /// <param name="receiveIdType">The user identifier type, e.g. open_id, union_id, user_id, email, chat_id.</param>
     /// <param name="receiveId">The identifier of the receive user or chat group.</param>
-    /// <param name="options">The additional options.
+    /// <param name="options">The additional options.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>An instance to generate the request options to update message.</returns>
     public Task<LarkMessageStreamingRequest?> CreateStreamingMessageRequestAsync(string receiveIdType, string receiveId, LarkSimpleStreamingMessageOptions options, CancellationToken cancellationToken = default)
         => CreateStreamingMessageRequestAsync(receiveIdType, receiveId, null, options, cancellationToken);
 
+    /// <summary>
+    /// Updates the settings of a message card.
+    /// </summary>
+    /// <param name="options">The card identifier and settings update options.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response of the card settings update request.</returns>
     public async Task<LarkResponseBody> UpdateCardMessageSettingsAsync(LarkMessageSettingsUpdateRequest options, CancellationToken cancellationToken = default)
     {
         var http = CreateJsonHttpClient();
@@ -214,9 +246,22 @@ public partial class LarkApi
         return new(resp);
     }
 
+    /// <summary>
+    /// Finishes a streaming message request and updates its message card settings.
+    /// </summary>
+    /// <param name="options">The streaming message request to finish.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response of the card settings update request.</returns>
     public Task<LarkResponseBody> UpdateCardMessageSettingsAsync(LarkMessageStreamingRequest options, CancellationToken cancellationToken = default)
         => UpdateCardMessageSettingsAsync(options.Finish(), cancellationToken);
 
+    /// <summary>
+    /// Creates an interactive card and sends it to a user identified by open ID.
+    /// </summary>
+    /// <param name="userOpenId">The recipient user open ID.</param>
+    /// <param name="req">The interactive card request.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The message sending response, or an error response if the recipient identifier is blank or card creation fails.</returns>
     public async Task<LarkResponseBody<LarkMessageResponse>> SendMessageAsync(string userOpenId, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(userOpenId)) return new(true, "The user identifier is null.");
@@ -231,6 +276,14 @@ public partial class LarkApi
         return resp;
     }
 
+    /// <summary>
+    /// Creates and sends an interactive card to each distinct user open ID.
+    /// </summary>
+    /// <param name="userOpenIds">The recipient user open IDs.</param>
+    /// <param name="req">The interactive card request.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>An asynchronous sequence of sending results.</returns>
+    /// <remarks>Blank and duplicate user identifiers are skipped.</remarks>
     public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<string> userOpenIds, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
     {
         var ids = new List<string>();
@@ -244,6 +297,14 @@ public partial class LarkApi
         }
     }
 
+    /// <summary>
+    /// Creates and sends an interactive card to each distinct user.
+    /// </summary>
+    /// <param name="users">The recipients containing user open IDs and optional names.</param>
+    /// <param name="req">The interactive card request.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>An asynchronous sequence of sending results.</returns>
+    /// <remarks>Users with blank or duplicate identifiers are skipped.</remarks>
     public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<LarkIdNameInfo> users, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
     {
         var ids = new List<string>();
@@ -257,6 +318,12 @@ public partial class LarkApi
         }
     }
 
+    /// <summary>
+    /// Downloads an image previously uploaded for a message.
+    /// </summary>
+    /// <param name="id">The image key.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The image stream, or null if <paramref name="id"/> is blank.</returns>
     public async Task<Stream?> DownloadMessageImageAsync(string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
@@ -265,6 +332,12 @@ public partial class LarkApi
         return resp;
     }
 
+    /// <summary>
+    /// Downloads a file previously uploaded for a message.
+    /// </summary>
+    /// <param name="id">The file key.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The file stream, or null if <paramref name="id"/> is blank.</returns>
     public async Task<Stream?> DownloadMessageFileAsync(string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
@@ -273,6 +346,14 @@ public partial class LarkApi
         return resp;
     }
 
+    /// <summary>
+    /// Downloads a file or image associated with a message.
+    /// </summary>
+    /// <param name="messageId">The message identifier.</param>
+    /// <param name="fileId">The file or image key.</param>
+    /// <param name="fileType">The resource type, or null to use <c>file</c>.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The file stream, or null if the message or file identifier is blank.</returns>
     public async Task<Stream?> DownloadMessageFileAsync(string messageId, string fileId, string fileType, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(messageId) || string.IsNullOrWhiteSpace(fileId)) return null;
@@ -284,6 +365,12 @@ public partial class LarkApi
         return resp;
     }
 
+    /// <summary>
+    /// Downloads the file content associated with a supported message type.
+    /// </summary>
+    /// <param name="message">The message containing the message type, identifier, and file or image key.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The associated file stream, or null if the message is unsupported or does not contain a file key.</returns>
     public async Task<Stream?> DownloadMessageFileAsync(LarkMessageResponse message, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(message.MessageType)) return null;
@@ -304,6 +391,16 @@ public partial class LarkApi
         }
     }
 
+    /// <summary>
+    /// Sends a streaming message and periodically updates its card with asynchronous response content.
+    /// </summary>
+    /// <param name="task">An optional task to await before sending the message.</param>
+    /// <param name="request">The streaming message request.</param>
+    /// <param name="response">The asynchronous sequence of text fragments to append and display.</param>
+    /// <param name="delaySeconds">The minimum interval, in seconds, between card updates; values below one use one second.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The complete accumulated response text, or null if <paramref name="request"/> is null.</returns>
+    /// <remarks>The method attempts to finish the streaming card settings even if response processing fails.</remarks>
     public async Task<string?> SendResponseAsync(Task? task, LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, int delaySeconds, CancellationToken cancellationToken = default)
     {
         if (request is null) return null;
@@ -422,6 +519,13 @@ public partial class LarkApi
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Sends a streaming message and updates its card with asynchronous response content at two-second intervals.
+    /// </summary>
+    /// <param name="request">The streaming message request.</param>
+    /// <param name="response">The asynchronous sequence of text fragments to append and display.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The complete accumulated response text, or null if <paramref name="request"/> is null.</returns>
     public Task<string?> SendResponseAsync(LarkMessageStreamingRequest request, IAsyncEnumerable<string> response, CancellationToken cancellationToken = default)
         => SendResponseAsync(null, request, response, 2, cancellationToken);
 

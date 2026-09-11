@@ -64,7 +64,7 @@ public partial class LarkApi
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.ListBaseTableTables, LarkUrls.GetId((response.Query as LarkResourceIdRequest)?.Id)), response, pageSize, cancellationToken);
 
     /// <summary>
-    /// Lists a page of views of a table in Lark Base.
+    /// Gets views of a table in Lark Base.
     /// </summary>
     /// <param name="baseId">The Lark Base app token or URL.</param>
     /// <param name="tableId">The table identifier.</param>
@@ -86,7 +86,7 @@ public partial class LarkApi
         => GetItemsAsync<LarkDocsBaseTableViewInfo>(LarkUrls.ToUrl(LarkUrls.GetBaseTableView, LarkUrls.GetId(baseId), tableId, viewId), cancellationToken);
 
     /// <summary>
-    /// Lists a page of fields of a table in Lark Base.
+    /// Gets fields of a table in Lark Base.
     /// </summary>
     /// <param name="baseId">The Lark Base app token or URL.</param>
     /// <param name="tableId">The table identifier.</param>

@@ -37,7 +37,7 @@ public partial class LarkApi
         => GetAsync<LarkDocsDriveMetaInfo>(LarkUrls.GetDriveRoot, cancellationToken);
 
     /// <summary>
-    /// Lists a page of files in a drive folder using the specified request options.
+    /// Gets files in a drive folder using the specified request options.
     /// </summary>
     /// <param name="options">The drive folder token and file listing request options.</param>
     /// <param name="paging">The optional page size and page token.</param>
@@ -47,7 +47,7 @@ public partial class LarkApi
         => GetItemsAsync<LarkDocsDriveNodeInfo>(LarkUrls.GetDriveFiles, options, "files", paging, null, cancellationToken);
 
     /// <summary>
-    /// Lists a page of files in a drive folder.
+    /// Gets files in a drive folder.
     /// </summary>
     /// <param name="token">The drive folder token.</param>
     /// <param name="paging">The optional page size and page token.</param>

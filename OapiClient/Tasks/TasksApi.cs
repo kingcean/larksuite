@@ -10,7 +10,7 @@ namespace LarkSuite;
 public partial class LarkApi
 {
     /// <summary>
-    /// Lists a page of OKR periods owned by a user.
+    /// Gets OKR periods owned by a user.
     /// </summary>
     /// <param name="id">The user identifier.</param>
     /// <param name="request">The optional page size and page token.</param>
@@ -20,7 +20,7 @@ public partial class LarkApi
         => GetItemsAsync<LarkOkrCycleItem>(LarkUrls.OkrPeriods, new LarkUserOwnedResourcesRequest(id), request, cancellationToken);
 
     /// <summary>
-    /// Lists a page of OKR periods using the specified user resource request options.
+    /// Gets OKR periods using the specified user resource request options.
     /// </summary>
     /// <param name="options">The user identifier and resource request options.</param>
     /// <param name="request">The page size and page token.</param>
@@ -40,7 +40,7 @@ public partial class LarkApi
         => GetItemsAsync(LarkUrls.OkrPeriods, response, pageSize, cancellationToken);
 
     /// <summary>
-    /// Lists a page of OKR objectives for a target resource.
+    /// Gets OKR objectives for a target resource.
     /// </summary>
     /// <param name="id">The target resource identifier.</param>
     /// <param name="request">The optional page size and page token.</param>
@@ -50,7 +50,7 @@ public partial class LarkApi
         => GetItemsAsync<LarkOkrObjectiveItem>(LarkUrls.ToUrl(LarkUrls.OkrObjectives, id), new LarkTargetResourcesRequest(id), request, cancellationToken);
 
     /// <summary>
-    /// Lists a page of OKR objectives for a target resource with user identifier type options.
+    /// Gets OKR objectives for a target resource with user identifier type options.
     /// </summary>
     /// <param name="id">The target resource identifier.</param>
     /// <param name="options">The user identifier type request options.</param>
@@ -136,7 +136,7 @@ public partial class LarkApi
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.OkrObjectiveProgress, (response.Query as LarkTargetResourcesRequest)?.Id), response, pageSize, cancellationToken);
 
     /// <summary>
-    /// Lists a page of key results for an OKR objective.
+    /// Gets key results for an OKR objective.
     /// </summary>
     /// <param name="id">The objective identifier.</param>
     /// <param name="request">The optional page size and page token.</param>
@@ -146,7 +146,7 @@ public partial class LarkApi
         => GetItemsAsync<LarkOkrKeyResultItem>(LarkUrls.ToUrl(LarkUrls.OkrKeyResults, id), new LarkTargetResourcesRequest(id), request, cancellationToken);
 
     /// <summary>
-    /// Lists a page of key results for an OKR objective with user identifier type options.
+    /// Gets key results for an OKR objective with user identifier type options.
     /// </summary>
     /// <param name="id">The objective identifier.</param>
     /// <param name="options">The user identifier type request options.</param>

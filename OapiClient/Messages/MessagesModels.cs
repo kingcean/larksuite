@@ -95,6 +95,36 @@ public class LarkMessageResponse
             _ => null,
         };
     }
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        if (IsDeleted) sb.Append("Deleted | ");
+        sb.Append(Sender is null ? "? " : $"[{Sender.SenderType}] {Sender.SenderName ?? Sender.Id} ");
+        sb.Append(CreationDate.ToString("f"));
+        sb.Append(" | ");
+        var content = Content?.Content;
+        sb.Append(MessageType);
+        if (content is null)
+        {
+            sb.Append(" without content");
+        }
+        else if (MessageType == "text" || MessageType == "hongbao")
+        {
+            var text = Content?.Content.TryGetStringTrimmedValue("text", true);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                sb.Append(" empty");
+            }
+            else
+            {
+                sb.Append(" | ");
+                sb.Append(text);
+            }
+        }
+
+        return sb.ToString();
+    }
 }
 
 public class LarkMessageSenderInfo
@@ -118,6 +148,9 @@ public class LarkMessageSenderInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("sender_i18n_names")]
     public JsonObjectNode? SenderNames { get; set; }
+
+    public override string ToString()
+        => $"[{SenderType}] {SenderName ?? "?"} ({IdType} {Id})";
 }
 
 public class LarkMessageContentInfo
@@ -155,6 +188,9 @@ public class LarkMessageMentionInfo
 
     [JsonPropertyName("tenant_key")]
     public string TenantKey { get; set; }
+
+    public override string ToString()
+        => $"{Name ?? "?"} ({IdType} {Id})";
 }
 
 public class LarkSimpleStreamingMessageOptions
@@ -214,6 +250,9 @@ public class LarkEventMessageArgs
 
     public T GetBody<T>()
         => Body is null ? default : Body.Deserialize<T>();
+
+    public override string ToString()
+        => $"{EventType} {CreationDate:f} {EventId}";
 }
 
 public class LarkEventMessage
@@ -248,6 +287,9 @@ public class LarkEventMessageHeader
 
     [JsonPropertyName("tenant_key")]
     public string TenantKey { get; set; }
+
+    public override string ToString()
+        => $"{EventType} {CreationDate:f} {Id}";
 }
 
 public class LarkMessageSendResult
@@ -296,4 +338,24 @@ public class LarkMessageSendResult
 
     [JsonPropertyName("error")]
     public bool IsError { get; set; }
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        sb.Append(MessageId);
+        if (IsError) sb.Append(" Error");
+        if (!string.IsNullOrWhiteSpace(ResultMessage))
+        {
+            sb.Append(' ');
+            sb.Append(ResultMessage);
+        }
+
+        if (Recipient is not null)
+        {
+            sb.Append(" | Recipient ");
+            sb.Append(Recipient.ToString());
+        }
+
+        return sb.ToString();
+    }
 }

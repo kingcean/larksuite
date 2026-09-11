@@ -101,7 +101,7 @@ public partial class LarkApi
         => GetItemsAsync<LarkDocsNodeInfo>(LarkUrls.ToUrl(LarkUrls.WikiSpaceNodes, LarkUrls.GetId(id)), cancellationToken);
 
     /// <summary>
-    /// Lists a page of nodes in a wiki space, optionally under a parent node.
+    /// Gets nodes in a wiki space, optionally under a parent node.
     /// </summary>
     /// <param name="options">The wiki space identifier and optional parent node token.</param>
     /// <param name="page">The optional page size and page token.</param>
@@ -130,7 +130,7 @@ public partial class LarkApi
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.WikiSpaceMembers, token), cancellationToken);
 
     /// <summary>
-    /// Lists a page of top level nodes in a wiki space.
+    /// Gets top level nodes in a wiki space.
     /// </summary>
     /// <param name="id">The wiki space identifier.</param>
     /// <param name="paging">The page size and page token.</param>
@@ -379,7 +379,7 @@ public partial class LarkApi
         => PostAsync<BaseLarkTaskInfo>(LarkUrls.ToUrl(LarkUrls.MoveWikiNode, options.SourceSpaceId, options.SourceToken), JsonObjectNode.ConvertFrom(options), cancellationToken);
 
     /// <summary>
-    /// Lists a page of comments on a document.
+    /// Gets comments on a document.
     /// </summary>
     /// <param name="options">The document token and comment query options.</param>
     /// <param name="paging">The optional page size and page token.</param>
@@ -1192,7 +1192,7 @@ public partial class LarkApi
     }
 
     /// <summary>
-    /// Lists a page of document versions.
+    /// Gets document versions.
     /// </summary>
     /// <param name="options">The document token, object type, and additional request options.</param>
     /// <param name="paging">The page size and page token.</param>
@@ -1202,7 +1202,7 @@ public partial class LarkApi
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsVersions, options.DocToken), options, paging, cancellationToken);
 
     /// <summary>
-    /// Lists a page of versions of the specified document.
+    /// Gets versions of the specified document.
     /// </summary>
     /// <param name="docToken">The document token.</param>
     /// <param name="docType">The document object type.</param>
