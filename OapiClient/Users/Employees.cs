@@ -15,8 +15,8 @@ namespace LarkSuite.CommandLine;
 
 public partial class LarkUsersCommandVerb : BaseCommandVerb
 {
-    private static List<string> employeeCoreFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "avatar_url", "person_info.talent_id", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2"];
-    private static List<string> employeeLimitFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "avatar_url", "job.id", "job.name", "person_info.talent_id", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2", "custom_fields"];
+    private static List<string> employeeCoreFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2"];
+    private static List<string> employeeLimitFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2", "custom_fields"];
 
     public static async Task<LarkResponsePagingBody> ListEmployeesAsync(LarkApi? larkApi, DateTime effectiveStartDate, bool withCustomFields = false, CancellationToken cancellationToken = default)
     {
@@ -25,6 +25,20 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         {
             Fields = withCustomFields ? employeeLimitFields : employeeCoreFields,
             EffectiveStartDate = effectiveStartDate.ToString("yyyy-MM-dd"),
+        }, new(50), cancellationToken);
+        if (resp is null) return new(true, "No response.");
+        if (resp.Data is null || resp.IsError) return resp;
+        await LarkApiUtils.LoadAllPagesAsync(resp, 50, larkApi.SearchEmployeesAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
+
+    public static async Task<LarkResponsePagingBody> GetDepartmentEmployeesAsync(LarkApi? larkApi, List<string> ids, bool withCustomFields = false, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        var resp = await larkApi.SearchEmployeesAsync(new LarkEmployeeSearchRequest()
+        {
+            Fields = withCustomFields ? employeeLimitFields : employeeCoreFields,
+            DepartmentIds = ids,
         }, new(50), cancellationToken);
         if (resp is null) return new(true, "No response.");
         if (resp.Data is null || resp.IsError) return resp;
@@ -78,7 +92,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         console.WriteLine(ConsoleColor.Yellow, GetEmployeeId(employee) ?? "?");
 
         console.WriteLine();
-        console.WriteLine(LarkCliUtils.ItalicText(), "Job info");
+        console.WriteLine(LarkCliUtils.ItalicText(), "Job Info");
         var deptInfo = employee.TryGetObjectValue("department");
         var deptName = GetName(deptInfo, "department_name");
         var deptId = deptInfo?.TryGetStringTrimmedValue("id_v2", true) ?? deptInfo?.TryGetStringTrimmedValue("id", true) ?? employee.TryGetStringTrimmedValue("department_id_v2", true) ?? employee.TryGetStringTrimmedValue("department_id", true);
@@ -90,8 +104,8 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         if (jobLevel is not null) LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Level", GetName(jobLevel), jobLevel.TryGetStringTrimmedValue("id", true) ?? employee.TryGetStringTrimmedValue("job_level_id", true));
 
         console.WriteLine();
-        console.WriteLine(LarkCliUtils.ItalicText(), "Contact and basic info");
-        var legalName = info?.TryGetStringTrimmedValue("legal_name", true);
+        console.WriteLine(LarkCliUtils.ItalicText(), "Contact and Basic Info");
+        var legalName = info.TryGetStringTrimmedValue("legal_name", true);
         if (legalName is not null && legalName != employeeName) LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Name", legalName);
         LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Email", info.TryGetStringValue("email_address"));
         LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Phone", info.TryGetStringValue("phone_number"));

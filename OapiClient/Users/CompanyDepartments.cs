@@ -78,12 +78,33 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             await WriteEmployeeInPropertiesAsync(console, larkApi, managerId, cancellationToken);
         }
 
+        var employeesTask = GetDepartmentEmployeesAsync(larkApi, [id], false, cancellationToken);
         var parentId = resp.TryGetStringTrimmedValue("parent_department_id", true);
         if (parentId is not null)
         {
             console.WriteLine();
             console.WriteLine(LarkCliUtils.ItalicText(), "Parent Department");
-            await WriteDepartmentInPropertiesAsync(console, larkApi, parentId, cancellationToken);
+            var parentPathTask = larkApi.GetCompanyDepartmentsParentAsync([parentId], cancellationToken);
+            await WriteDepartmentInPropertiesAsync(console, larkApi, parentId, false, cancellationToken);
+            var parentPath = (await parentPathTask)?.Data?.Get(parentId);
+            if (parentPath?.Parents is not null && parentPath.Parents.Count > 0)
+            {
+                console.WriteLine();
+                console.WriteLine(LarkCliUtils.ItalicText(), "Higher-Level Department");
+                var i = 1;
+                foreach (var p in parentPath.Parents)
+                {
+                    i++;
+                    if (p is null) continue;
+                    console.Append(ConsoleColor.Blue, '+');
+                    console.Append(ConsoleColor.Blue, i);
+                    if (!p.IsActive) console.Append(ConsoleColor.Red, " × ");
+                    else console.Append(ConsoleColor.DarkGray, " | ");
+                    console.Append(p.GetName());
+                    console.Append(" \t");
+                    console.WriteLine(ConsoleColor.DarkGray, p.DepartmentId);
+                }
+            }
         }
 
         var children = await childrenTask;
@@ -93,6 +114,15 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             console.WriteLine();
             console.WriteLine(LarkCliUtils.ItalicText(), "Subordinate Departments");
             WriteDepartments(console, children.Data);
+        }
+
+        var employees = await employeesTask;
+        if (employees.Data is not null && employees.Data.Count > 0)
+        {
+            console.WriteLine();
+            console.WriteLine(LarkCliUtils.ItalicText(), "Members");
+            WriteEmployees(console, employees.Data);
+            console.WriteLine(ConsoleColor.DarkGray, "* Includes only members of this department, excluding ones of its sub-departments.");
         }
 
         return resp;
@@ -120,7 +150,10 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
     public static string? GetDepartmentDescription(JsonObjectNode json)
         => GetName(json, "description");
 
-    public static async Task<JsonObjectNode?> WriteDepartmentInPropertiesAsync(StyleConsole? console, LarkApi? larkApi, string id, CancellationToken cancellationToken = default)
+    public static Task<JsonObjectNode?> WriteDepartmentInPropertiesAsync(StyleConsole? console, LarkApi? larkApi, string id, CancellationToken cancellationToken = default)
+        => WriteDepartmentInPropertiesAsync(console, larkApi, id, true, cancellationToken);
+
+    private static async Task<JsonObjectNode?> WriteDepartmentInPropertiesAsync(StyleConsole? console, LarkApi? larkApi, string id, bool containParentId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
         console ??= StyleConsole.Default;
@@ -139,7 +172,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Code", info.TryGetStringValue("code"));
         if (info.TryGetBooleanValue("is_root") == true) LarkCliUtils.WritePropertyLine(console, "Level", "Root");
         LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Description", GetDepartmentDescription(info));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Parent ID", info.TryGetStringTrimmedValue("parent_department_id", true));
+        if (containParentId) LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Parent ID", info.TryGetStringTrimmedValue("parent_department_id", true));
         return info;
     }
 

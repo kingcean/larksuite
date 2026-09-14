@@ -12,7 +12,6 @@ using Trivial.Collection;
 using Trivial.CommandLine;
 using Trivial.Text;
 using Trivial.Web;
-using static System.Collections.Specialized.BitVector32;
 
 namespace LarkSuite.CommandLine;
 

@@ -39,11 +39,11 @@ public static partial class LarkApiUtils
     /// </summary>
     /// <param name="names">The collection of name.</param>
     /// <returns>The locale name.</returns>
-    public static string? GetName(this IEnumerable<LarkLocaleNameItemInfo> names)
+    public static string? GetName(this IEnumerable<LarkLocaleValueItemInfo> names)
     {
         if (names is null) return null;
-        var name = GetName(names, UseChinese ? "zh-cn" : "en-us");
-        if (string.IsNullOrEmpty(name)) name = GetName(names, UseChinese ? "en-us" : "zh-cn");
+        var name = GetName(names, UseChinese ? "zh-CN" : "en-US");
+        if (string.IsNullOrEmpty(name)) name = GetName(names, UseChinese ? "en-US" : "zh-CN");
         return name;
     }
 
@@ -53,12 +53,12 @@ public static partial class LarkApiUtils
     /// <param name="names">The collection of name.</param>
     /// <param name="langCode">The language code.</param>
     /// <returns>The locale name.</returns>
-    public static string? GetName(IEnumerable<LarkLocaleNameItemInfo> names, string langCode)
+    public static string? GetName(IEnumerable<LarkLocaleValueItemInfo> names, string langCode)
     {
         if (names is null || string.IsNullOrWhiteSpace(langCode)) return null;
         foreach (var name in names)
         {
-            if (name?.LanguageCode == langCode) return name.Name;
+            if (name?.LanguageCode == langCode) return name.Value;
         }
 
         return null;

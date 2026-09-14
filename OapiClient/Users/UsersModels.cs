@@ -610,7 +610,7 @@ public class LarkCompanyDepartmentParentInfo
     /// Gets or sets the list of department names in different locales.
     /// </summary>
     [JsonPropertyName("department_name")]
-    public List<LarkLocaleNameItemInfo> Name { get; set; }
+    public List<LarkLocaleValueItemInfo> Name { get; set; }
 
     /// <summary>
     /// Gets or sets the parent department identifier.

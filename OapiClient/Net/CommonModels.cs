@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Data;
 using Trivial.Text;
 
@@ -110,7 +111,36 @@ public class LarkLocaleNameItemInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("name")]
     public string Name { get; set; }
+
+    /// <inhertidoc />
+    public override string ToString()
+        => $"[{LanguageCode}] {Name}";
 }
+
+/// <summary>
+/// The information of international value.
+/// </summary>
+public class LarkLocaleValueItemInfo
+{
+    /// <summary>
+    /// Gets or sets the language code: zh-CN, en-US.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("lang")]
+    public string LanguageCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the value.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("value")]
+    public string Value { get; set; }
+
+    /// <inhertidoc />
+    public override string ToString()
+        => $"[{LanguageCode}] {Value}";
+}
+
 /// <summary>
 /// The information with identifier and name.
 /// </summary>
