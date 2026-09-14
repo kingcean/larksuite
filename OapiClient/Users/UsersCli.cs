@@ -1,25 +1,128 @@
 ﻿using LarkSuite;
 using LarkSuite.OapiModels;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Text;
 using System.Text.Json;
+using Trivial.Collection;
 using Trivial.CommandLine;
 using Trivial.Text;
 using Trivial.Web;
+using static System.Collections.Specialized.BitVector32;
 
 namespace LarkSuite.CommandLine;
 
-public class LarkUsersCommandVerb : BaseCommandVerb
+public partial class LarkUsersCommandVerb : BaseCommandVerb
 {
-    public static string Description => "Get user info and org info.";
+    /// <summary>
+    /// Gets the description of the command.
+    /// </summary>
+    public static string Description => "Get employee info and org info.";
 
+    /// <summary>
+    /// Additional capabilities.
+    /// </summary>
+    private readonly Dictionary<string, string> caps = new();
+
+    /// <summary>
+    /// Registers the additional command.
+    /// </summary>
+    /// <param name="key">The command key.</param>
+    /// <param name="description">The description.</param>
+    protected void Register(string key, string description)
+    {
+        if (key is null) return;
+        key = key.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(key)) return;
+        var method = GetType().GetMethod($"Process{key.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
+        if (method is not null && !method.IsStatic) caps[key] = description;
+    }
+
+    /// <inheritdoc />
     protected override async Task OnProcessAsync(CancellationToken cancellationToken = default)
     {
-        await GetUserInfoAsync();
+        var console = CurrentConsole;
+        console.WriteLine(ConsoleColor.Magenta, Description);
+        var verb = Arguments.Verb;
+        var command = verb.Count > 0 ? verb[0]?.Trim()?.ToLowerInvariant() : null;
+
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            var selection = new SelectionData<string>
+            {
+                new('r', "recent\tGet the recent employees.", "recent"),
+                new('e', "employee\tGet details of a specific employee.", "employee"),
+                new('d', "department\tGet details of a specific department.", "department"),
+            };
+            foreach (var item in caps)
+            {
+                if (string.IsNullOrWhiteSpace(item.Key)) continue;
+                selection.Add(new($"{item.Key}\t{item.Value}", item.Key));
+            }
+
+            var result = console.Select(selection, LarkCliUtils.GetMenuSelectionOptions());
+            command = result.Data ?? result.Value;
+        }
+
+        if (string.IsNullOrWhiteSpace(command) || LarkCliUtils.IsToExit(command)) return;
+        console.WriteLine();
+        if (caps.ContainsKey(command))
+        {
+            var method = GetType().GetMethod($"Process{command.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
+            if (method is null || method.IsStatic)
+            {
+                console.WriteLine("Not supported command.");
+                console.WriteLine();
+                return;
+            }
+
+            var task = method.Invoke(this, [cancellationToken]) as Task;
+            if (task is not null) await task;
+            return;
+        }
+
+        switch (command)
+        {
+            case "r":
+            case "recent":
+            case "近期":
+                {
+                    var today = DateTime.Today;
+                    await WriteEmployeesAsync(console, today.Day < 15 ? today.AddMonths(-1) : today, cancellationToken);
+                    break;
+                }
+            case "e":
+            case "employee":
+            case "员工":
+                {
+                    console.WriteLine("Please type the employee ID or email:  ");
+                    var s = LarkCliUtils.ReadLine(console, "employee");
+                    if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
+                    await WriteEmployeeAsync(console, s, cancellationToken);
+                    break;
+                }
+            case "d":
+            case "department":
+            case "dept":
+            case "部门":
+                {
+                    console.WriteLine("Please type the department ID:  ");
+                    var s = LarkCliUtils.ReadLine(console, "dept");
+                    if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
+                    await WriteDepartmentAsync(console, s, cancellationToken);
+                    break;
+                }
+            default:
+                {
+                    console.WriteLine("Not supported command.");
+                    console.WriteLine();
+                    break;
+                }
+        }
     }
 
     public async Task<JsonObjectNode> GetUserInfoAsync()
@@ -45,65 +148,18 @@ public class LarkUsersCommandVerb : BaseCommandVerb
         return col.Data;
     }
 
-    public static void WriteLine(StyleConsole console, IEnumerable<JsonObjectNode> col)
+    private static string? GetName(JsonObjectNode? json, string? key = null)
     {
-        console ??= StyleConsole.Default;
-        foreach (var user in col)
+        var arr = json?.TryGetObjectListValue(key ?? "name", true);
+        if (arr is null) return null;
+        string? nameZh = null;
+        string? nameEn = null;
+        foreach (var info in arr)
         {
-            console.Write(ConsoleColor.Blue, "· ");
-            var nickname = user.TryGetStringValue("nickname");
-            var name = user.TryGetStringValue("name");
-            var enName = user.TryGetStringValue("en_name");
-            if (string.IsNullOrWhiteSpace(nickname) || nickname == name)
-            {
-                console.Write(name);
-                if (!string.IsNullOrWhiteSpace(enName) && enName != name)
-                    console.Write(ConsoleColor.DarkGray, $"  ({enName})");
-            }
-            else
-            {
-                console.Write(nickname);
-                if (!string.IsNullOrWhiteSpace(enName) && enName != name && enName != nickname)
-                    console.Write(ConsoleColor.DarkGray, $"  ({name} | {nickname})");
-                else
-                    console.Write(ConsoleColor.DarkGray, $"  ({name})");
-            }
-
-            console.Write(" \t");
-            console.WriteLine(ConsoleColor.DarkGray, user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true));
-        }
-    }
-
-    public static void WriteEmployee(StyleConsole console, JsonObjectNode employee)
-    {
-        if (employee is null) return;
-        console ??= StyleConsole.Default;
-        var info = employee.TryGetObjectValue("person_info");
-        if (info is null) return;
-        console.WriteLine(LarkCliUtils.BoldText(), employee.TryGetStringTrimmedValue("preferred_name", true)
-            ?? info.TryGetStringTrimmedValue("preferred_local_full_name", true)
-            ?? info.TryGetStringTrimmedValue("legal_name", true)
-            ?? info.TryGetStringTrimmedValue("preferred_english_full_name", true)
-            ?? "?");
-        var jobTitle = employee.TryGetObjectValue("job")?.TryGetObjectListValue("name", true);
-        if (jobTitle is not null)
-        {
-            string? nameZh = null;
-            string? nameEn = null;
-            foreach (var jobInfo in jobTitle)
-            {
-                if (jobInfo.TryGetStringTrimmedValue("lang") == "zh-CN") nameZh = jobInfo.TryGetStringTrimmedValue("value", true);
-                else if (jobInfo.TryGetStringTrimmedValue("lang") == "en-US") nameEn = jobInfo.TryGetStringTrimmedValue("value", true);
-            }
-
-            var name = nameZh ?? nameEn;
-            if (name is not null) console.WriteLine(name);
+            if (info.TryGetStringTrimmedValue("lang") == "zh-CN") nameZh = info.TryGetStringTrimmedValue("value", true);
+            else if (info.TryGetStringTrimmedValue("lang") == "en-US") nameEn = info.TryGetStringTrimmedValue("value", true);
         }
 
-        console.WriteLine();
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Email", info.TryGetStringValue("email_address"));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Phone", info.TryGetStringValue("phone_number"));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Birthday", info.TryGetStringValue("date_of_birth"));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Gender", info.TryGetObjectValue("gender")?.TryGetStringValue("enum_name")?.ToSpecificCase(Cases.Capitalize));
+        return LarkApiUtils.UseChinese ? (nameZh ?? nameEn) : (nameEn ?? nameZh);
     }
 }

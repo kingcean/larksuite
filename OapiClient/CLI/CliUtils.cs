@@ -259,7 +259,7 @@ public static partial class LarkCliUtils
         return id;
     }
 
-    internal static void WritePropertyLine(StyleConsole console, string label, string? value)
+    internal static void WritePropertyLine(StyleConsole console, string label, string? value, string? note = null)
     {
         console ??= StyleConsole.Default;
         var style = new ConsoleTextStyle(Color.FromArgb(0xCE, 0x91, 0x78), ConsoleColor.Green, null, null);
@@ -269,25 +269,34 @@ public static partial class LarkCliUtils
             return;
         }
 
-        console.Write(style, label);
-        console.Write(label.Length < 8 ? "\t\t" : " \t");
-        console.WriteLine(value);
+        console.Append(style, label);
+        console.Append(label.Length < 8 ? "\t\t" : " \t");
+        console.Append(value);
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            console.WriteLine();
+            return;
+        }
+
+        console.Append(" \t");
+        console.WriteLine(ConsoleColor.DarkGray, note);
     }
 
-    internal static void WritePropertyLineIfNotEmpty(StyleConsole console, string label, string? value)
+    internal static void WritePropertyLineIfNotEmpty(StyleConsole console, string label, string? value, string? note = null)
     {
-        if (!string.IsNullOrWhiteSpace(value)) WritePropertyLine(console, label, value);
+        if (!string.IsNullOrWhiteSpace(value)) WritePropertyLine(console, label, value, note);
     }
 
     internal static void WriteEmpty(StyleConsole console)
         => (console ?? StyleConsole.Default).WriteLine(ConsoleColor.Red, "Empty");
 
-    internal static bool WriteEmpty(StyleConsole console, LarkResponsePagingBody resp)
+    internal static bool WriteEmpty(StyleConsole console, LarkResponsePagingBody? resp)
     {
         if (resp is not null && !resp.IsError && resp.Count > 0) return false;
         console ??= StyleConsole.Default;
-        console.WriteLine(ConsoleColor.Red, "Empty.");
-        if (!resp.IsMessageEmpty()) console.WriteLine(resp.Message);
+        console.Append(ConsoleColor.Red, "Empty. \t");
+        if (resp is not null && !resp.IsMessageEmpty()) console.WriteLine(resp.Message);
+        else console.WriteLine();
         return true;
     }
 

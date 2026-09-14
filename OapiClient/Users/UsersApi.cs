@@ -86,7 +86,29 @@ public partial class LarkApi
 
     public Task<LarkResponsePagingBody> SearchEmployeesAsync(LarkEmployeeSearchRequest options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
         => PostItemsAsync(LarkUrls.SearchEmployees, options, paging, cancellationToken);
-
+    
     public Task<IReadOnlyList<JsonObjectNode>> SearchEmployeesAsync(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
-        => GetItemsAsync(LarkUrls.SearchEmployees, response, pageSize, cancellationToken);
+        => PostItemsAsync(LarkUrls.SearchEmployees, response, pageSize, cancellationToken);
+
+    public Task<LarkResponsePagingBody> GetCompanyDepartmentsAsync(LarkCompanyDepartmentResolveRequest options, CancellationToken cancellationToken = default)
+        => PostItemsAsync(LarkUrls.GetCompanyDepartments, options, null, cancellationToken);
+
+    public Task<LarkResponsePagingBody> SearchCompanyDepartmentsAsync(LarkCompanyDepartmentsSearchRequest options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+        => PostItemsAsync(LarkUrls.SearchCompanyDepartments, options, paging, cancellationToken);
+
+    public Task<IReadOnlyList<JsonObjectNode>> SearchCompanyDepartmentsAsync(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
+        => PostItemsAsync(LarkUrls.SearchCompanyDepartments, response, pageSize, cancellationToken);
+
+    public Task<LarkResponseBody<LarkCompanyDepartmentParentResponseInfo>> GetCompanyDepartmentsParentAsync(List<string> ids, string? departmentIdType, CancellationToken cancellationToken = default)
+        => PostAsync<LarkCompanyDepartmentParentResponseInfo>(string.IsNullOrWhiteSpace(departmentIdType) ? LarkUrls.GetCompanyDepartmentsParent : LarkUrls.ToUrl(LarkUrls.GetCompanyDepartmentsParent, new QueryData
+        {
+            { "department_id_type", departmentIdType },
+        }), new()
+        {
+            { "department_id_list", ids },
+            
+        }, cancellationToken);
+
+    public Task<LarkResponseBody<LarkCompanyDepartmentParentResponseInfo>> GetCompanyDepartmentsParentAsync(List<string> ids, CancellationToken cancellationToken = default)
+        => GetCompanyDepartmentsParentAsync(ids, null, cancellationToken);
 }

@@ -21,6 +21,9 @@ public class LarkHireCommandVerb : BaseCommandVerb
     /// </summary>
     public static string Description => "Get details of interview and candidate.";
 
+    /// <summary>
+    /// Additional capabilities.
+    /// </summary>
     private readonly Dictionary<string, string> caps = new();
 
     /// <summary>
@@ -149,9 +152,12 @@ public class LarkHireCommandVerb : BaseCommandVerb
             case "interviews":
             case "interview":
             case "latest":
+            case "面试":
                 await GetInterviewsAsync(DateTime.Now.AddDays(-Math.Abs(LatestDays)).Date, DateTime.Now, cancellationToken);
                 break;
+            case "date":
             case "day":
+            case "日期":
                 {
                     console.WriteLine("Please type the date in YYYY-MM-DD format.");
                     var s = LarkCliUtils.ReadLine(console, "Hire\\Date")!;
@@ -183,6 +189,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                     break;
                 }
             case "talent":
+            case "人才":
                 await GetTalentInterviewAsync(cancellationToken);
                 break;
             default:

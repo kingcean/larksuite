@@ -18,6 +18,11 @@ namespace LarkSuite.OapiModels;
 public static partial class LarkApiUtils
 {
     /// <summary>
+    /// Gets or sets a value indicating whether to use Chinese instead of English as the first language.
+    /// </summary>
+    public static bool UseChinese { get; set; } = true;
+
+    /// <summary>
     /// Gets the locale name.
     /// </summary>
     /// <param name="json">The object with strings.</param>
@@ -25,7 +30,38 @@ public static partial class LarkApiUtils
     public static string? GetName(JsonObjectNode? json)
     {
         if (json is null) return null;
-        return json.TryGetStringTrimmedValue("zh_cn", true) ?? json.TryGetStringTrimmedValue("en_us", true);
+        if (UseChinese) return json.TryGetStringTrimmedValue("zh_cn", true) ?? json.TryGetStringTrimmedValue("en_us", true);
+        return json.TryGetStringTrimmedValue("en_us", true) ?? json.TryGetStringTrimmedValue("zh_cn", true);
+    }
+
+    /// <summary>
+    /// Gets the locale name.
+    /// </summary>
+    /// <param name="names">The collection of name.</param>
+    /// <returns>The locale name.</returns>
+    public static string? GetName(this IEnumerable<LarkLocaleNameItemInfo> names)
+    {
+        if (names is null) return null;
+        var name = GetName(names, UseChinese ? "zh-cn" : "en-us");
+        if (string.IsNullOrEmpty(name)) name = GetName(names, UseChinese ? "en-us" : "zh-cn");
+        return name;
+    }
+
+    /// <summary>
+    /// Gets the locale name.
+    /// </summary>
+    /// <param name="names">The collection of name.</param>
+    /// <param name="langCode">The language code.</param>
+    /// <returns>The locale name.</returns>
+    public static string? GetName(IEnumerable<LarkLocaleNameItemInfo> names, string langCode)
+    {
+        if (names is null || string.IsNullOrWhiteSpace(langCode)) return null;
+        foreach (var name in names)
+        {
+            if (name?.LanguageCode == langCode) return name.Name;
+        }
+
+        return null;
     }
 
     /// <summary>
