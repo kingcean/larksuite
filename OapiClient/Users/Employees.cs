@@ -25,6 +25,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         {
             Fields = withCustomFields ? employeeLimitFields : employeeCoreFields,
             EffectiveStartDate = effectiveStartDate.ToString("yyyy-MM-dd"),
+            EmploymentStatus = "hired",
         }, new(50), cancellationToken);
         if (resp is null) return new(true, "No response.");
         if (resp.Data is null || resp.IsError) return resp;
@@ -39,6 +40,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         {
             Fields = withCustomFields ? employeeLimitFields : employeeCoreFields,
             DepartmentIds = ids,
+            EmploymentStatus = "hired",
         }, new(50), cancellationToken);
         if (resp is null) return new(true, "No response.");
         if (resp.Data is null || resp.IsError) return resp;
@@ -53,6 +55,13 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         var resp = await larkApi.GetEmployeesAsync(new LarkEmployeeResolveRequest(id, withCustomFields ? employeeLimitFields : employeeCoreFields), cancellationToken);
         if (resp?.Data is null || resp.IsError) return null;
         return resp.Data.FirstOrDefault();
+    }
+
+    public static async Task<LarkResponsePagingBody> GetEmployeesAsync(LarkApi? larkApi, List<string> ids, bool withCustomFields = false, CancellationToken cancellationToken = default)
+    {
+        if (ids is null) return new(true, "No employee identifier provided.");
+        larkApi ??= LarkApi.DefaultInstance;
+        return await larkApi.GetEmployeesAsync(new LarkEmployeeResolveRequest("employment", ids, withCustomFields ? employeeLimitFields : employeeCoreFields), cancellationToken);
     }
 
     public static void WriteEmployees(StyleConsole console, IEnumerable<JsonObjectNode> col)

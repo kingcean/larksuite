@@ -165,6 +165,8 @@ public class LarkEmployeeResolveRequest : LarkUserIdTypeRequestOptions
         if (col.Count < 1) return;
         switch (idType.Trim().ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty).Replace("-", string.Empty))
         {
+            case "ouid":
+            case "id":
             case "employment":
             case "employmentid":
             case "":
@@ -263,9 +265,9 @@ public class LarkEmployeeSearchRequest : LarkUserIdTypeRequestOptions
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("key_word")]
     public string? Keyword { get; set; }
-    
+
     /// <summary>
-    /// Gets or sets the employment status.
+    /// Gets or sets the employment status: hired, terminated.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("employment_status")]

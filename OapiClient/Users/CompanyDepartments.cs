@@ -69,7 +69,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
 
         WriteDepartment(console, resp, true);
 
-        var childrenTask = GetSubordinateDepartmentsAsync(larkApi, id, cancellationToken);
+        var childrenTask = GetSubordinateDepartmentsAsync(larkApi, id, true, cancellationToken);
         var managerId = resp.TryGetStringTrimmedValue("manager", true);
         if (managerId is not null)
         {
@@ -128,7 +128,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         return resp;
     }
 
-    public static async Task<LarkResponsePagingBody> GetSubordinateDepartmentsAsync(LarkApi? larkApi, string id, CancellationToken cancellationToken = default)
+    public static async Task<LarkResponsePagingBody> GetSubordinateDepartmentsAsync(LarkApi? larkApi, string id, bool? isActive, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return new(true, "The department identifier should not be empty.");
         larkApi ??= LarkApi.DefaultInstance;
@@ -136,6 +136,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         {
             ParentDepartmentId = id,
             Fields = departmentFields,
+            IsActive = isActive,
         };
         var resp = await larkApi.SearchCompanyDepartmentsAsync(childrenReq, new(50), cancellationToken);
         if (resp is null) return new(true, "No response.");
