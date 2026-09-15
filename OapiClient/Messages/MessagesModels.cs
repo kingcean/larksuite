@@ -3,6 +3,7 @@ using LarkSuite.Text;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 using System.Reflection;
 using System.Text;
@@ -10,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Trivial.Collection;
+using Trivial.Data;
 using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
@@ -358,4 +360,262 @@ public class LarkMessageSendResult
 
         return sb.ToString();
     }
+}
+
+public class LarkMessageGroupRestrictInfo
+{
+    [JsonPropertyName("status")]
+    public bool Status { get; set; }
+
+    [JsonPropertyName("screenshot_has_permission_setting")]
+    public string Screenshot { get; set; }
+
+    [JsonPropertyName("download_has_permission_setting")]
+    public string Download { get; set; }
+
+    [JsonPropertyName("message_has_permission_setting")]
+    public string Copy { get; set; }
+}
+
+public class BaseLarkMessageGroupInfo : IIdPropertyModel
+{
+    [JsonPropertyName("chat_id")]
+    public string Id { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("avatar")]
+    public string? AvatarUrl { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("i18n_names")]
+    public JsonObjectNode LocaleNames { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("owner_id")]
+    public string? OwnerId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("owner_id_type")]
+    public string? OwnerIdType { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the message group is available for the users out of current organization.
+    /// </summary>
+    [JsonPropertyName("external")]
+    [Description("A value indicating whether the message group is available for the users out of current organization.")]
+    public bool IsExternal { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tenant key.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("tenant_key")]
+    [Description("The tenant key.")]
+    public string? TenantKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for hide member count setting.
+    /// <list type="bullet">
+    /// <item>normal</item>
+    /// <item>dissolved</item>
+    /// <item>dissolved_save</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("chat_status")]
+    [Description("The status of the message group, including `normal`, `dissolved` and `dissolved_save`.")]
+    public string? Status { get; set; }
+
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement> AdditionalProperties { get; set; }
+}
+
+public class LarkMessageGroupInfo : BaseLarkMessageGroupInfo
+{
+    /// <summary>
+    /// Gets or sets the permission for sending urgent messages.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("urgent_setting")]
+    [Description("The permission for sending urgent messages, including `only_owner` and `all_members`.")]
+    public string? UrgentMessagePermission { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for video conference setting.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("video_conference_setting")]
+    [Description("The permission for video conference setting, including `only_owner` and `all_members`.")]
+    public string? VideoConferencePermission { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for adding member.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("add_member_permission")]
+    [Description("The permission for adding member, including `only_owner` and `all_members`.")]
+    public string? AddMemberPermission { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for sharing this group.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("share_card_permission")]
+    [Description("The permission for sharing this group, including `only_owner` and `all_members`.")]
+    public string? SharePermission { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for at (@, mentions) all members.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("at_all_permission")]
+    [Description("The permission for at (@, mentions) all members, including `only_owner` and `all_members`.")]
+    public string? AtAllPermission { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for edit message setting.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("edit_permission")]
+    [Description("The permission for edit message setting, including `only_owner` and `all_members`.")]
+    public string? EditMessagePermission { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mode of message sending in group.
+    /// <list type="bullet">
+    /// <item>chat</item>
+    /// <item>thread</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("group_message_type")]
+    [Description("The mode of message sending in group, including `chat` and `thread`.")]
+    public string? MessageMode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the visibility of the message group.
+    /// <list type="bullet">
+    /// <item>private</item>
+    /// <item>public</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("chat_type")]
+    [Description("The visibility of the message group, including `private` and `public`.")]
+    public string? Visibility { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message group kind.
+    /// <list type="bullet">
+    /// <item>inner</item>
+    /// <item>tenant</item>
+    /// <item>department</item>
+    /// <item>edu</item>
+    /// <item>meeting</item>
+    /// <item>customer_service</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("chat_tag")]
+    [Description("The message group kind, including `inner`, `tenant`, `department`, `edu`, `meeting` and `customer_service`.")]
+    public string? Kind { get; set; }
+
+    /// <summary>
+    /// Gets or sets the visibility of user join notification.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// <item>not_anyone</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("join_message_visibility")]
+    [Description("The visibility of user join notification, including `only_owner`, `all_members` and `not_anyone`.")]
+    public string? JoinNotification { get; set; }
+
+    /// <summary>
+    /// Gets or sets the visibility of user leave notification.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// <item>not_anyone</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("leave_message_visibility")]
+    [Description("The visibility of user leave notification, including `only_owner`, `all_members` and `not_anyone`.")]
+    public string? LeaveNotification { get; set; }
+
+    /// <summary>
+    /// Gets or sets the membership approval status.
+    /// <list type="bullet">
+    /// <item>no_approval_required</item>
+    /// <item>approval_required</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("membership_approval")]
+    [Description("The membership approval status, including `no_approval_required` and `approval_required`.")]
+    public string? MembershipApproval { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for moderation (sending message)g.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>moderator_list</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("moderation_permission")]
+    [Description("The permission for moderation (sending message), including `only_owner`, `moderator_list` and `all_members`.")]
+    public string? ModerationPermission { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("restricted_mode_setting")]
+    public LarkMessageGroupRestrictInfo? RestrictSettings { get; set; }
+
+    /// <summary>
+    /// Gets or sets the permission for hide member count setting.
+    /// <list type="bullet">
+    /// <item>only_owner</item>
+    /// <item>all_members</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("hide_member_count_setting")]
+    [Description("The permission for hide member count setting, including `only_owner` and `all_members`.")]
+    public string? HideMemberCountPermission { get; set; }
 }

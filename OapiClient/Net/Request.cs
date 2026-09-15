@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -579,8 +580,14 @@ public class LarkUserIdTypeRequestOptions : BaseQueryRequestInfo
 {
     /// <summary>
     /// Gets or sets type of user identifier.
+    /// <list type="bullet">
+    /// <item>open_id</item>
+    /// <item>union_id</item>
+    /// <item>user_id</item>
+    /// </list>
     /// </summary>
     [JsonPropertyName("user_id_type")]
+    [Description("The type of user identifier. It can be `open_id`, `union_id`, or `user_id`.")]
     public LarkUserIdType UserIdType { get; set; }
 
     /// <summary>
@@ -659,6 +666,25 @@ public class LarkUserOwnedResourcesRequest : LarkUserIdTypeRequestOptions
     {
         base.OnQueryDataFill(q);
         q["user_id"] = UserId;
+    }
+}
+
+/// <summary>
+/// The request options with user identifier to list resources.
+/// </summary>
+public class LarkBasicResourceListRequestOptions : LarkUserIdTypeRequestOptions
+{
+    /// <summary>
+    /// Gets or sets the sort type.
+    /// e.g.: ByCreateTimeAsc.
+    /// </summary>
+    public string? SortType { get; set; }
+
+    /// <inheritdoc />
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        if (!string.IsNullOrWhiteSpace(SortType)) q["sort_type"] = SortType;
     }
 }
 

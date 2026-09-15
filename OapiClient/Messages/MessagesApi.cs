@@ -1,6 +1,7 @@
 ﻿using LarkSuite.OapiModels;
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
@@ -390,6 +391,71 @@ public partial class LarkApi
                 return null;
         }
     }
+
+    /// <summary>
+    /// Gets the message groups.
+    /// </summary>
+    /// <param name="options">The options for listing the message groups.</param>
+    /// <param name="page">The page size and token information.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group creation request.</returns>
+    public Task<LarkResponsePagingBody<BaseLarkMessageGroupInfo>> ListMessageGroupAsync(LarkBasicResourceListRequestOptions? options, LarkPageTokenInfo page, CancellationToken cancellationToken = default)
+        => GetItemsAsync<BaseLarkMessageGroupInfo>(LarkUrls.MessageGroup, options, page, cancellationToken);
+
+    /// <summary>
+    /// Gets a specific message group.
+    /// </summary>
+    /// <param name="id">The chat identifier.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group creation request.</returns>
+    public Task<LarkResponseBody<LarkMessageGroupInfo>> GetMessageGroupAsync(string id, CancellationToken cancellationToken = default)
+        => GetAsync<LarkMessageGroupInfo>(string.Concat(LarkUrls.MessageGroup, id), cancellationToken);
+
+    /// <summary>
+    /// Gets a specific message group.
+    /// </summary>
+    /// <param name="id">The chat identifier.</param>
+    /// <param name="options">The options for creating the message group.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group creation request.</returns>
+    public Task<LarkResponseBody<LarkMessageGroupInfo>> GetMessageGroupAsync(string id, LarkUserIdTypeRequestOptions? options, CancellationToken cancellationToken = default)
+        => GetAsync<LarkMessageGroupInfo>(LarkUrls.ToUrl(string.Concat(LarkUrls.MessageGroup, id), options), cancellationToken);
+
+    /// <summary>
+    /// Creates a message group.
+    /// </summary>
+    /// <param name="options">The options for creating the message group.</param>
+    /// <param name="body">The body of the message group creation request.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group creation request.</returns>
+    public Task<LarkResponseBody<LarkMessageGroupInfo>> CreateMessageGroupAsync(LarkMessageGroupCreationRequest options, LarkMessageGroupCreationInfo body, CancellationToken cancellationToken = default)
+        => PostAsync<LarkMessageGroupInfo>(LarkUrls.ToUrl(LarkUrls.MessageGroup, options), JsonObjectNode.ConvertFrom(body), cancellationToken);
+
+    /// <summary>
+    /// Gets a specific message group.
+    /// </summary>
+    /// <param name="id">The chat identifier.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group creation request.</returns>
+    public async Task<LarkResponseBody> DeleteMessageGroupAsync(string id, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return new(true, "The chat identifier should not be empty.");
+        var http = CreateJsonHttpClient();
+        var resp = await http.SendAsync(HttpMethod.Delete, string.Concat(LarkUrls.DeleteDocsBlocks, id), cancellationToken);
+        return new(resp);
+    }
+
+    public Task<LarkResponsePagingBody> GetMessageGroupUsersAsync(LarkMessageGroupMemberListRequest? options, LarkPageTokenInfo page, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.MessageGroupMembers, options.Id), options, page, cancellationToken);
+
+    public Task<IReadOnlyList<JsonObjectNode>> GetMessageGroupUsersAsync(LarkResponsePagingBody resp, int? pageSize, CancellationToken cancellationToken = default)
+        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.MessageGroupMembers, (resp.Query as LarkMessageGroupMemberListRequest).Id), resp, pageSize, cancellationToken);
+
+    public Task<LarkResponseBody> AddMessageGroupUsersAsync(string id, LarkMessageGroupMemberAddRequest? options, IEnumerable<string> userIds, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.MessageGroupMembers, options, id), new()
+        {
+            { "id_list", userIds }
+        }, cancellationToken);
 
     /// <summary>
     /// Sends a streaming message and periodically updates its card with asynchronous response content.

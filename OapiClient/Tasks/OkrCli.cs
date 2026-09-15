@@ -28,7 +28,7 @@ public class LarkOkrCommandVerb : BaseCommandVerb
         console.WriteLine("Please type the cycle ID.");
         var id = LarkCliUtils.ReadLine(console, "Okr\\Cycle")?.Trim();
         if (LarkCliUtils.IsToExit(id)) return;
-        if (string.IsNullOrEmpty(id)) id = GetDefaultCycleId();
+        if (string.IsNullOrEmpty(id)) id = await GetDefaultCycleIdAsync(larkApi, cancellationToken);
         id = GetCycleId(id);
         if (id is null)
         {
@@ -64,8 +64,8 @@ public class LarkOkrCommandVerb : BaseCommandVerb
     /// Gets the default cycle ID.
     /// </summary>
     /// <returns>The cycle ID; or null, if no such information.</returns>
-    protected virtual string? GetDefaultCycleId()
-        => null;
+    protected virtual Task<string?> GetDefaultCycleIdAsync(LarkApi? larkApi, CancellationToken cancellationToken = default)
+        => Task.FromResult<string?>(null);
 
     public static async Task<LarkOkrObjectiveItem?> ProcessAsync(StyleConsole console, LarkApi larkApi, LarkOkrObjectiveInfo info, CancellationToken cancellationToken = default)
     {

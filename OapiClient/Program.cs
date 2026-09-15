@@ -69,5 +69,6 @@ dispatcher.Register<LarkDocsCommandVerb>("docs");
 dispatcher.Register<LarkHireCommandVerb>("hire");
 dispatcher.Register<LarkUsersCommandVerb>("users");
 dispatcher.Register<LarkOkrCommandVerb>("okr");
+dispatcher.Register<LarkMessageGroupCommandVerb>("messages");
 
 await dispatcher.ProcessOrSelectAsync(LarkCliUtils.GetMenuSelectionOptions());

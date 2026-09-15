@@ -14,4 +14,6 @@ internal static partial class LarkUrls
     public const string DownloadMessageImageUploaded = "https://open.feishu.cn/open-apis/im/v1/images/";
     public const string DownloadMessageFileUploaded = "https://open.feishu.cn/open-apis/im/v1/files/";
     public const string DownloadMessageFile = "https://open.feishu.cn/open-apis/im/v1/messages/{0}/resources/{1}";
+    public const string MessageGroup = "https://open.feishu.cn/open-apis/im/v1/chats/";
+    public const string MessageGroupMembers = "https://open.feishu.cn/open-apis/im/v1/chats/{0}/members";
 }
