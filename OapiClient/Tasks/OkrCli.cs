@@ -10,6 +10,9 @@ using Trivial.Text;
 
 namespace LarkSuite.CommandLine;
 
+/// <summary>
+/// The OKR command verb.
+/// </summary>
 public class LarkOkrCommandVerb : BaseCommandVerb
 {
     /// <summary>
@@ -17,27 +20,38 @@ public class LarkOkrCommandVerb : BaseCommandVerb
     /// </summary>
     public static string Description => "Get OKR information";
 
+    /// <inherticdot />
     protected async override Task OnProcessAsync(CancellationToken cancellationToken = default)
     {
         var console = CurrentConsole;
         var larkApi = LarkApi.DefaultInstance;
         console.WriteLine("Please type the cycle ID.");
-        var id = LarkCliUtils.ReadLine(console, "Okr\\Cycle");
+        var id = LarkCliUtils.ReadLine(console, "Okr\\Cycle")?.Trim();
         if (LarkCliUtils.IsToExit(id)) return;
+        if (string.IsNullOrEmpty(id)) id = GetDefaultCycleId();
         id = GetCycleId(id);
         if (id is null)
         {
-            console.WriteLine(ConsoleColor.Red, "Failed to get the cycle ID.");
+            console.Append(ConsoleColor.Red, "Error.");
+            console.WriteLine(" \tFailed to get the cycle ID.");
             return;
         }
 
         var okr = await larkApi.GetOkrsAsync(id, cancellationToken);
+        if (okr is null)
+        {
+            console.Append(ConsoleColor.Red, "Error.");
+            console.WriteLine(" \tFailed to get the OKR.");
+            return;
+        }
+
         var col = await LarkCliUtils.WriteLineAsync(console, okr);
-        console.Append($"Total objective: ");
-        console.Append(ConsoleColor.Green, col.Count);
+        console.Append("Total objective: ");
+        console.Append(col.Count > 0 ? ConsoleColor.Green : ConsoleColor.Yellow, col.Count);
         console.WriteLine('.');
+
         if (col.Count < 1) return;
-        console.Write("Please type O?KR? to get details: ");
+        console.Write("Please type O?KR? to get details:  ");
         var line = console.ReadLine();
         if (string.IsNullOrWhiteSpace(line) || LarkCliUtils.IsToExit(line)) return;
         var item = LarkApiUtils.Get(col, line);
@@ -45,6 +59,13 @@ public class LarkOkrCommandVerb : BaseCommandVerb
         else if (item is LarkOkrObjectiveInfo objectiveInfo) await ProcessAsync(console, larkApi, objectiveInfo, cancellationToken);
         else if (item is LarkOkrKeyResultInfo keyResultInfo) await ProcessAsync(console, larkApi, keyResultInfo, cancellationToken);
     }
+
+    /// <summary>
+    /// Gets the default cycle ID.
+    /// </summary>
+    /// <returns>The cycle ID; or null, if no such information.</returns>
+    protected virtual string? GetDefaultCycleId()
+        => null;
 
     public static async Task<LarkOkrObjectiveItem?> ProcessAsync(StyleConsole console, LarkApi larkApi, LarkOkrObjectiveInfo info, CancellationToken cancellationToken = default)
     {
