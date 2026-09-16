@@ -8,7 +8,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Text;
 using System.Text.Json;
+using Trivial.Collection;
 using Trivial.CommandLine;
+using Trivial.Data;
 using Trivial.Text;
 using Trivial.Web;
 
@@ -16,8 +18,8 @@ namespace LarkSuite.CommandLine;
 
 public partial class LarkUsersCommandVerb : BaseCommandVerb
 {
-    private static List<string> employeeCoreFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2"];
-    private static List<string> employeeLimitFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2", "custom_fields"];
+    private static List<string> employeeCoreFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "employment_status", "employment_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2"];
+    private static List<string> employeeLimitFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "employment_status", "employment_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2", "custom_fields"];
 
     public static async Task<LarkResponsePagingBody> ListEmployeesAsync(LarkApi? larkApi, DateTime effectiveStartDate, bool withCustomFields = false, CancellationToken cancellationToken = default)
     {
@@ -65,7 +67,8 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         larkApi ??= LarkApi.DefaultInstance;
         var resp = await larkApi.GetEmployeesAsync(new LarkEmployeeResolveRequest(id, withCustomFields ? employeeLimitFields : employeeCoreFields), cancellationToken);
         if (resp?.Data is null || resp.IsError) return null;
-        return resp.Data.FirstOrDefault();
+        var item = resp.Data.FirstOrDefault();
+        return item;
     }
 
     public static async Task<LarkResponsePagingBody> GetEmployeesAsync(LarkApi? larkApi, List<string> ids, bool withCustomFields = false, CancellationToken cancellationToken = default)
@@ -73,6 +76,75 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         if (ids is null) return new(true, "No employee identifier provided.");
         larkApi ??= LarkApi.DefaultInstance;
         return await larkApi.GetEmployeesAsync(new LarkEmployeeResolveRequest("employment", ids, withCustomFields ? employeeLimitFields : employeeCoreFields), cancellationToken);
+    }
+
+    public static async Task<LarkEmployeeInfo?> SelectEmployeeAsync(LarkApi? larkApi, StyleConsole console, LarkResponsePagingBody resp, DataCacheCollection<LarkEmployeeInfo>? cache = null, CancellationToken cancellationToken = default)
+    {
+        if (resp?.Data is null || resp.IsError)
+        {
+            LarkCliUtils.WriteEmpty(console, resp);
+            return null;
+        }
+
+        return await SelectEmployeeAsync(larkApi, console, resp.Data, cache, cancellationToken);
+    }
+
+    public static async Task<LarkEmployeeInfo?> SelectEmployeeAsync(LarkApi? larkApi, StyleConsole console, IEnumerable<JsonObjectNode> col, DataCacheCollection<LarkEmployeeInfo>? cache = null, CancellationToken cancellationToken = default)
+    {
+        console ??= StyleConsole.Default;
+        larkApi ??= LarkApi.DefaultInstance;
+        var selection = new SelectionData<LarkEmployeeInfo>();
+        foreach (var item in col)
+        {
+            if (item is null) continue;
+            var employee = SimplifyEmployee(item);
+            selection.Add(new($"{employee.Name}\t{employee.Job?.Title}", employee));
+        }
+
+        if (selection.Count < 1)
+        {
+            console.WriteLine(ConsoleColor.Red, "No employee found.");
+            return null;
+        }
+
+        if (selection.Count == 1)
+        {
+            var onlyOne = selection.FirstOrDefault()!.Data;
+            LarkCliUtils.WriteLine(console, onlyOne);
+            return onlyOne;
+        }
+
+        var select = console.Select(selection, LarkCliUtils.GetItemSelectionOptions());
+        var model = select.Data;
+        if (model is not null)
+        {
+            console.WriteLine();
+            LarkCliUtils.WriteLine(console, model);
+            if (cache is not null && !string.IsNullOrWhiteSpace(model.Id)) cache[model.Id] = select.Data;
+            return model;
+        }
+
+        var id = select.Value;
+        if (string.IsNullOrWhiteSpace(id) || LarkCliUtils.IsToExit(id)) return null;
+        if (cache is not null && cache.TryGet(id, out model) && model is not null)
+        {
+            console.WriteLine();
+            LarkCliUtils.WriteLine(console, model);
+            return model;
+        }
+
+        var resp = await GetEmployeeAsync(larkApi, id, false, cancellationToken);
+        if (resp is null)
+        {
+            console.WriteLine(ConsoleColor.Red, "Not found.");
+            return null;
+        }
+
+        model = SimplifyEmployee(resp);
+        if (cache is not null && !string.IsNullOrWhiteSpace(model.Id)) cache[model.Id] = model;
+        console.WriteLine();
+        LarkCliUtils.WriteLine(console, model);
+        return model;
     }
 
     public static void WriteEmployees(StyleConsole console, IEnumerable<JsonObjectNode> col)
@@ -90,7 +162,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                 console.Append(jobTitle);
             }
 
-            var id = employee.TryGetStringTrimmedValue("employment_id_v2", true) ?? employee.TryGetStringTrimmedValue("employment_id", true);
+            var id = GetEmployeeId(employee);
             if (id is null)
             {
                 console.WriteLine();
@@ -102,38 +174,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         }
     }
 
-    public static void WriteEmployee(StyleConsole console, JsonObjectNode employee)
-    {
-        if (employee is null) return;
-        console ??= StyleConsole.Default;
-        var employeeName = GetEmployeeName(employee, out var info);
-        if (info is null) return;
-        console.WriteLine(LarkCliUtils.BoldText(), employeeName ?? "?");
-        console.WriteLine(ConsoleColor.Yellow, GetEmployeeId(employee) ?? "?");
-
-        console.WriteLine();
-        console.WriteLine(LarkCliUtils.ItalicText(), "Job Info");
-        var deptInfo = employee.TryGetObjectValue("department");
-        var deptName = GetName(deptInfo, "department_name");
-        var deptId = deptInfo?.TryGetStringTrimmedValue("id_v2", true) ?? deptInfo?.TryGetStringTrimmedValue("id", true) ?? employee.TryGetStringTrimmedValue("department_id_v2", true) ?? employee.TryGetStringTrimmedValue("department_id", true);
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Department", deptName, deptId);
-        var jobTitle = GetEmployeeJobTitle(employee, out var jobInfo);
-        var jobId = jobInfo?.TryGetStringTrimmedValue("id", true) ?? employee.TryGetStringTrimmedValue("job_id", true);
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Title", jobTitle, jobId);
-        var jobLevel = employee.TryGetObjectValue("job_level");
-        if (jobLevel is not null) LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Level", GetName(jobLevel), jobLevel.TryGetStringTrimmedValue("id", true) ?? employee.TryGetStringTrimmedValue("job_level_id", true));
-
-        console.WriteLine();
-        console.WriteLine(LarkCliUtils.ItalicText(), "Contact and Basic Info");
-        var legalName = info.TryGetStringTrimmedValue("legal_name", true);
-        if (legalName is not null && legalName != employeeName) LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Name", legalName);
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Email", info.TryGetStringValue("email_address"));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Phone", info.TryGetStringValue("phone_number"));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Birthday", info.TryGetStringValue("date_of_birth"));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Gender", info.TryGetObjectValue("gender")?.TryGetStringValue("enum_name")?.ToSpecificCase(Cases.Capitalize));
-    }
-
-    public static async Task<JsonObjectNode?> WriteEmployeeAsync(StyleConsole console, string id, CancellationToken cancellationToken = default)
+    public static async Task<LarkEmployeeInfo?> WriteEmployeeAsync(StyleConsole console, string id, CancellationToken cancellationToken = default)
     {
         console ??= StyleConsole.Default;
         if (string.IsNullOrWhiteSpace(id)) return null;
@@ -144,58 +185,54 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             return null;
         }
 
-        WriteEmployee(console, resp);
-        return resp;
+        var model = SimplifyEmployee(resp);
+        LarkCliUtils.WriteLine(console, model);
+        return model;
     }
 
-    public static async Task<JsonObjectNode?> WriteEmployeeInPropertiesAsync(StyleConsole console, LarkApi? larkApi, string id, CancellationToken cancellationToken = default)
+    public static async Task<LarkEmployeeInfo?> WriteEmployeeInPropertiesAsync(StyleConsole console, LarkApi? larkApi, string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return null;
         console ??= StyleConsole.Default;
         larkApi ??= LarkApi.DefaultInstance;
-        var info = await GetEmployeeAsync(larkApi, id, false, cancellationToken);
-        if (info is null)
+        var resp = await GetEmployeeAsync(larkApi, id, false, cancellationToken);
+        if (resp is null)
         {
             LarkCliUtils.WritePropertyLine(console, "ID", id);
             return null;
         }
 
-        LarkCliUtils.WritePropertyLine(console, "ID", GetEmployeeId(info));
-        LarkCliUtils.WritePropertyLine(console, "Name", GetEmployeeName(info));
-        LarkCliUtils.WritePropertyLine(console, "Title", GetEmployeeJobTitle(info));
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Email", info.TryGetStringValue("email_address"));
+        var info = SimplifyEmployee(resp);
+        LarkCliUtils.WritePropertyLine(console, "ID", info.Id);
+        LarkCliUtils.WritePropertyLine(console, "Name", info.Name);
+        LarkCliUtils.WritePropertyLine(console, "Title", info.Job?.Title);
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Email", info.Info?.Email);
         return info;
     }
 
-    public static async Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, DateTime effectiveStartDate, CancellationToken cancellationToken = default)
+    public static async Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, DateTime effectiveStartDate, DataCacheCollection<LarkEmployeeInfo>? cache, CancellationToken cancellationToken = default)
     {
         var larkApi = LarkApi.DefaultInstance;
         console ??= StyleConsole.Default;
         var resp = await ListEmployeesAsync(null, effectiveStartDate, false, cancellationToken);
-        if (resp?.Data is null || resp.IsError)
-        {
-            LarkCliUtils.WriteEmpty(console, resp);
-            return [];
-        }
-
-        WriteEmployees(console, resp.Data);
-        return resp.Data;
+        await SelectEmployeeAsync(larkApi, console, resp, cache, cancellationToken);
+        return resp?.Data ?? [];
     }
 
-    public static async Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, string q, CancellationToken cancellationToken = default)
+    public static Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, DateTime effectiveStartDate, CancellationToken cancellationToken = default)
+        => WriteEmployeesAsync(console, effectiveStartDate, null, cancellationToken);
+
+    public static async Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, string q, DataCacheCollection<LarkEmployeeInfo>? cache, CancellationToken cancellationToken = default)
     {
         var larkApi = LarkApi.DefaultInstance;
         console ??= StyleConsole.Default;
         var resp = await SearchEmployeesAsync(null, q, false, cancellationToken);
-        if (resp?.Data is null || resp.IsError)
-        {
-            LarkCliUtils.WriteEmpty(console, resp);
-            return [];
-        }
-
-        WriteEmployees(console, resp.Data);
-        return resp.Data;
+        await SelectEmployeeAsync(larkApi, console, resp, cache, cancellationToken);
+        return resp?.Data ?? [];
     }
+
+    public static Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, string q, CancellationToken cancellationToken = default)
+        => WriteEmployeesAsync(console, q, null, cancellationToken);
 
     public static string? GetEmployeeId(JsonObjectNode employee)
         => employee.TryGetStringTrimmedValue("employment_id_v2", true) ?? employee.TryGetStringTrimmedValue("employment_id", true);
@@ -232,6 +269,8 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         var department = GetDepartmentByEmployee(employee);
         var job = GetJobByEmployee(employee);
         var jobLevel = GetJobLevelByEmployee(employee);
+        var info = employee.TryGetObjectValue("person_info") ?? [];
+        var gender = LarkApiUtils.ParseGender(info.TryGetObjectValue("gender")?.TryGetStringValue("enum_name"));
         return new()
         {
             Id = GetEmployeeId(employee),
@@ -239,16 +278,16 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             AvatarUrl = employee.TryGetStringTrimmedValue("avatar_url", true),
             Info = new()
             {
-                LegalName = employee.TryGetStringTrimmedValue("legal_name", true),
-                Email = employee.TryGetStringTrimmedValue("email_address", true),
-                Phone = employee.TryGetStringTrimmedValue("phone_number", true),
-                Birthday = employee.TryGetStringTrimmedValue("date_of_birth", true),
-                Gender = employee.TryGetObjectValue("gender")?.TryGetStringValue("enum_name")?.ToSpecificCase(Cases.Capitalize),
+                LegalName = info.TryGetStringTrimmedValue("legal_name", true),
+                Email = info.TryGetStringTrimmedValue("email_address", true),
+                Phone = info.TryGetStringTrimmedValue("phone_number", true),
+                Birthday = info.TryGetStringTrimmedValue("date_of_birth", true),
+                Gender = gender,
             },
             Job = new()
             {
-                Title = job?.Name,
-                JobId = job?.Id,
+                Title = job.Name,
+                JobId = job.Id,
                 EmployeeNumber = employee.TryGetStringTrimmedValue("employee_number", true),
                 Level = new()
                 {
@@ -260,6 +299,16 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                     Id = department?.Id,
                     Name = department?.Name,
                 },
+            },
+            Employment = new()
+            {
+                Status = employee.TryGetObjectValue("employment_status")?.TryGetStringValue("enum_name"),
+                EmploymentType = employee.TryGetObjectValue("employment_type")?.TryGetStringValue("enum_name"),
+                EffectiveDate = employee.TryGetStringTrimmedValue("effective_date", true),
+                ContractStartDate = employee.TryGetStringTrimmedValue("contract_start_date", true),
+                ContractEndDate = employee.TryGetStringTrimmedValue("contract_end_date", true),
+                EmployeeNumber = employee.TryGetStringTrimmedValue("employee_number", true),
+                TalentId = info.TryGetStringTrimmedValue("talent_id", true),
             }
         };
     }
@@ -285,4 +334,38 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
 
     private static string? GetEmployeeJobTitle(JsonObjectNode employee)
         => GetEmployeeJobTitle(employee, out _);
+}
+
+public static partial class LarkCliUtils
+{
+    public static void WriteLine(this StyleConsole console, LarkEmployeeInfo employee)
+    {
+        if (employee is null) return;
+        console ??= StyleConsole.Default;
+        console.WriteLine(BoldText(), employee.Name ?? "?");
+        console.WriteLine(ConsoleColor.Yellow, employee.Id ?? "?");
+
+        var jobInfo = employee.Job;
+        if (jobInfo is not null)
+        {
+            console.WriteLine();
+            console.WriteLine(ItalicText(), "Job Info");
+            WritePropertyLineIfNotEmpty(console, "Department", jobInfo.Department?.Name, jobInfo.Department?.Id);
+            WritePropertyLineIfNotEmpty(console, "Title", jobInfo.Title, jobInfo.JobId);
+            WritePropertyLineIfNotEmpty(console, "Level", jobInfo.Level?.Name, jobInfo.Level?.Id);
+        }
+
+        var info = employee.Info;
+        if (info is not null)
+        {
+            console.WriteLine();
+            console.WriteLine(ItalicText(), "Contact and Basic Info");
+            var legalName = info.LegalName;
+            if (legalName is not null && legalName != employee.Name) WritePropertyLineIfNotEmpty(console, "Name", legalName);
+            WritePropertyLineIfNotEmpty(console, "Email", info.Email);
+            WritePropertyLineIfNotEmpty(console, "Phone", info.Phone);
+            WritePropertyLineIfNotEmpty(console, "Birthday", info.Birthday);
+            WritePropertyLineIfNotEmpty(console, "Gender", LarkApiUtils.ToString(info.Gender));
+        }
+    }
 }

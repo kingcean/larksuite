@@ -102,6 +102,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                     console.WriteLine("Please type the employee ID or email:  ");
                     var s = LarkCliUtils.ReadLine(console, "employee");
                     if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
+                    console.WriteLine();
                     await WriteEmployeeAsync(console, s, cancellationToken);
                     break;
                 }
@@ -113,6 +114,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                     console.WriteLine("Please type the keyword to search:  ");
                     var s = LarkCliUtils.ReadLine(console, "employee");
                     if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
+                    console.WriteLine();
                     await WriteEmployeesAsync(console, s, cancellationToken);
                     break;
                 }
@@ -124,6 +126,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                     console.WriteLine("Please type the department ID:  ");
                     var s = LarkCliUtils.ReadLine(console, "dept");
                     if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
+                    console.WriteLine();
                     await WriteDepartmentAsync(console, s, cancellationToken);
                     break;
                 }

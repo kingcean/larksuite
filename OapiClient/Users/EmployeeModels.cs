@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Data;
 
 namespace LarkSuite.Users;
@@ -25,8 +26,19 @@ public class LarkEmployeeInfo : IIdPropertyModel, INamePropertyModel
     public LarkEmployeePersonalInfo? Info { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("employment")]
+    public LarkEmployeeContractInfo? Employment { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("job")]
     public LarkEmployeeJobInfo? Job { get; set; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"{Name ?? "?"} ({Id}) {Job?.Title}";
 }
 
 public class LarkEmployeePersonalInfo
@@ -49,7 +61,52 @@ public class LarkEmployeePersonalInfo
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("gender")]
-    public string? Gender { get; set; }
+    public LarkGender Gender { get; set; } = LarkGender.Unknown;
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => string.IsNullOrWhiteSpace(Email) ? (LegalName ?? "?") : $"{LegalName ?? "?"} <{Email}>";
+}
+
+public class LarkEmployeeContractInfo
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("employeeNumber")]
+    public string? EmployeeNumber { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("effectiveDate")]
+    public string? EffectiveDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("talentId")]
+    public string? TalentId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("contractStartDate")]
+    public string? ContractStartDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("contractEndDate")]
+    public string? ContractEndDate { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("employmentType")]
+    public string? EmploymentType { get; set; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"Number = {EmployeeNumber} & Status = {Status} & Type = {EmploymentType}";
 }
 
 public class LarkEmployeeJobInfo
@@ -73,6 +130,13 @@ public class LarkEmployeeJobInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("department")]
     public LarkIdNameStaticInfo? Department { get; set; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"Title = {Title ?? "?"} & Department = {Department?.Name ?? "?"} ({Department?.Id}) & Level = {Level?.Name ?? "?"} ({Level?.Id})";
 }
 
 public class LarkCompanyDepartmentInfo : IIdPropertyModel, INamePropertyModel
@@ -102,6 +166,13 @@ public class LarkCompanyDepartmentInfo : IIdPropertyModel, INamePropertyModel
 
     [JsonIgnore]
     string? INamePropertyModel.Name => Info?.Name;
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => IsActive == false ? $"Inactived | {Info?.Name ?? "?"} ({Id})" : $"{Info?.Name ?? "?"} ({Id})";
 }
 
 public class LarkCompanyDepartmentStaticInfo : INamePropertyModel
@@ -121,4 +192,11 @@ public class LarkCompanyDepartmentStaticInfo : INamePropertyModel
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("costCenterId")]
     public string? CostCenterId { get; set; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"Code = {Code} & Name = {Name}";
 }

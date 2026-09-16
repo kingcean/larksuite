@@ -288,6 +288,43 @@ public static partial class LarkApiUtils
         return resp.Data;
     }
 
+    /// <summary>
+    /// Parses gender.
+    /// </summary>
+    /// <param name="s">The string representation of gender.</param>
+    /// <returns>The parsed <see cref="LarkGender"/> value.</returns>
+    public static LarkGender ParseGender(string? s)
+    {
+        if (s == null) return LarkGender.Unknown;
+        return s.Trim().ToLowerInvariant() switch
+        {
+            "male" or "m" or "男" or "1" => LarkGender.Male,
+            "female" or "f" or "女" or "2" => LarkGender.Female,
+            "" or "unknown" or "0" or "?" => LarkGender.Unknown,
+            _ => LarkGender.Others,
+        };
+    }
+
+    /// <summary>
+    /// Converts gender to string.
+    /// </summary>
+    /// <param name="gender">The gender value.</param>
+    /// <returns>The string representation of the gender.</returns>
+    public static string ToString(LarkGender gender)
+        => UseChinese ? gender switch
+        {
+            LarkGender.Male => "男",
+            LarkGender.Female => "女",
+            LarkGender.Unknown => "未知",
+            _ => "其它",
+        } : gender switch
+        {
+            LarkGender.Male => "Male",
+            LarkGender.Female => "Female",
+            LarkGender.Unknown => "Unknown",
+            _ => "Others",
+        };
+
     internal static string ToDocsFilterString(BasicCompareOperator op)
         => op switch
         {

@@ -124,7 +124,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             console.WriteLine();
             console.WriteLine(LarkCliUtils.ItalicText(), "Members");
             WriteEmployees(console, employees.Data);
-            console.WriteLine(ConsoleColor.DarkGray, "* Includes only members of this department, excluding ones of its sub-departments.");
+            console.WriteLine(ConsoleColor.DarkGray, "* Includeing only members of this department, excluding ones of its sub-departments.");
         }
 
         return resp;
