@@ -42,7 +42,26 @@ public class LarkMessageGroupCommandVerb : BaseCommandVerb
         if (select.Data is null)
         {
             if (string.IsNullOrWhiteSpace(select.Value) || LarkCliUtils.IsToExit(select.Value)) return;
-            console.WriteLine(ConsoleColor.Red, "Not found.");
+            if (select.Value.Contains(' '))
+            {
+                console.WriteLine(ConsoleColor.Red, "Not found.");
+                return;
+            }
+
+            var chat = await api.GetMessageHistoryAsync(select.Value, 50, cancellationToken);
+            if (chat?.Data is null || chat.IsError)
+            {
+                console.WriteLine(ConsoleColor.Red, "Not found.");
+                return;
+            }
+
+            if (chat.Data.Count < 1)
+            {
+                LarkCliUtils.WriteEmpty(console);
+                return;
+            }
+
+            WriteLine(console, chat.Data, true);
             return;
         }
 
@@ -63,15 +82,53 @@ public class LarkMessageGroupCommandVerb : BaseCommandVerb
             }
         }
 
-        LarkCliUtils.WritePropertyLine(console, "External", select.Data.IsExternal ? "Yes" : "No");
         if (string.IsNullOrWhiteSpace(select.Data.OwnerId))
         {
             LarkCliUtils.WritePropertyLine(console, "Owner", "None");
-            return;
+        }
+        else
+        {
+            var users = await api.GetUserInfoAsync([select.Data.OwnerId], cancellationToken);
+            var userName = users.Data?.FirstOrDefault()?.TryGetStringTrimmedValue("name");
+            LarkCliUtils.WritePropertyLine(console, "Owner", string.IsNullOrWhiteSpace(userName) ? "?" : userName, select.Data.OwnerId);
         }
 
-        var users = await api.GetUserInfoAsync([select.Data.OwnerId], cancellationToken);
-        var userName = users.Data?.FirstOrDefault()?.TryGetStringTrimmedValue("name");
-        LarkCliUtils.WritePropertyLine(console, "Owner", string.IsNullOrWhiteSpace(userName) ? "?" : userName, select.Data.OwnerId);
+        LarkCliUtils.WritePropertyLine(console, "External", select.Data.IsExternal ? "Yes" : "No");
+        console.WriteLine();
+
+        var messages = await api.GetMessageHistoryAsync(select.Data.Id, 50, cancellationToken);
+        if (messages?.Data is null || messages.IsError || messages.Data.Count < 1) return;
+        console.WriteLine(LarkCliUtils.ItalicText(), "Recent history");
+        console.WriteLine();
+        WriteLine(console, messages.Data, true);
+    }
+
+    public static void WriteLine(StyleConsole console, IEnumerable<LarkMessageResponse> col, bool revert = false)
+    {
+        if (col is null) return;
+        console ??= StyleConsole.Default;
+        if (revert) col = col.Reverse();
+        var sep = string.Concat(Environment.NewLine, "---", Environment.NewLine);
+        foreach (var message in col)
+        {
+            if (message is null) continue;
+            var text = message.GetContentString()?.Trim();
+            var empty = string.IsNullOrEmpty(text) || text == "---";
+            var senderName = message.Sender?.SenderName;
+            if (empty && string.IsNullOrEmpty(senderName)) continue;
+            console.Append(ConsoleColor.Blue, "· ");
+            console.Append(senderName ?? "?");
+            console.Append(" \t");
+            console.Append(ConsoleColor.DarkGray, message.CreationDate.ToString("f"));
+            console.WriteLine();
+            if (!empty)
+            {
+                var offset = text.IndexOf(sep);
+                if (offset >= 0) text = text[(offset + sep.Length)..].Trim();
+                if (!string.IsNullOrEmpty(text)) console.WriteLine(text);
+            }
+
+            console.WriteLine();
+        }
     }
 }

@@ -33,12 +33,21 @@ public partial class LarkApi
         => options?.Request is null ? Task.FromResult(new LarkResponseBody<LarkMessageResponse>(true, "Requires options but empty.")) : SendMessageAsync(options.Request, cancellationToken);
 
     /// <summary>
-    /// Sends a chat message.
+    /// Gets a specific chat message.
+    /// </summary>
+    /// <param name="id">The message ID.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The message. It is a list: containing one item that is the message itself; also containing the items forwarded if it is a merge forward message.</returns>
+    public Task<LarkResponseBody<List<LarkMessageResponse>>> GetMessageInfoAsync(string id, CancellationToken cancellationToken = default)
+        => GetAsync<List<LarkMessageResponse>>(string.Concat(LarkUrls.SendMessage, id), cancellationToken);
+
+    /// <summary>
+    /// Gets the chat message history.
     /// </summary>
     /// <param name="id">The chat ID.</param>
     /// <param name="pageSize">The optional page size.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>The sending response.</returns>
+    /// <returns>The message list.</returns>
     public Task<LarkResponsePagingBody<LarkMessageResponse>> GetMessageHistoryAsync(string id, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkMessageResponse>(LarkUrls.SendMessage, new LarkMessageHistoryRequest
         {
@@ -50,22 +59,22 @@ public partial class LarkApi
         }, pageSize.HasValue ? new LarkPageTokenInfo(pageSize.Value) : null, cancellationToken);
 
     /// <summary>
-    /// Sends a chat message.
+    /// Gets the chat message history.
     /// </summary>
     /// <param name="options">The options.</param>
     /// <param name="paging">The paging info.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>The sending response.</returns>
+    /// <returns>The message list.</returns>
     public Task<LarkResponsePagingBody<LarkMessageResponse>> GetMessageHistoryAsync(LarkMessageHistoryRequest options, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkMessageResponse>(LarkUrls.SendMessage, options, paging, cancellationToken);
 
     /// <summary>
-    /// Sends a chat message.
+    /// Gets the chat message history.
     /// </summary>
     /// <param name="response">The response of previous page.</param>
     /// <param name="pageSize">The optional page size.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>The sending response.</returns>
+    /// <returns>The message list.</returns>
     public Task<IReadOnlyList<LarkMessageResponse>> GetMessageHistoryAsync(LarkResponsePagingBody<LarkMessageResponse> response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.SendMessage, response, pageSize, cancellationToken);
 

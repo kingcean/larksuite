@@ -1,5 +1,6 @@
 ﻿using LarkSuite;
 using LarkSuite.OapiModels;
+using LarkSuite.Users;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,6 +28,16 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             EffectiveStartDate = effectiveStartDate.ToString("yyyy-MM-dd"),
             EmploymentStatus = "hired",
         }, new(50), cancellationToken);
+        if (resp is null) return new(true, "No response.");
+        if (resp.Data is null || resp.IsError) return resp;
+        await LarkApiUtils.LoadAllPagesAsync(resp, 50, larkApi.SearchEmployeesAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
+
+    public static async Task<LarkResponsePagingBody> SearchEmployeesAsync(LarkApi? larkApi, string q, bool withCustomFields = false, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        var resp = await larkApi.SearchEmployeesAsync(q, withCustomFields ? employeeLimitFields : employeeCoreFields, cancellationToken);
         if (resp is null) return new(true, "No response.");
         if (resp.Data is null || resp.IsError) return resp;
         await LarkApiUtils.LoadAllPagesAsync(resp, 50, larkApi.SearchEmployeesAsync, cancellationToken).CountAsync(cancellationToken);
@@ -171,6 +182,21 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         return resp.Data;
     }
 
+    public static async Task<IReadOnlyList<JsonObjectNode>> WriteEmployeesAsync(StyleConsole console, string q, CancellationToken cancellationToken = default)
+    {
+        var larkApi = LarkApi.DefaultInstance;
+        console ??= StyleConsole.Default;
+        var resp = await SearchEmployeesAsync(null, q, false, cancellationToken);
+        if (resp?.Data is null || resp.IsError)
+        {
+            LarkCliUtils.WriteEmpty(console, resp);
+            return [];
+        }
+
+        WriteEmployees(console, resp.Data);
+        return resp.Data;
+    }
+
     public static string? GetEmployeeId(JsonObjectNode employee)
         => employee.TryGetStringTrimmedValue("employment_id_v2", true) ?? employee.TryGetStringTrimmedValue("employment_id", true);
 
@@ -200,6 +226,43 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
 
     public static string? GetEmployeeName(JsonObjectNode employee)
         => GetEmployeeName(employee, out _);
+
+    public static LarkEmployeeInfo SimplifyEmployee(JsonObjectNode employee)
+    {
+        var department = GetDepartmentByEmployee(employee);
+        var job = GetJobByEmployee(employee);
+        var jobLevel = GetJobLevelByEmployee(employee);
+        return new()
+        {
+            Id = GetEmployeeId(employee),
+            Name = GetEmployeeName(employee),
+            AvatarUrl = employee.TryGetStringTrimmedValue("avatar_url", true),
+            Info = new()
+            {
+                LegalName = employee.TryGetStringTrimmedValue("legal_name", true),
+                Email = employee.TryGetStringTrimmedValue("email_address", true),
+                Phone = employee.TryGetStringTrimmedValue("phone_number", true),
+                Birthday = employee.TryGetStringTrimmedValue("date_of_birth", true),
+                Gender = employee.TryGetObjectValue("gender")?.TryGetStringValue("enum_name")?.ToSpecificCase(Cases.Capitalize),
+            },
+            Job = new()
+            {
+                Title = job?.Name,
+                JobId = job?.Id,
+                EmployeeNumber = employee.TryGetStringTrimmedValue("employee_number", true),
+                Level = new()
+                {
+                    Id = jobLevel?.Id,
+                    Name = jobLevel?.Name,
+                },
+                Department = new()
+                {
+                    Id = department?.Id,
+                    Name = department?.Name,
+                },
+            }
+        };
+    }
 
     private static string? GetEmployeeName(JsonObjectNode employee, out JsonObjectNode? personInfo)
     {

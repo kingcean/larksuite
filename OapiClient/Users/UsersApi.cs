@@ -90,6 +90,14 @@ public partial class LarkApi
     public Task<IReadOnlyList<JsonObjectNode>> SearchEmployeesAsync(LarkResponsePagingBody response, int? pageSize, CancellationToken cancellationToken = default)
         => PostItemsAsync(LarkUrls.SearchEmployees, response, pageSize, cancellationToken);
 
+    public Task<LarkResponsePagingBody> SearchEmployeesAsync(string q, List<string> fields, CancellationToken cancellationToken = default)
+        => SearchEmployeesAsync(new LarkEmployeeSearchRequest()
+        {
+            Fields = fields,
+            Keyword = q,
+            EmploymentStatus = "hired",
+        }, new LarkPageTokenInfo(50), cancellationToken);
+
     public Task<LarkResponsePagingBody> GetCompanyDepartmentsAsync(LarkCompanyDepartmentResolveRequest options, CancellationToken cancellationToken = default)
         => PostItemsAsync(LarkUrls.GetCompanyDepartments, options, null, cancellationToken);
 

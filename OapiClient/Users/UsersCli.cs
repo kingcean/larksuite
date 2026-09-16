@@ -55,6 +55,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             {
                 new('r', "recent\tGet the recent employees.", "recent"),
                 new('e', "employee\tGet details of a specific employee.", "employee"),
+                new('q', "search\tSearch employees.", "search"),
                 new('d', "department\tGet details of a specific department.", "department"),
             };
             foreach (var item in caps)
@@ -102,6 +103,17 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                     var s = LarkCliUtils.ReadLine(console, "employee");
                     if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
                     await WriteEmployeeAsync(console, s, cancellationToken);
+                    break;
+                }
+            case "q":
+            case "query":
+            case "search":
+            case "搜索":
+                {
+                    console.WriteLine("Please type the keyword to search:  ");
+                    var s = LarkCliUtils.ReadLine(console, "employee");
+                    if (string.IsNullOrWhiteSpace(s) || LarkCliUtils.IsToExit(s)) break;
+                    await WriteEmployeesAsync(console, s, cancellationToken);
                     break;
                 }
             case "d":

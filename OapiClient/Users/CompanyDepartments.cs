@@ -1,5 +1,6 @@
 ﻿using LarkSuite;
 using LarkSuite.OapiModels;
+using LarkSuite.Users;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,6 +10,7 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Serialization;
 using Trivial.CommandLine;
+using Trivial.Data;
 using Trivial.Text;
 using Trivial.Web;
 
@@ -153,6 +155,44 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
 
     public static Task<JsonObjectNode?> WriteDepartmentInPropertiesAsync(StyleConsole? console, LarkApi? larkApi, string id, CancellationToken cancellationToken = default)
         => WriteDepartmentInPropertiesAsync(console, larkApi, id, true, cancellationToken);
+
+    public static LarkCompanyDepartmentInfo SimplifyDepartment(JsonObjectNode department, DataCacheCollection<LarkCompanyDepartmentInfo> cache)
+    {
+        var id = department.TryGetStringTrimmedValue("id", true);
+        var parentId = department.TryGetStringTrimmedValue("parent_department_id", true);
+        var info = new LarkCompanyDepartmentInfo()
+        {
+            Id = id,
+            IsActive = department.TryGetBooleanValue("active"),
+            Info = new()
+            {
+                Name = GetDepartmentName(department),
+                Code = department.TryGetStringValue("code"),
+                Description = GetDepartmentDescription(department),
+                CostCenterId = department.TryGetStringValue("cost_center_id"),
+            },
+            Manager = new()
+            {
+                Id = department.TryGetStringTrimmedValue("manager", true)
+            },
+            ParentDepartment = new()
+            {
+                Id = department.TryGetStringTrimmedValue("parent_department_id", true)
+            },
+            IsRoot = department.TryGetBooleanValue("is_root"),
+        };
+        if (cache is not null)
+        {
+            if (id is not null) cache[id] = info;
+            if (parentId is not null && cache.TryGet(parentId, out var parent) && parent?.Info?.Name is not null)
+                info.ParentDepartment.Name = parent.Info.Name;
+        }
+
+        return info;
+    }
+
+    public static LarkCompanyDepartmentInfo SimplifyDepartment(JsonObjectNode department)
+        => SimplifyDepartment(department, null);
 
     private static async Task<JsonObjectNode?> WriteDepartmentInPropertiesAsync(StyleConsole? console, LarkApi? larkApi, string id, bool containParentId, CancellationToken cancellationToken = default)
     {

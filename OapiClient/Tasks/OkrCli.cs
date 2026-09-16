@@ -25,10 +25,12 @@ public class LarkOkrCommandVerb : BaseCommandVerb
     {
         var console = CurrentConsole;
         var larkApi = LarkApi.DefaultInstance;
+        var defaultCycleId = await GetDefaultCycleIdAsync(larkApi, cancellationToken);
         console.WriteLine("Please type the cycle ID.");
-        var id = LarkCliUtils.ReadLine(console, "Okr\\Cycle")?.Trim();
+        var id = string.IsNullOrWhiteSpace(defaultCycleId)
+            ? LarkCliUtils.ReadLine(console, "Okr\\Cycle")?.Trim()
+            : LarkCliUtils.ReadLine(console, "Okr\\Cycle", defaultCycleId)?.Trim();
         if (LarkCliUtils.IsToExit(id)) return;
-        if (string.IsNullOrEmpty(id)) id = await GetDefaultCycleIdAsync(larkApi, cancellationToken);
         id = GetCycleId(id);
         if (id is null)
         {
