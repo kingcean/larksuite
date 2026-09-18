@@ -5,12 +5,13 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Trivial.Data;
 using Trivial.Text;
 using Trivial.Web;
 
 namespace LarkSuite.OapiModels;
 
-public class BaseLarkContentBlock
+public class BaseLarkContentBlock : IIdPropertyModel
 {
     [JsonPropertyName("block_id")]
     public string Id { get; set; }
@@ -396,7 +397,7 @@ public class LarkContentLinkInfo
     public string Url { get; set; }
 }
 
-public class LarkContentUserInfo
+public class LarkContentUserInfo : IIdPropertyModel
 {
     [JsonPropertyName("user_id")]
     public string Id { get; set; }
@@ -473,7 +474,7 @@ public class LarkDocsTextContent
     public string Content { get; set; }
 }
 
-public class LarkDocsAccessUserInfo
+public class LarkDocsAccessUserInfo : IIdPropertyModel, INamePropertyModel
 {
     public LarkDocsAccessUserInfo()
     {

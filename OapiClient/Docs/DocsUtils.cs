@@ -585,6 +585,19 @@ public static partial class LarkApiUtils
         return result.Data ?? default;
     }
 
+    public static IEnumerable<string> ToIds(IEnumerable<LarkDocsAccessUserInfo> users)
+    {
+        if (users is null) yield break;
+        var list = new List<string>();
+        foreach (var item in users)
+        {
+            var id = item?.Id;
+            if (string.IsNullOrWhiteSpace(id) || list.Contains(id)) continue;
+            list.Add(id);
+            yield return id;
+        }
+    }
+
     public static SelectionData<LarkDocsBaseTableRecord<JsonObjectNode>> ToSelection(this IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> col, Func<JsonObjectNode, string>? title)
     {
         if (col is null) return new();

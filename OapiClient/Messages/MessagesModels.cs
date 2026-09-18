@@ -619,3 +619,99 @@ public class LarkMessageGroupInfo : BaseLarkMessageGroupInfo
     [Description("The permission for hide member count setting, including `only_owner` and `all_members`.")]
     public string? HideMemberCountPermission { get; set; }
 }
+
+public class LarkMessageFavorLinkInfo : IJsonObjectHost, INamePropertyModel
+{
+    /// <summary>
+    /// Gets or sets the name of the link.
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the type of the link.
+    /// <list type="bullet">
+    /// <item>message</item>
+    /// <item>doc_list</item>
+    /// <item>doc</item>
+    /// <item>pin</item>
+    /// <item>meeting_minute</item>
+    /// <item>chat_announcement</item>
+    /// <item>url</item>
+    /// <item>file</item>
+    /// <item>files_resources</item>
+    /// <item>images_videos</item>
+    /// <item>task</item>
+    /// </list>
+    /// </summary>
+    public string LinkType { get; set; }
+
+    public string Url { get; set; }
+
+    public string? ImageKey { get; set; }
+
+    public JsonObjectNode ToJson()
+    {
+        var json = new JsonObjectNode();
+        json.SetValueIfNotEmpty("tab_name", Name);
+        var type = LinkType?.Trim()?.ToLowerInvariant() ?? string.Empty;
+        json.SetValue("tab_type", type);
+        var content = new JsonObjectNode();
+        json.SetValue("tab_content", content);
+        switch (type)
+        {
+            case "url":
+                content.SetValue("url", Url);
+                if (!string.IsNullOrWhiteSpace(ImageKey)) json.SetValue("tab_config", new JsonObject
+                {
+                    { "icon_key", ImageKey },
+                });
+                break;
+            case "url_in_app":
+            case "url-in-app":
+            case "urlinapp":
+                {
+                    json.SetValue("tab_type", "url");
+                    content.SetValue("url", Url);
+                    var config = new JsonObjectNode
+                    {
+                        { "is_built_in", true },
+                    };
+                    config.SetValueIfNotEmpty("icon_key", ImageKey);
+                    json.SetValue("tab_config", config);
+                    break;
+                }
+            case "url_in_browser":
+            case "url-in-browser":
+            case "url in browser":
+                {
+                    json.SetValue("tab_type", "url");
+                    content.SetValue("url", Url);
+                    var config = new JsonObjectNode
+                    {
+                        { "is_built_in", false },
+                    };
+                    config.SetValueIfNotEmpty("icon_key", ImageKey);
+                    json.SetValue("tab_config", config);
+                    break;
+                }
+            case "doc":
+                content.SetValue("doc", Url);
+                break;
+            case "docx":
+                json.SetValue("tab_type", "doc");
+                content.SetValue("doc", Url);
+                break;
+            case "meeting_minute":
+                json.SetValueIfNotEmpty("meeting_minute", Url);
+                break;
+            case "task":
+                json.SetValueIfNotEmpty("task", Url);
+                break;
+            default:
+                json.SetValueIfNotEmpty("url", Url);
+                break;
+        }
+
+        return json;
+    }
+}

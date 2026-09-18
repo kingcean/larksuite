@@ -94,6 +94,86 @@ public static partial class LarkApiUtils
     }
 
     /// <summary>
+    /// Converts the response to a data result.
+    /// </summary>
+    /// <param name="response">The response to convert.</param>
+    /// <returns>The data result.</returns>
+    public static DataResult<JsonObjectNode> ToResult(this LarkResponseBody? response)
+    {
+        if (response is null) return new()
+        {
+            Message = "No response.",
+        };
+        if (response.Data is null || response.IsError) return new()
+        {
+            Message = response.Message ?? "No response data.",
+        };
+        return new(response.Data);
+    }
+
+    /// <summary>
+    /// Converts the response to a data result.
+    /// </summary>
+    /// <typeparam name="T">The type of the data.</typeparam>
+    /// <param name="response">The response to convert.</param>
+    /// <returns>The data result.</returns>
+    public static DataResult<T> ToResult<T>(this LarkResponseBody<T>? response)
+    {
+        if (response is null) return new()
+        {
+            Message = "No response.",
+        };
+        if (response.Data is null || response.IsError) return new()
+        {
+            Message = response.Message ?? "No response data.",
+        };
+        return new(response.Data);
+    }
+
+    /// <summary>
+    /// Converts the response to a collection result.
+    /// </summary>
+    /// <param name="response">The response to convert.</param>
+    /// <returns>The collection result.</returns>
+    public static CollectionResult<JsonObjectNode> ToResult(this LarkResponsePagingBody? response)
+    {
+        if (response is null) return new()
+        {
+            Message = "No response.",
+        };
+        if (response.Data is null || response.IsError) return new()
+        {
+            Message = response.Message ?? "No response data.",
+        };
+        return new(response.Data)
+        {
+            TotalCount = response.TotalCount,
+        };
+    }
+
+    /// <summary>
+    /// Converts the response to a collection result.
+    /// </summary>
+    /// <typeparam name="T">The type of the data.</typeparam>
+    /// <param name="response">The response to convert.</param>
+    /// <returns>The collection result.</returns>
+    public static CollectionResult<T> ToResult<T>(this LarkResponsePagingBody<T>? response)
+    {
+        if (response is null) return new()
+        {
+            Message = "No response.",
+        };
+        if (response.Data is null || response.IsError) return new()
+        {
+            Message = response.Message ?? "No response data.",
+        };
+        return new(response.Data)
+        {
+            TotalCount = response.TotalCount,
+        };
+    }
+
+    /// <summary>
     /// Loads all rest pages.
     /// </summary>
     /// <typeparam name="T">The type of item.</typeparam>

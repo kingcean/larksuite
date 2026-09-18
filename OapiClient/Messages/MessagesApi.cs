@@ -466,6 +466,24 @@ public partial class LarkApi
             { "id_list", userIds }
         }, cancellationToken);
 
+    public Task ListMessageFavorLinksAsync(string id, CancellationToken cancellationToken = default)
+        => GetAsync(LarkUrls.ToUrl(LarkUrls.ListMessageFavorLink, id), cancellationToken);
+
+    public Task<LarkResponseBody> AddMessageFavorLinkAsync(string id, LarkMessageFavorLinkInfo link, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.AddMessageFavorLink, id), new JsonObjectNode
+        {
+            { "chat_tabs", new JsonArrayNode
+            {
+                link.ToJson(),
+            } },
+        }, cancellationToken);
+
+    public Task<LarkResponseBody> AddMessageFavorLinkAsync(string id, IEnumerable<LarkMessageFavorLinkInfo> links, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.AddMessageFavorLink, id), new JsonObjectNode
+        {
+            { "chat_tabs", links.ToJsonArrayNode() },
+        }, cancellationToken);
+
     /// <summary>
     /// Sends a streaming message and periodically updates its card with asynchronous response content.
     /// </summary>
