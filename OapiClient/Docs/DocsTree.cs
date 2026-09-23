@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Security;
 using System.Text;
 using System.Text.Json;
@@ -235,6 +236,13 @@ public class LarkDocLinkItem(string nodeToken, string? name) : INamePropertyMode
     [JsonPropertyName("nodeToken")]
     [Description("The node token is a kind of identifier to a doc node used to get its information, content and child nodes.")]
     public string NodeToken { get; } = nodeToken;
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"{Name} ({NodeToken})";
 }
 
 public class LarkDocContent(string nodeToken, string? name, string? docToken, string docType, object content)
@@ -339,6 +347,13 @@ public class LarkDocContent(string nodeToken, string? name, string? docToken, st
         else return false;
         return true;
     }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"[{DocType}] {Name} ({NodeToken})";
 }
 
 public class LarkDocContent<T>(string nodeToken, string? name, string? docToken, string docType, T content)

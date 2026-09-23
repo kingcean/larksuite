@@ -82,4 +82,30 @@ public static class LarkDocsFieldsHelper
         });
         node.SetValue(key, arr);
     }
+
+    public static JsonObjectNode CreateMenuContentBlock(string id, string token, bool old = false)
+        => new()
+        {
+            { "block_id", id },
+            { "block_type", old ? 42 : 51 },
+            { "sub_page_list", new JsonObjectNode
+            {
+                { old ? "wiki_catalog" : "wiki_token", token },
+            } },
+        };
+
+    public static JsonObjectNode CreateCalloutBlock(string id, string emoji, int? backgroundColor = null, int? borderColor = null, int? textColor = null)
+    {
+        var json = new JsonObjectNode();
+        json.SetValueIfNotNull("background_color", backgroundColor);
+        json.SetValueIfNotNull("border_color", borderColor);
+        json.SetValueIfNotNull("text_color", textColor);
+        json.SetValueIfNotEmpty("emoji", emoji);
+        return new JsonObjectNode()
+        {
+            { "block_id", id },
+            { "block_type", 19 },
+            { "callout", json },
+        };
+    }
 }

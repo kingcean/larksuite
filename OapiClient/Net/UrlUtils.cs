@@ -21,6 +21,16 @@ internal static partial class LarkUrls
         return info.Id;
     }
 
+    public static string? GetId(string url, out string? kind)
+    {
+        kind = null;
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        if (url.IndexOf(".feishu.cn/") < 0) return url;
+        var info = new LarkUrlInfo(url);
+        kind = info.Product;
+        return info.Id;
+    }
+
     public static string ToUrl(string url, string? arg)
         => url.Replace("{0}", arg);
 

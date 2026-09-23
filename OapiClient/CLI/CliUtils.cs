@@ -189,6 +189,35 @@ public static partial class LarkCliUtils
         return console.Select(selection, options);
     }
 
+    public static void WritePropertyLine(StyleConsole console, string label, string? value, string? note = null)
+    {
+        console ??= StyleConsole.Default;
+        var style = new ConsoleTextStyle(Color.FromArgb(0xCE, 0x91, 0x78), ConsoleColor.Green, null, null);
+        if (value is null)
+        {
+            console.WriteLine(style, label);
+            return;
+        }
+
+        console.Append(style, label);
+        console.Append(label.Length < 8 ? "\t\t" : " \t");
+        if (value.StartsWith("https") && !value.Contains(" ")) console.Append(ConsoleColor.Blue, value);
+        else console.Append(value);
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            console.WriteLine();
+            return;
+        }
+
+        console.Append(" \t");
+        console.WriteLine(ConsoleColor.DarkGray, note);
+    }
+
+    public static void WritePropertyLineIfNotEmpty(StyleConsole console, string label, string? value, string? note = null)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) WritePropertyLine(console, label, value, note);
+    }
+
     internal static string? GetName(JsonObjectNode? json)
         => LarkApiUtils.GetName(json);
 
@@ -257,34 +286,6 @@ public static partial class LarkCliUtils
         if (int.TryParse(id, out var index) && index > 0 && index <= ids.Count)
             return ids[index - 1]?.Data;
         return id;
-    }
-
-    internal static void WritePropertyLine(StyleConsole console, string label, string? value, string? note = null)
-    {
-        console ??= StyleConsole.Default;
-        var style = new ConsoleTextStyle(Color.FromArgb(0xCE, 0x91, 0x78), ConsoleColor.Green, null, null);
-        if (value is null)
-        {
-            console.WriteLine(style, label);
-            return;
-        }
-
-        console.Append(style, label);
-        console.Append(label.Length < 8 ? "\t\t" : " \t");
-        console.Append(value);
-        if (string.IsNullOrWhiteSpace(note))
-        {
-            console.WriteLine();
-            return;
-        }
-
-        console.Append(" \t");
-        console.WriteLine(ConsoleColor.DarkGray, note);
-    }
-
-    internal static void WritePropertyLineIfNotEmpty(StyleConsole console, string label, string? value, string? note = null)
-    {
-        if (!string.IsNullOrWhiteSpace(value)) WritePropertyLine(console, label, value, note);
     }
 
     internal static void WriteEmpty(StyleConsole console)

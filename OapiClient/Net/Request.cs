@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Data;
 using Trivial.Maths;
 using Trivial.Net;
@@ -201,6 +202,13 @@ public class LarkDocsSortItem : IJsonObjectHost
             { "desc", IsDesc },
         };
     }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"{Name} {(IsDesc ? "desc" : "asc")}";
 }
 
 /// <summary>
@@ -324,6 +332,13 @@ public class LarkDocsFilter : IJsonObjectHost
             { "children", arr },
         };
     }
+
+    /// <summary>
+    /// Returns a string that represents the filter.
+    /// </summary>
+    /// <returns>A string that represents the filter.</returns>
+    public override string ToString()
+        => $"Op = {Conjunction} & Items = Properties {list.Count} + Sub-Filter {children.Count}";
 }
 
 /// <summary>
@@ -570,6 +585,34 @@ public class LarkDocsFilterCondition : IJsonObjectHost
             { "operator", Operation },
             { "value", Value },
         };
+    }
+
+    /// <summary>
+    /// Returns a string that represents the filter.
+    /// </summary>
+    /// <returns>A string that represents the filter.</returns>
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        sb.Append(Name);
+        sb.Append(' ');
+        sb.Append(Operation);
+        var v = Value;
+        if (v is null || v.Count < 1 || v.FirstOrDefault() is null)
+            return sb.ToString();
+        sb.Append(' ');
+        if (v.Count == 1)
+        {
+            sb.Append(v.FirstOrDefault());
+        }
+        else
+        {
+            sb.Append('[');
+            sb.Append(string.Join(", ", v));
+            sb.Append(']');
+        }
+
+        return sb.ToString();
     }
 }
 

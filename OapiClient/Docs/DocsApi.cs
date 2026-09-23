@@ -266,7 +266,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The content of the doc.</returns>
     [Description("Get the content of the specific identifier. The result is in a collection of block.")]
-    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL, node token or doc token of the online doc.")] string token, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkContentBlock>(LarkUrls.ToUrl(LarkUrls.DocsBlocks, LarkUrls.GetId(token), true), new LarkResourceIdRequest(LarkUrls.GetId(token)), null, json => new(json), cancellationToken);
 
     /// <summary>
@@ -277,7 +277,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The content of the doc.</returns>
     [Description("Get the content of the specific identifier. The result is in a collection of block.")]
-    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
+    public Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL, node token or doc token of the online doc.")] string token, LarkPageTokenInfo paging, CancellationToken cancellationToken = default)
         => GetItemsAsync<LarkContentBlock>(LarkUrls.ToUrl(LarkUrls.DocsBlocks, LarkUrls.GetId(token), true), new LarkResourceIdRequest(LarkUrls.GetId(token)), paging, json => new(json), cancellationToken);
 
     /// <summary>
@@ -288,7 +288,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The content of the doc.</returns>
     [Description("Get the content of the specific identifier. The result is in a collection of block.")]
-    public async Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, [Description("A flag to control if need load all the blocks once; or false, if load the ones of the first page only.")] bool loadAllPages, CancellationToken cancellationToken = default)
+    public async Task<LarkResponsePagingBody<LarkContentBlock>> GetDocsBlocksAsync([Description("The URL, node token or doc token of the online doc.")] string token, [Description("A flag to control if need load all the blocks once; or false, if load the ones of the first page only.")] bool loadAllPages, CancellationToken cancellationToken = default)
     {
         var resp = await GetDocsBlocksAsync(token, new LarkPageTokenInfo(50), cancellationToken);
         if (loadAllPages) await LarkApiUtils.LoadAllPagesAsync(resp, 50, GetDocsBlocksAsync, cancellationToken).CountAsync(cancellationToken);
@@ -1167,9 +1167,21 @@ public partial class LarkApi
     public async Task<LarkDocContent> GetDocsNodeContentAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(token)) return LarkApiUtils.ErrorLarkDocContent(null, "The node token is null.");
-        token = LarkUrls.GetId(token)!;
+        token = LarkUrls.GetId(token, out var kind)!;
+        if (kind == "docx" || kind == "file") return await LarkApiUtils.GetDocsNodeContentAsync(this, kind, token, cancellationToken);
         var info = await GetWikiNodeAsync(token, cancellationToken);
-        if (string.IsNullOrWhiteSpace(info?.Data?.NodeToken) || info.IsError) return LarkApiUtils.ErrorLarkDocContent(token, info?.Message ?? "Get node failed.");
+        if (info is null) return LarkApiUtils.ErrorLarkDocContent(token, "No response.");
+        if (string.IsNullOrWhiteSpace(info.Data?.NodeToken) || info.IsError)
+        {
+            if (info.Message?.Trim()?.ToLowerInvariant() == "not found")
+            {
+                var doc = await LarkApiUtils.GetDocsNodeContentAsync(this, "docx", token, cancellationToken);
+                if (!string.IsNullOrWhiteSpace(doc?.DocToken) && doc.Content is not null) return doc;
+            }
+
+            return LarkApiUtils.ErrorLarkDocContent(token, info.Message ?? "Get node failed.");
+        }
+
         return await LarkApiUtils.GetDocsNodeContentAsync(this, info, cancellationToken);
     }
 

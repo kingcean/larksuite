@@ -598,6 +598,28 @@ public static partial class LarkApiUtils
         }
     }
 
+    public static LarkDocsAccessUserInfo? ToDocsUser(JsonObjectNode? json)
+        => json is null ? null : new(json);
+
+    public static LarkDocsAccessUserInfo? ToDocsUser(JsonObjectNode? json, string key)
+        => ToDocsUser(json?.TryGetObjectValue(key));
+
+    public static List<LarkDocsAccessUserInfo> ToDocsUsers(JsonObjectNode? json, string key)
+    {
+        if (json is null || string.IsNullOrWhiteSpace(key)) return [];
+        var arr = json.TryGetObjectListValue(key, true);
+        if (arr is null) return [];
+        var list = new List<LarkDocsAccessUserInfo>();
+        foreach (var item in arr)
+        {
+            var user = ToDocsUser(item);
+            if (user is null) continue;
+            list.Add(user);
+        }
+
+        return list;
+    }
+
     public static SelectionData<LarkDocsBaseTableRecord<JsonObjectNode>> ToSelection(this IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> col, Func<JsonObjectNode, string>? title)
     {
         if (col is null) return new();
@@ -764,6 +786,36 @@ public static partial class LarkApiUtils
             Connector = connector,
             Table = table,
         };
+    }
+
+    internal static async Task<LarkDocContent> GetDocsNodeContentAsync(this LarkApi larkApi, string kind, string token, CancellationToken cancellationToken = default)
+    {
+        switch (kind)
+        {
+            case "doc":
+            case "docx":
+            case "docs":
+                {
+                    var doc = await larkApi.GetDocsBlocksAsync(token, true, cancellationToken);
+                    if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.");
+                    var refIds = new LarkContentBlockResourceIds();
+                    var tree = doc.Data.ToTree(null, refIds);
+                    if (refIds.Users.Count > 0) await larkApi.GetUserInfoAsync(refIds.Users, tree, cancellationToken);
+                    if (refIds.Whiteboards.Count > 0) await larkApi.GetDocsWhiteboardNodesAsync(refIds.Whiteboards, tree, null, cancellationToken).CountAsync(cancellationToken);
+                    return new LarkDocContent<LarkContentBlockTree>(null, tree.Content?.FirstOrDefault()?.Text, token, "docx", tree);
+                }
+            case "file":
+                {
+                    var file = await larkApi.ReadDocsTextFileAsync(token, cancellationToken);
+                    return ToDocContent(file, new()
+                    {
+                        DocToken = token,
+                        DocType = "file",
+                    }, "Load file text error.", input => new LarkDocsTextContent(input));
+                }
+            default:
+                return ErrorLarkDocContent(token, "Unsupported format.");
+        }
     }
 
     internal static LarkDocContent ToDocContent<T>(LarkResponseBody<T>? body, LarkDocsNodeInfo node, string errorMessage)

@@ -268,16 +268,17 @@ public partial class LarkApi
     /// <summary>
     /// Creates an interactive card and sends it to a user identified by open ID.
     /// </summary>
-    /// <param name="userOpenId">The recipient user open ID.</param>
+    /// <param name="receiveIdType">The user identifier type, e.g. open_id, union_id, user_id, email, chat_id.</param>
+    /// <param name="receiveId">The identifier of the receive user or chat group.</param>
     /// <param name="req">The interactive card request.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The message sending response, or an error response if the recipient identifier is blank or card creation fails.</returns>
-    public async Task<LarkResponseBody<LarkMessageResponse>> SendMessageAsync(string userOpenId, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<LarkMessageResponse>> SendMessageAsync(string receiveIdType, string receiveId, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(userOpenId)) return new(true, "The user identifier is null.");
+        if (string.IsNullOrWhiteSpace(receiveId)) return new(true, "The user identifier is null.");
         var card = await CreateMessageCardAsync(req);
         if (string.IsNullOrWhiteSpace(card?.Data) || card.IsError) return new(true, card?.Message ?? "Create message interactive card failed.");
-        var info = new LarkMessageRequest("open_id", userOpenId)
+        var info = new LarkMessageRequest(receiveIdType ?? "open_id", receiveId)
         {
             Id = Guid.NewGuid().ToString(),
         };
@@ -285,6 +286,16 @@ public partial class LarkApi
         var resp = await SendMessageAsync(info, cancellationToken);
         return resp;
     }
+
+    /// <summary>
+    /// Creates an interactive card and sends it to a user identified by open ID.
+    /// </summary>
+    /// <param name="userOpenId">The recipient user open ID.</param>
+    /// <param name="req">The interactive card request.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The message sending response, or an error response if the recipient identifier is blank or card creation fails.</returns>
+    public Task<LarkResponseBody<LarkMessageResponse>> SendMessageAsync(string userOpenId, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+        => SendMessageAsync("open_id", userOpenId, req, cancellationToken);
 
     /// <summary>
     /// Creates and sends an interactive card to each distinct user open ID.
