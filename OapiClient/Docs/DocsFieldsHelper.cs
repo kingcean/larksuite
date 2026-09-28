@@ -108,4 +108,23 @@ public static class LarkDocsFieldsHelper
             { "callout", json },
         };
     }
+
+    public static JsonObjectNode CreateWebPageBlock(string id, int type, string url)
+        => new()
+        {
+            { "block_id", id },
+            { "block_type", 26 },
+            { "iframe", new JsonObjectNode
+            {
+                { "component", new JsonObjectNode
+                {
+                    { "type", type },
+                    { "url", url },
+                } },
+            }
+            },
+        };
+
+    public static JsonObjectNode CreateWebPageBlock(string id, string url)
+        => CreateWebPageBlock(id, 99, url);
 }

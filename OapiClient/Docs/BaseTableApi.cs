@@ -196,11 +196,66 @@ public partial class LarkApi
     /// <returns>The matching records for the requested page, or an error response if the Lark Base or table identifier is missing.</returns>
     public async Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(LarkDocsBaseTableFilter options, LarkPageTokenInfo? paging, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(options?.BaseId) || string.IsNullOrWhiteSpace(options.TableId)) return new(true);
+        if (string.IsNullOrWhiteSpace(options?.BaseId) || string.IsNullOrWhiteSpace(options.TableId)) return new(true, "The identifier of the table should not be empty.");
         var http = CreateJsonHttpClient();
         var resp = await http.PostAsync(LarkUrls.ToUrl(LarkUrls.ReadBaseTable, paging, options.BaseId, options.TableId), options.ToJson(), cancellationToken);
         return new(options, resp, json => new(json));
     }
+
+    /// <summary>
+    /// Queries a page of table records using the specified filter options.
+    /// </summary>
+    /// <param name="baseId">The Lark Base app token.</param>
+    /// <param name="tableId">The table identifier.</param>
+    /// <param name="viewId">The view identifier.</param>
+    /// <param name="filter">The filter conditions.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The matching records for the requested page, or an error response if the Lark Base or table identifier is missing.</returns>
+    public async Task<LarkResponseBody<IReadOnlyList<LarkDocsBaseTableRecord>>> ReadBaseTableAsync(string baseId, string tableId, string? viewId, ICollection<LarkDocsFilterCondition> filter, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(baseId) || string.IsNullOrWhiteSpace(tableId)) return new(true, "The identifier of the table should not be empty.");
+        var options = new LarkDocsBaseTableFilter(baseId, tableId);
+        if (!string.IsNullOrWhiteSpace(viewId)) options.ViewId = viewId;
+        LarkResponseBody<IReadOnlyList<LarkDocsBaseTableRecord>>? col = null;
+        var items = new JsonArrayNode();
+        var list = new List<LarkDocsBaseTableRecord>();
+        for (var i = 0; i < filter.Count; i += 40)
+        {
+            options.Filter = new(Trivial.Maths.CriteriaBooleanOperator.Or, filter.Skip(i).Take(40));
+            var resp = await ReadBaseTableAsync(options, new LarkPageTokenInfo(500), cancellationToken);
+            if (i == 0)
+            {
+                col = new(new JsonObjectNode
+                {
+                    { "code", resp.Code },
+                    { "msg", resp.Message },
+                    { "data", new JsonObjectNode
+                    {
+                        { "items", items },
+                    } }
+                }, json => list);
+                if (resp?.Data is null || resp.IsError) return col;
+            }
+
+            if (resp?.Data is null || resp.IsError || col is null) continue;
+            list.AddRange(resp.Data);
+            var data = (resp as LarkResponseBody)?.Data?.TryGetObjectListValue("items");
+            if (data is not null) items.AddRange(data);
+        }
+
+        return col ?? new(true, "No response.");
+    }
+
+    /// <summary>
+    /// Queries a page of table records using the specified filter options.
+    /// </summary>
+    /// <param name="baseId">The Lark Base app token.</param>
+    /// <param name="tableId">The table identifier.</param>
+    /// <param name="filter">The filter conditions.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The matching records for the requested page, or an error response if the Lark Base or table identifier is missing.</returns>
+    public Task<LarkResponseBody<IReadOnlyList<LarkDocsBaseTableRecord>>> ReadBaseTableAsync(string baseId, string tableId, ICollection<LarkDocsFilterCondition> filter, CancellationToken cancellationToken = default)
+        => ReadBaseTableAsync(baseId, tableId, null, filter, cancellationToken);
 
     /// <summary>
     /// Lists the records of a specific table in Lark Base (former named Bitable).

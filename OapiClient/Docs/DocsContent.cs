@@ -5,6 +5,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Data;
 using Trivial.Text;
 using Trivial.Web;
@@ -284,6 +285,10 @@ public class LarkContentTextInfo
 
     [JsonPropertyName("elements")]
     public List<LarkContentTextElement> Elements { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => Elements is null || Elements.Count < 1 ? string.Empty : string.Join(Environment.NewLine, Elements.Select(ele => ele?.Text?.Content ?? string.Empty));
 }
 
 public class LarkContentTextElement
@@ -315,6 +320,10 @@ public class LarkContentTextElement
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("equation")]
     public JsonObjectNode? Equation { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Text?.Content ?? string.Empty}";
 }
 
 public class LarkContentTextRun
@@ -389,6 +398,24 @@ public class LarkContentTextElementStyle
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     [JsonPropertyName("comment_ids")]
     public List<string>? CommentIds { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+        if (IsBold) sb.Append('B');
+        if (IsItalic) sb.Append('I');
+        if (Underline) sb.Append('U');
+        if (Strikethrough) sb.Append('S');
+        if (!string.IsNullOrWhiteSpace(Link?.Url))
+        {
+            if (sb.Length > 0) sb.Append(" | ");
+            sb.Append("Link = ");
+            sb.Append(Link.Url);
+        }
+
+        return sb.ToString();
+    }
 }
 
 public class LarkContentLinkInfo
@@ -472,6 +499,10 @@ public class LarkDocsTextContent
 
     [JsonPropertyName("content")]
     public string Content { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"{Message ?? "?"} | {Content}";
 }
 
 public class LarkDocsAccessUserInfo : IIdPropertyModel, INamePropertyModel

@@ -1076,7 +1076,19 @@ public partial class LarkApi
     /// <param name="blockIndex">The insertion index in the document root block, or -1 to append. Batched requests always append.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The block insertion response, or an error response if conversion or node lookup fails.</returns>
-    public async Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, int blockIndex, CancellationToken cancellationToken = default)
+    public Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, int blockIndex, CancellationToken cancellationToken = default)
+        => UpdateDocsAsync(nodeToken, markdown, null, blockIndex, cancellationToken);
+
+    /// <summary>
+    /// Converts Markdown to blocks and inserts them into a wiki document without replacing existing content.
+    /// </summary>
+    /// <param name="nodeToken">The wiki node token or URL of the document.</param>
+    /// <param name="markdown">The nonempty Markdown content to insert.</param>
+    /// <param name="appendBlocks">The additional blocks.</param>
+    /// <param name="blockIndex">The insertion index in the document root block, or -1 to append. Batched requests always append.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The block insertion response, or an error response if conversion or node lookup fails.</returns>
+    public async Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, List<JsonObjectNode>? appendBlocks, int blockIndex, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(markdown)) return new(true, "The markdown is empty.");
         var blocksTask = ConvertDocsBlocksAsync("markdown", markdown, null, cancellationToken);
@@ -1086,7 +1098,20 @@ public partial class LarkApi
             return new(true, nodeInfo?.Message);
         if (blocks?.Data is null || blocks.IsError)
             return new(true, blocks?.Message);
-        var resp = await AddDocsBlocksAsync(nodeInfo.Data.DocToken, nodeInfo.Data.DocToken, blocks.Data.TopBlockIds, blockIndex, blocks.Data.Blocks, cancellationToken);
+        var ids = blocks.Data.TopBlockIds;
+        var content = blocks.Data.Blocks;
+        if (appendBlocks is not null)
+        {
+            foreach (var append in appendBlocks)
+            {
+                var appendId = append?.TryGetStringValue("block_id");
+                if (string.IsNullOrWhiteSpace(appendId)) continue;
+                ids.Add(appendId);
+                content.Add(append!);
+            }
+        }
+
+        var resp = await AddDocsBlocksAsync(nodeInfo.Data.DocToken, nodeInfo.Data.DocToken, ids, blockIndex, content, cancellationToken);
         return resp;
     }
 
@@ -1098,7 +1123,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The block insertion response, or an error response if conversion or node lookup fails.</returns>
     public Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, CancellationToken cancellationToken = default)
-        => UpdateDocsAsync(nodeToken, markdown, -1, cancellationToken);
+        => UpdateDocsAsync(nodeToken, markdown, null, -1, cancellationToken);
 
     /// <summary>
     /// Deletes a range of child blocks from a document block.

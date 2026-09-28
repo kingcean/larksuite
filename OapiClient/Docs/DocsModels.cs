@@ -176,6 +176,10 @@ public class LarkDocsDocCoverInfo
 
     [JsonPropertyName("offset_ratio_y")]
     public double OffsetRatioY { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"Image Token = {ImageToken} & X = {OffsetRatioX} & Y = {OffsetRatioY}";
 }
 
 public class LarkDocsFileTextResponse(LarkDocsNodeInfo node, string value)
@@ -192,6 +196,10 @@ public class LarkDocsImageUrlMappingResponse
 
     [JsonPropertyName("image_url")]
     public string ImageUrl { get; set; }
+
+    /// <inheritdoc />
+    public override string ToString()
+        => $"Block = {BlockId} & Image = {ImageUrl}";
 }
 
 public class LarkDocsMarkdownConvertResponse
@@ -204,7 +212,6 @@ public class LarkDocsMarkdownConvertResponse
 
     [JsonPropertyName("block_id_to_image_urls")]
     public List<LarkDocsImageUrlMappingResponse> ImageMapping { get; set; }
-
 }
 
 public abstract class BaseLarkDocsDriveMetaInfo : IIdPropertyModel
