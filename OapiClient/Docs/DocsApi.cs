@@ -15,6 +15,7 @@ using System.Xml.Linq;
 using Trivial.Net;
 using Trivial.Security;
 using Trivial.Text;
+using Trivial.Web;
 
 namespace LarkSuite;
 
@@ -1188,8 +1189,8 @@ public partial class LarkApi
     /// <param name="token">The node token.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The doc content.</returns>
-    [Description("Read the content of the specific online doc.")]
-    public async Task<LarkDocContent> GetDocsNodeContentAsync([Description("The URL or node token (not the doc token nor file token) of the online doc.")] string token, CancellationToken cancellationToken = default)
+    [Description("Read the content of the specific online doc (also including markdown file, plain text file and Lark Base).")]
+    public async Task<LarkDocContent> GetDocsNodeContentAsync([Description("The URL or node token of the online doc.")] string token, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(token)) return LarkApiUtils.ErrorLarkDocContent(null, "The node token is null.");
         token = LarkUrls.GetId(token, out var kind)!;

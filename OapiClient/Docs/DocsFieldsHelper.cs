@@ -127,4 +127,60 @@ public static class LarkDocsFieldsHelper
 
     public static JsonObjectNode CreateWebPageBlock(string id, string url)
         => CreateWebPageBlock(id, 99, url);
+
+    public static JsonObjectNode CreateSeparator(string id)
+        => new()
+        {
+            { "block_id", id },
+            { "block_type", 22 },
+            { "divider", new JsonObjectNode() },
+        };
+
+    public static JsonObjectNode CreateText(string id, string text, int heading = 0)
+        => new()
+        {
+            { "block_id", id },
+            { "block_type", 22 },
+            { heading switch
+            {
+                0 => "text",
+                1 => "heading1",
+                2 => "heading2",
+                3 => "heading3",
+                4 => "heading4",
+                5 => "heading5",
+                6 => "heading6",
+                7 => "heading7",
+                8 => "heading8",
+                9 or 10 => "heading9",
+                _ => "text",
+            }, new JsonObjectNode
+            {
+                { "elements", new JsonArrayNode
+                {
+                    new JsonObjectNode
+                    {
+                        { "text_run", new JsonObjectNode
+                        {
+                            { "content", text },
+                            { "text_element_style", heading switch
+                            {
+                                11 => new JsonObjectNode
+                                {
+                                    { "italic", true },
+                                },
+                                12 => new JsonObjectNode
+                                {
+                                    { "bold", true },
+                                },
+                                _ => []
+                            } },
+                        } },
+                    },
+                } },
+                { "style", new JsonObjectNode
+                {
+                } },
+            } },
+        };
 }

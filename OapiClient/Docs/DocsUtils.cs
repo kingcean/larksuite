@@ -409,8 +409,35 @@ public static partial class LarkApiUtils
         return Simplify<T>(records, mapping).ToList();
     }
 
-    public static async Task<List<LarkDocsBaseTableRecord<JsonObjectNode>>> SimplifyAsync(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records)
-        => Simplify(await records).ToList();
+    public static async Task<CollectionResult<T>> SimplifyAsync<T>(LarkApi? larkApi, string baseId, string tableId, Func<LarkDocsBaseTableRecord, T> converter, CancellationToken cancellationToken = default)
+    {
+        var records = await (larkApi ?? LarkApi.DefaultInstance).ReadBaseTableAsync(baseId, tableId, cancellationToken);
+        return Simplify(records, converter);
+    }
+
+    public static async Task<CollectionResult<T>> SimplifyAsync<T>(LarkApi? larkApi, string baseId, string tableId, bool all, Func<LarkDocsBaseTableRecord, T> converter, CancellationToken cancellationToken = default)
+    {
+        larkApi ??= LarkApi.DefaultInstance;
+        var records = await larkApi.ReadBaseTableAsync(baseId, tableId, cancellationToken);
+        if (records is null) return new()
+        {
+            Message = "Error: No response."
+        };
+        if (records.Data is null || records.IsError) return new()
+        {
+            Message = records.Message ?? "Error: No data."
+        };
+        if (all)
+        {
+            while (records.HasNextPage)
+            {
+                var col = larkApi.ReadBaseTableAsync(records, 500, cancellationToken);
+                if (col is null) break;
+            }
+        }
+
+        return Simplify(records, converter);
+    }
 
     public static async Task<List<LarkDocsBaseTableRecord<JsonObjectNode>>> SimplifyAsync(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
         => Simplify(await records, mapping).ToList();
@@ -420,6 +447,47 @@ public static partial class LarkApiUtils
 
     public static async Task<List<LarkDocsBaseTableRecord<T>>> SimplifyAsync<T>(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Dictionary<string, string> mapping)
         => Simplify<T>(await records, mapping).ToList();
+
+    public static async Task<CollectionResult<T>> SimplifyAsync<T>(this Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> records, Func<LarkDocsBaseTableRecord, T> converter)
+        => Simplify(await records, converter);
+
+    public static CollectionResult<T> Simplify<T>(this LarkResponsePagingBody<LarkDocsBaseTableRecord> resp, Func<LarkDocsBaseTableRecord, T?> converter)
+    {
+        if (resp is null) return new()
+        {
+            Message = "Error: No response.",
+        };
+        if (resp.Data is null || resp.IsError) return new()
+        {
+            Message = resp.Message ?? "Error: No data.",
+        };
+        var col = new List<T>();
+        if (converter is null)
+        {
+            foreach (var record in resp.Data)
+            {
+                if (record?.Fields is null) continue;
+                var item = record.Fields.Deserialize<T>();
+                if (item is null) continue;
+                col.Add(item);
+            }
+        }
+        else
+        {
+            foreach (var record in resp.Data)
+            {
+                if (record?.Id is null) continue;
+                var item = converter(record);
+                if (item is null) continue;
+                col.Add(item);
+            }
+        }
+
+        return new(col)
+        {
+            Message = "Success!",
+        };
+    }
 
     public static IEnumerable<LarkDocsBaseTableRecord<JsonObjectNode>> Simplify(this LarkResponsePagingBody<LarkDocsBaseTableRecord> records)
     {
@@ -498,6 +566,28 @@ public static partial class LarkApiUtils
         {
             var info = fields.Deserialize<T>();
             if (info is not null && info.Data is not null) yield return info;
+        }
+    }
+
+    public static IEnumerable<T> Simplify<T>(this IEnumerable<LarkDocsBaseTableRecord> records, Func<LarkDocsBaseTableRecord, T> converter)
+    {
+        if (converter is null)
+        {
+            foreach (var record in records)
+            {
+                if (record?.Fields is null) continue;
+                var info = record.Fields.Deserialize<T>();
+                if (info is not null) yield return info;
+            }
+        }
+        else
+        {
+            foreach (var record in records)
+            {
+                if (record?.Id is null) continue;
+                var info = converter(record);
+                if (info is not null) yield return info;
+            }
         }
     }
 
@@ -585,7 +675,7 @@ public static partial class LarkApiUtils
         return result.Data ?? default;
     }
 
-    public static IEnumerable<string> ToIds(IEnumerable<LarkDocsAccessUserInfo> users)
+    public static IEnumerable<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?> users)
     {
         if (users is null) yield break;
         var list = new List<string>();
@@ -596,6 +686,36 @@ public static partial class LarkApiUtils
             list.Add(id);
             yield return id;
         }
+    }
+
+    public static IReadOnlyList<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?> users, IList<string> ids)
+    {
+        if (users is null) return [];
+        var list = new List<string>();
+        foreach (var item in users)
+        {
+            var id = item?.Id;
+            if (string.IsNullOrWhiteSpace(id) || list.Contains(id)) continue;
+            list.Add(id);
+            ids.Add(id);
+        }
+
+        return list;
+    }
+
+    public static IReadOnlyList<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?> users, IList<LarkDocsAccessUserInfo> ids)
+    {
+        if (users is null) return [];
+        var list = new List<string>();
+        foreach (var item in users)
+        {
+            var id = item?.Id;
+            if (string.IsNullOrWhiteSpace(id) || list.Contains(id)) continue;
+            list.Add(id);
+            ids.Add(item!);
+        }
+
+        return list;
     }
 
     public static LarkDocsAccessUserInfo? ToDocsUser(JsonObjectNode? json)

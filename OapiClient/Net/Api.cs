@@ -907,6 +907,46 @@ public partial class LarkApi : TokenContainer
     }
 
     /// <summary>
+    /// Creates the query data for login.
+    /// </summary>
+    /// <param name="redirectUrl">The redirect URL.</param>
+    /// <param name="scope">The scope.</param>
+    /// <param name="state">The state which will return back after signing in.</param>
+    /// <returns>The query data used for login.</returns>
+    public QueryData CreateLoginQuery(string redirectUrl, IEnumerable<string> scope, string? state = null)
+    {
+        var q = new QueryData
+        {
+            { "client_id", AppKeyId },
+            { "response_type", "code" },
+            { "redirect_uri", redirectUrl },
+            { "scope", scope is null ? string.Empty : string.Join(' ', scope) },
+        };
+        q.SetIfNotEmpty("state", state);
+        return q;
+    }
+
+    /// <summary>
+    /// Creates the query data for login.
+    /// </summary>
+    /// <param name="redirectUrl">The redirect URL.</param>
+    /// <param name="scope">The scope.</param>
+    /// <param name="state">The state which will return back after signing in.</param>
+    /// <returns>The query data used for login.</returns>
+    public QueryData CreateLoginQuery(Uri redirectUrl, IEnumerable<string> scope, string? state = null)
+    {
+        var q = new QueryData
+        {
+            { "client_id", AppKeyId },
+            { "response_type", "code" },
+            { "redirect_uri", redirectUrl?.OriginalString },
+            { "scope", scope is null ? string.Empty : string.Join(' ', scope) },
+        };
+        q.SetIfNotEmpty("state", state);
+        return q;
+    }
+
+    /// <summary>
     /// Sends a request message by GET to get response with collection result.
     /// </summary>
     /// <param name="url">The URL the request is sent to.</param>

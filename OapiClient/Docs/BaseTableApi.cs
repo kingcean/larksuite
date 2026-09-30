@@ -291,20 +291,20 @@ public partial class LarkApi
     /// </summary>
     /// <param name="baseId">The Lark Base app token (doc token).</param>
     /// <param name="tableId">The table identifier.</param>
-    /// <param name="filter">The optional simple filter.</param>
+    /// <param name="filter">The optional simple filter.  When you need to specify column names for filtering or sorting, first read the column information for the relevant table in the Lark Base. Do not guess column names, as incorrect names will cause the operation to fail.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The records of the base table.</returns>
     [Description("List the records in Lark Base (former named Bitable). Return 200 records at most; or the value specified in the `filter.MaxCount` property.")]
     public async Task<LarkResponsePagingBody<LarkDocsBaseTableRecord>> ReadBaseTableAsync(
     [Description("The Lark Base instance identifier (token node).")] string baseId,
     [Description("The table (sheet) identifier. A Lark Base instance may include one or more table instance.")] string tableId,
-    [Description("The optional filter and sort options.")] LarkBaseTableSimpleFilter? filter,
+    [Description("The optional filter and sort options. When you need to specify column names for filtering or sorting, first read the column information for the relevant table in the Lark Base. Do not guess column names, as incorrect names will cause the operation to fail.")] LarkBaseTableSimpleFilter? filter,
     CancellationToken cancellationToken = default)
     {
         LarkResponsePagingBody<LarkDocsBaseTableRecord> resp;
         if (string.IsNullOrWhiteSpace(filter?.FilterPropertyValue) && string.IsNullOrWhiteSpace(filter?.SortPropertyName))
         {
-            resp = await ReadBaseTableAsync(baseId, tableId, new LarkPageTokenInfo(filter.MaxCount ?? 200), cancellationToken);
+            resp = await ReadBaseTableAsync(baseId, tableId, new LarkPageTokenInfo(filter?.MaxCount ?? 200), cancellationToken);
         }
         else
         {

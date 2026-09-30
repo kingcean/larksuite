@@ -127,10 +127,10 @@ public class LarkDocsBaseTableFilter : BaseQueryRequestInfo, IJsonObjectHost
 
     public List<LarkDocsSortItem>? Sort { get; set; }
 
-    public void SetOrder(string name, bool isDesc)
+    public void SetOrder(string name, bool isDesc = false)
         => Sort = [new(name, isDesc)];
 
-    public void AddOrder(string name, bool isDesc)
+    public void AddOrder(string name, bool isDesc = false)
     {
         Sort ??= [];
         Sort.Add(new(name, isDesc));
