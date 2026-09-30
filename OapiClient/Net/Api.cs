@@ -947,6 +947,32 @@ public partial class LarkApi : TokenContainer
     }
 
     /// <summary>
+    /// Clones a new LarkApi instance for user with the code.
+    /// </summary>
+    /// <param name="code">The auth code.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The cloned LarkApi instance.</returns>
+    public async Task<LarkApi> CloneUserAsync(string code, CancellationToken cancellationToken = default)
+    {
+        var larkApi = new LarkApi(AppKey);
+        if (!string.IsNullOrWhiteSpace(code)) await larkApi.GetUserTokenAsync(new(code), cancellationToken);
+        return larkApi;
+    }
+
+    /// <summary>
+    /// Clones a new LarkApi instance for user with the code.
+    /// </summary>
+    /// <param name="code">The auth code.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The cloned LarkApi instance.</returns>
+    public async Task<LarkApi> CloneUserAsync(CodeTokenRequestBody code, CancellationToken cancellationToken = default)
+    {
+        var larkApi = new LarkApi(AppKey);
+        if (code is not null) await larkApi.GetUserTokenAsync(code, cancellationToken);
+        return larkApi;
+    }
+
+    /// <summary>
     /// Sends a request message by GET to get response with collection result.
     /// </summary>
     /// <param name="url">The URL the request is sent to.</param>
