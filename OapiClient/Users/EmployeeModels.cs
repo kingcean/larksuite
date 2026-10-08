@@ -120,10 +120,6 @@ public class LarkEmployeeJobInfo
     public string? JobId { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    [JsonPropertyName("employeeNumber")]
-    public string? EmployeeNumber { get; set; }
-
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [JsonPropertyName("level")]
     public LarkIdNameStaticInfo? Level { get; set; }
 

@@ -3,10 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Trivial.Data;
 using Trivial.Security;
 using Trivial.Text;
@@ -167,6 +169,7 @@ public class LarkContentBlockTreeContent
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(LarkContentBlockUserReference), "user")]
 [JsonDerivedType(typeof(LarkContentBlockLinkReference), "link")]
+[DebuggerDisplay("{DisplayName}")]
 public abstract class BaseLarkContentBlockTreeContentReference
 {
     [JsonIgnore]
@@ -391,6 +394,13 @@ public class LarkDocContentError
 
     [JsonPropertyName("message")]
     public string? Message { get; set; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"Error = {IsError} & Message = {Message}";
 }
 
 public class LarkDocWhiteboardNodePositionInfo

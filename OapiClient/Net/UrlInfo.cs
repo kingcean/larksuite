@@ -4,6 +4,7 @@ using System.Text;
 using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LarkSuite.OapiModels;
 
@@ -108,4 +109,11 @@ public class LarkUrlInfo
     /// Gets the optional query col.
     /// </summary>
     public QueryData Query { get; }
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"{Product ?? "?"} {Id} with query count {Query.Count}";
 }

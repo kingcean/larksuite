@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Net;
 using Trivial.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LarkSuite.OapiModels;
 
@@ -133,8 +134,8 @@ public class LarkResponseBody
         var id = Data.TryGetId(out _)?.Trim();
         var name = Data.TryGetStringTrimmedValue("name", true);
         return string.IsNullOrEmpty(id) && name is null
-            ? $"Props count {Data?.Count ?? 0} | {Message}"
-            : $"{name ?? "?"} ({id}) | Props count {Data?.Count ?? 0} | {Message}";
+            ? $"Data props count {Data?.Count ?? 0} | {Message}"
+            : $"{name ?? "?"} ({id}) | Data props count {Data?.Count ?? 0} | {Message}";
     }
 }
 
@@ -270,6 +271,13 @@ public class LarkResponsePagingStatusInfo(DateTime response, string? message, in
     /// Gets the count of item.
     /// </summary>
     public int Count { get; } = count;
+
+    /// <summary>
+    /// Returns a string that represents the current object.
+    /// </summary>
+    /// <returns>A string that represents the current object.</returns>
+    public override string ToString()
+        => $"Date = {ResponseTime:g} & Count = {Count} & Message = {Message}";
 }
 
 /// <summary>
