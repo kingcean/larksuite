@@ -140,6 +140,19 @@ public class LarkSearchOptions : LarkPageTokenInfo
     }
 }
 
+public class LarkTimeRangeOptions
+{
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
+    [JsonPropertyName("start")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTime? Start { get; set; }
+
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
+    [JsonPropertyName("start")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public DateTime? End { get; set; }
+}
+
 /// <summary>
 /// The request options to resolve resource.
 /// </summary>

@@ -836,6 +836,12 @@ public static partial class LarkApiUtils
         return token;
     }
 
+    public static bool IsAddDocComment(LarkEventMessageArgs args)
+        => Is(args, LarkUrls.AddDocCommentEvent);
+
+    public static Task<bool> IsAddDocCommentAsync(LarkEventMessageArgs args, Func<LarkEventMessageArgs, Task>? callback)
+        => IsAsync(args, LarkUrls.AddDocCommentEvent, callback);
+
     internal static LarkDocWhiteboardNodeInfo SimplifyWhiteboard(JsonObjectNode json)
     {
         if (json is null) return new();

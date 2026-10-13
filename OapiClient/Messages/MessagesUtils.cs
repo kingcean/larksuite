@@ -67,6 +67,12 @@ public static partial class LarkApiUtils
         }
     }
 
+    public static bool IsChatMessageReceive(LarkEventMessageArgs args)
+        => Is(args, LarkUrls.MessageReceive);
+
+    public static Task<bool> IsChatMessageReceiveAsync(LarkEventMessageArgs args, Func<LarkEventMessageArgs, Task>? callback)
+        => IsAsync(args, LarkUrls.MessageReceive, callback);
+
     internal static string GetRichMessageText(string title, JsonArrayNode? content)
     {
         var col = new List<string>();

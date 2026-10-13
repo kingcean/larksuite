@@ -97,4 +97,13 @@ public static partial class LarkApiUtils
         list.Add(item!);
         return true;
     }
+
+    public static bool IsHireApplicationStateChange(LarkEventMessageArgs args)
+        => Is(args, LarkUrls.ApplicationStateChange);
+
+    public static bool IsHireApplicationStateChange(LarkEventMessageArgs args, out LarkEventMessageArgs<LarkHireApplicationStateChangeInfo> result)
+        => Is(args, LarkUrls.ApplicationStateChange, out result);
+
+    public static Task<bool> IsHireApplicationStateChangeAsync(LarkEventMessageArgs args, Func<LarkEventMessageArgs<LarkHireApplicationStateChangeInfo>, Task>? callback)
+        => IsAsync(args, LarkUrls.ApplicationStateChange, callback);
 }

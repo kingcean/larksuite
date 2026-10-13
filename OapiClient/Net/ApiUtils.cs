@@ -405,6 +405,59 @@ public static partial class LarkApiUtils
             _ => "Others",
         };
 
+    /// <summary>
+    /// Checks whether the event is the specific type.
+    /// </summary>
+    /// <param name="args">The event message arguments.</param>
+    /// <param name="eventType">The event type to check.</param>
+    /// <returns>True if the event is of the specified type; otherwise, false.</returns>
+    public static bool Is(this LarkEventMessageArgs args, string eventType)
+        => !string.IsNullOrWhiteSpace(eventType) && args?.EventType == eventType;
+
+    /// <summary>
+    /// Checks whether the event is the specific type.
+    /// </summary>
+    /// <param name="args">The event message arguments.</param>
+    /// <param name="eventType">The event type to check.</param>
+    /// <param name="callback">The callback function to invoke if the event is of the specified type.</param>
+    /// <returns>True if the event is of the specified type; otherwise, false.</returns>
+    public static async Task<bool> IsAsync(this LarkEventMessageArgs args, string eventType, Func<LarkEventMessageArgs, Task>? callback)
+    {
+        if (!Is(args, eventType)) return false;
+        if (callback is not null) await callback(args);
+        return true;
+    }
+
+    /// <summary>
+    /// Checks whether the event is the specific type and returns the typed event message arguments.
+    /// </summary>
+    /// <typeparam name="T">The type of the event message arguments.</typeparam>
+    /// <param name="args">The event message arguments.</param>
+    /// <param name="eventType">The event type to check.</param>
+    /// <param name="result">The typed event message arguments if the event is of the specified type; otherwise, null.</param>
+    /// <returns>True if the event is of the specified type; otherwise, false.</returns>
+    public static bool Is<T>(this LarkEventMessageArgs args, string eventType, out LarkEventMessageArgs<T>? result)
+    {
+        var v = Is(args, eventType);
+        result = v ? new(args) : null;
+        return v;
+    }
+
+    /// <summary>
+    /// Checks whether the event is the specific type and returns the typed event message arguments.
+    /// </summary>
+    /// <typeparam name="T">The type of the event message arguments.</typeparam>
+    /// <param name="args">The event message arguments.</param>
+    /// <param name="eventType">The event type to check.</param>
+    /// <param name="callback">The callback function to invoke if the event is of the specified type.</param>
+    /// <returns>True if the event is of the specified type; otherwise, false.</returns>
+    public static async Task<bool> IsAsync<T>(this LarkEventMessageArgs args, string eventType, Func<LarkEventMessageArgs<T>, Task>? callback)
+    {
+        var v = Is(args, eventType);
+        if (v && callback is not null) await callback(new(args));
+        return v;
+    }
+
     internal static string ToDocsFilterString(BasicCompareOperator op)
         => op switch
         {

@@ -945,3 +945,19 @@ public class LarkAttachmentInfo : IIdPropertyModel, INamePropertyModel
     [JsonPropertyName("create_time")]
     public DateTime CreationDate { get; set; }
 }
+
+public class LarkHireApplicationStateChangeInfo
+{
+    [JsonPropertyName("application_id")]
+    public string ApplicationId { get; set; }
+
+    [JsonPropertyName("origin_stage_id")]
+    public string OldStage { get; set; }
+
+    [JsonPropertyName("target_stage_id")]
+    public string NewStage { get; set; }
+
+    [JsonPropertyName("update_time")]
+    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
+    public DateTime ChangeDate { get; set; }
+}

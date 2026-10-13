@@ -292,7 +292,6 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         var console = CurrentConsole;
         var larkApi = LarkApi.DefaultInstance;
         console.WriteLine();
-        var task = larkApi.GetDocsBlocksAsync(token, cancellationToken);
         var writer = new InternalLarkDocsContentCliWriter();
         var blocks = await LarkCliUtils.WritePagesAsync(
             console,

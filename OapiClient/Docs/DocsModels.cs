@@ -313,3 +313,174 @@ public class LarkDocsDriveFileMoveTaskInfo : BaseLarkTaskInfo
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool ApplyPermission { get; set; }
 }
+
+public class LarkDocsUserSearchItemInfo
+{
+    /// <summary>
+    /// Gets or sets the node token.
+    /// </summary>
+    [JsonPropertyName("node_id")]
+    public string NodeToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the space identifier.
+    /// </summary>
+    [JsonPropertyName("space_id")]
+    public string SpaceId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the doc type.
+    /// </summary>
+    [JsonPropertyName("obj_type")]
+    public string DocType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the doc token.
+    /// </summary>
+    [JsonPropertyName("obj_token")]
+    public string DocToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parent node identifier.
+    /// </summary>
+    [JsonPropertyName("parent_id")]
+    public string Parent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the index of the item in the search result. Start from one (1).
+    /// </summary>
+    [JsonPropertyName("sort_id")]
+    public int Index { get; set; }
+
+    /// <summary>
+    /// Gets or sets the title.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the URL.
+    /// </summary>
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    /// <summary>
+    /// Gets or sets the icon URL.
+    /// </summary>
+    [JsonPropertyName("icon")]
+    public string? Icon { get; set; }
+}
+
+public class LarkDocsSearchItemMeta
+{
+    [JsonPropertyName("doc_types")]
+    public string DocType { get; set; }
+
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
+    [JsonPropertyName("update_time")]
+    public DateTime ModificationDate { get; set; }
+
+    [JsonPropertyName("url")]
+    public string URL { get; set; }
+
+    [JsonPropertyName("owner_name")]
+    public string OwnerName { get; set; }
+
+    [JsonPropertyName("owner_id")]
+    public string OwnerId { get; set; }
+
+    [JsonPropertyName("is_cross_tenant")]
+    public bool IsCrossTenant { get; set; }
+
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
+    [JsonPropertyName("create_time")]
+    public DateTime CreationDate { get; set; }
+
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
+    [JsonPropertyName("last_open_time")]
+    public bool LatestAccessDate { get; set; }
+
+    [JsonPropertyName("edit_user_id")]
+    public string ModificationUserId { get; set; }
+
+    [JsonPropertyName("edit_user_name")]
+    public string ModificationUserName { get; set; }
+
+    [JsonPropertyName("token")]
+    public string DocToken { get; set; }
+
+    [JsonPropertyName("file_type")]
+    public string FileType { get; set; }
+
+    [JsonPropertyName("icon_info")]
+    public string Icon { get; set; }
+}
+
+public class LarkDocsSearchItemInfo
+{
+    /// <summary>
+    /// Gets or sets the title with highlighted keywords.
+    /// </summary>
+    [JsonPropertyName("title_highlighted")]
+    public string TitleHighlighted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the highlighted summary.
+    /// </summary>
+    [JsonPropertyName("summary_highlighted")]
+    public string SummaryHighlighted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the entity type.
+    /// <list type="bullet">
+    /// <item>DOC</item>
+    /// <item>WIKI</item>
+    /// </list>
+    /// </summary>
+    [JsonPropertyName("entity_type")]
+    public string EntityType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the metadata.
+    /// </summary>
+    [JsonPropertyName("result_meta")]
+    public LarkDocsSearchItemMeta Info { get; set; }
+}
+
+/// <summary>
+/// The result of searching docs.
+/// </summary>
+public class LarkDocsSearchResult
+{
+    /// <summary>
+    /// Gets the result collection.
+    /// </summary>
+    [JsonPropertyName("res_units")]
+    public IReadOnlyList<LarkDocsSearchItemInfo> Data { get; }
+
+    /// <summary>
+    /// Gets the count of items.
+    /// </summary>
+    [JsonIgnore]
+    public int Count => Data.Count;
+
+    /// <summary>
+    /// Gets the token used to get next page.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("pageToken")]
+    public string? PageToken { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether has next page.
+    /// </summary>
+    [JsonPropertyName("has_more")]
+    public bool HasNextPage { get; set; }
+
+    /// <summary>
+    /// Gets the total count; or null, if not provided.
+    /// </summary>
+    [JsonPropertyName("total")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? TotalCount { get; set; }
+}

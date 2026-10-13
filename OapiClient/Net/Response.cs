@@ -375,7 +375,7 @@ public class LarkResponsePagingBody : LarkResponseBody
     public BaseQueryRequestInfo? Query { get; }
 
     /// <summary>
-    /// Gets the result col.
+    /// Gets the result collection.
     /// </summary>
     [JsonPropertyName("data")]
     public new IReadOnlyList<JsonObjectNode> Data { get; }
@@ -638,7 +638,7 @@ public sealed class LarkResponsePagingBody<T> : LarkResponsePagingBody
     }
 
     /// <summary>
-    /// Gets the result col.
+    /// Gets the result collection.
     /// </summary>
     [JsonPropertyName("data")]
     public new IReadOnlyList<T> Data { get; }

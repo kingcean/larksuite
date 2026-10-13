@@ -11,6 +11,7 @@ using Trivial.CommandLine;
 using Trivial.Data;
 using Trivial.Text;
 using Trivial.Web;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.CommandLine;
 
@@ -132,9 +133,11 @@ public class LarkHireCommandVerb : BaseCommandVerb
         }
 
         console.WriteLine();
-        if (caps.ContainsKey(selection.Data))
+        var whitespace = selection.Data.IndexOf(' ');
+        var selectionKey = whitespace >= 0 ? selection.Data[0..whitespace] : selection.Data;
+        if (caps.ContainsKey(selectionKey))
         {
-            var method = GetType().GetMethod($"Process{selection.Data.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
+            var method = GetType().GetMethod($"Process{selectionKey.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
             if (method is null || method.IsStatic)
             {
                 console.WriteLine("Not supported command.");
@@ -147,7 +150,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
             return;
         }
 
-        switch (selection.Data)
+        switch (selectionKey)
         {
             case "interviews":
             case "interview":
@@ -761,6 +764,42 @@ public static partial class LarkCliUtils
             }
 
             if (!string.IsNullOrWhiteSpace(xp.Description)) console.WriteLine(xp.Description);
+        }
+    }
+
+    public static async Task WriteLineAsync(this StyleConsole console, LarkApi? larkApi, LarkHireApplicationInfo applicationInfo, CancellationToken cancellationToken = default)
+    {
+        if (applicationInfo is null)
+        {
+            WriteEmpty(console);
+            return;
+        }
+
+        larkApi ??= LarkApi.DefaultInstance;
+        var applicationBasic = applicationInfo?.Info;
+        WritePropertyLine(console, "ID", applicationBasic?.Id);
+        var stage = applicationBasic?.Stage ?? new();
+        WritePropertyLine(console, "Stage", stage.ChineseName ?? stage.EnglishName ?? stage.StageType.ToString());
+
+        var talentId = applicationBasic?.TalentId;
+        if (talentId is not null)
+        {
+            var talentResp = await larkApi.GetHireTalentAsync(talentId, cancellationToken);
+            var talent = talentResp?.Data;
+            if (talent is not null)
+            {
+                console.WriteLine();
+                console.WriteLine(talent);
+            }
+        }
+
+        var jobInfo = applicationInfo?.Job;
+        if (jobInfo is not null)
+        {
+            console.WriteLine();
+            console.WriteLine(ItalicText(), "Job Info");
+            console.WriteLine(BoldText(), jobInfo.TryGetStringTrimmedValue("name", true));
+            console.WriteLine(ConsoleColor.Yellow, jobInfo.TryGetStringTrimmedValue("id", true));
         }
     }
 

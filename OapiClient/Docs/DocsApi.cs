@@ -72,15 +72,55 @@ public partial class LarkApi
     /// <summary>
     /// Searches wiki by given query string.
     /// </summary>
+    /// <param name="spaceId">The space identifier.</param>
+    /// <param name="q">The query.</param>
+    /// <param name="cancellationToken">A cancellation id to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    /// <remarks>User id only.</remarks>
+    public Task<LarkResponseBody> SearchWikiAsync(string spaceId, string q, CancellationToken cancellationToken = default)
+        => TokenKind == LarkApiTokenSourceKind.Tenant
+            ? PostAsync(LarkUrls.SearchDocWiki, new JsonObjectNode
+            {
+                { "query", q },
+                {
+                    "wiki_filter", new JsonObjectNode
+                    {
+                        { "space_ids", new JsonArrayNode { spaceId } },
+                        { "only_title", false },
+                        { "sort_type", "DEFAULT_TYPE" },
+                    }
+                },
+            }, cancellationToken)
+            : PostAsync(LarkUrls.SearchWiki, new JsonObjectNode
+            {
+                { "query", q },
+                { "space_id", spaceId },
+            }, cancellationToken);
+
+    /// <summary>
+    /// Searches wiki by given query string.
+    /// </summary>
     /// <param name="q">The query.</param>
     /// <param name="cancellationToken">A cancellation id to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
     /// <remarks>User id only.</remarks>
     public Task<LarkResponseBody> SearchWikiAsync(string q, CancellationToken cancellationToken = default)
-        => PostAsync(LarkUrls.SearchWiki, new JsonObjectNode
-        {
-            { "query", q }
-        }, cancellationToken);
+        => TokenKind == LarkApiTokenSourceKind.Tenant
+            ? PostAsync(LarkUrls.SearchDocWiki, new JsonObjectNode
+            {
+                { "query", q },
+                {
+                    "wiki_filter", new JsonObjectNode
+                    {
+                        { "only_title", false },
+                        { "sort_type", "DEFAULT_TYPE" },
+                    }
+                },
+            }, cancellationToken)
+            : PostAsync(LarkUrls.SearchWiki, new JsonObjectNode
+            {
+                { "query", q },
+            }, cancellationToken);
 
     /// <summary>
     /// Searches wiki by given query string.
@@ -89,8 +129,17 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation id to observe while waiting for the task to complete.</param>
     /// <returns>The response result.</returns>
     /// <remarks>User id only.</remarks>
-    public Task<LarkResponseBody> SearchWikiAsync(LarkWikiSearchOptions options, CancellationToken cancellationToken = default)
-        => PostAsync(LarkUrls.ToUrl(LarkUrls.SearchWiki, options), options?.ToJson() ?? [], cancellationToken);
+    public Task<LarkResponsePagingBody<LarkDocsUserSearchItemInfo>> SearchWikiAsync(LarkWikiSearchOptions options, LarkPageTokenInfo? paging = null, CancellationToken cancellationToken = default)
+        => PostItemsAsync<LarkDocsUserSearchItemInfo>(LarkUrls.SearchWiki, options, paging, cancellationToken);
+
+    /// <summary>
+    /// Searches wiki by given query string.
+    /// </summary>
+    /// <param name="options">The search options.</param>
+    /// <param name="cancellationToken">A cancellation id to observe while waiting for the task to complete.</param>
+    /// <returns>The response result.</returns>
+    public Task<LarkResponseBody<LarkDocsSearchResult>> SearchWikiAsync(LarkWikiDocSearchOptions options, CancellationToken cancellationToken = default)
+        => PostAsync<LarkDocsSearchResult>(LarkUrls.SearchDocWiki, JsonObjectNode.ConvertFrom(options), cancellationToken);
 
     /// <summary>
     /// Lists the top level nodes of the wiki space.
@@ -398,6 +447,20 @@ public partial class LarkApi
     /// <returns>The comments loaded from the next page.</returns>
     public Task<IReadOnlyList<JsonObjectNode>> ListDocsCommentsAsync(LarkResponsePagingBody response, int? pageSize = null, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.DocsComments, (response.Query as LarkDocsCommentListOptions)?.DocToken), response, pageSize, cancellationToken);
+
+    /// <summary>
+    /// Gets comments on a document.
+    /// </summary>
+    /// <param name="options">The document token and comment query options.</param>
+    /// <param name="loadAllPages">true if load all the blocks once, otherwise, false, to load the ones of the first page.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The comments loaded from the next page.</returns>
+    public async Task<LarkResponsePagingBody> ListDocsCommentsAsync(LarkDocsCommentListOptions options, bool loadAllPages, CancellationToken cancellationToken = default)
+    {
+        var resp = await ListDocsCommentsAsync(options, new LarkPageTokenInfo(50), cancellationToken);
+        if (loadAllPages) await LarkApiUtils.LoadAllPagesAsync(resp, 50, ListDocsCommentsAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
 
     /// <summary>
     /// Adds a comment to a document.
@@ -1195,6 +1258,15 @@ public partial class LarkApi
         if (string.IsNullOrWhiteSpace(token)) return LarkApiUtils.ErrorLarkDocContent(null, "The node token is null.");
         token = LarkUrls.GetId(token, out var kind)!;
         if (kind == "docx" || kind == "file") return await LarkApiUtils.GetDocsNodeContentAsync(this, kind, token, cancellationToken);
+        if (kind == "okr")
+        {
+            var okrCycleId = CommandLine.LarkOkrCommandVerb.GetCycleId(token);
+            if (string.IsNullOrWhiteSpace(okrCycleId)) return LarkApiUtils.ErrorLarkDocContent(token, "The OKR cycle ID is null.");
+            var okr = await GetOkrsAsync(okrCycleId, cancellationToken);
+            if (okr is null) return LarkApiUtils.ErrorLarkDocContent(token, "No response.");
+            return new(okrCycleId, $"{okr.Objectives.Count}O - {okr.UserId}", null, "okr", okr);
+        }
+
         var info = await GetWikiNodeAsync(token, cancellationToken);
         if (info is null) return LarkApiUtils.ErrorLarkDocContent(token, "No response.");
         if (string.IsNullOrWhiteSpace(info.Data?.NodeToken) || info.IsError)

@@ -60,10 +60,10 @@ public class LarkWikiNodesCreateRequestOptions
 /// The node search options of wiki space.
 /// </summary>
 [Description("The node search options of wiki space.")]
-public class LarkWikiSearchOptions : LarkPageTokenInfo, IJsonObjectHost
+public class LarkWikiSearchOptions : BaseQueryRequestInfo, IJsonObjectHost
 {
     /// <summary>
-    /// The query string (keyword) to search.
+    /// Gets or sets the query string (keyword) to search.
     /// </summary>
     [JsonPropertyName("query")]
     public string Query { get; set; }
@@ -93,6 +93,126 @@ public class LarkWikiSearchOptions : LarkPageTokenInfo, IJsonObjectHost
         json.SetValueIfNotEmpty("node_id", ParentNodeId);
         return json;
     }
+
+    /// <inheritdoc />
+    protected override void OnQueryDataFill(QueryData q)
+    {
+    }
+}
+
+/// <summary>
+/// The doc search filter of wiki space.
+/// </summary>
+[Description("The doc search filter of wiki.")]
+public class LarkWikiDocSearchFilter
+{
+    [JsonPropertyName("creator_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Owners { get; set; }
+
+    [JsonPropertyName("doc_types")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? DocTypes { get; set; }
+
+    [JsonPropertyName("space_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Spaces { get; set; }
+
+    [JsonPropertyName("folder_tokens")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? ParentNodes { get; set; }
+
+    [JsonPropertyName("only_title")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool OnlyTitle { get; set; }
+
+    [JsonPropertyName("open_time")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkTimeRangeOptions? AccessDate { get; set; }
+
+    /// <summary>
+    /// The sort type of docs.
+    /// <list type="bullet">
+    /// <item>DEFAULT_TYPE</item>
+    /// <item>OPEN_TIME</item>
+    /// <item>EDIT_TIME</item>
+    /// <item>EDIT_TIME_ASC</item>
+    /// <item>CREATE_TIME</item>
+    /// <item>CREATE_TIME_ASC</item>
+    /// </list>
+    /// </summary>
+    [JsonPropertyName("sort_type")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OrderBy { get; set; }
+
+    [JsonPropertyName("create_time")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkTimeRangeOptions? CreationDate { get; set; }
+
+    [JsonPropertyName("chat_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Chat { get; set; }
+
+    [JsonPropertyName("sharer_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Sharers { get; set; }
+
+    [JsonPropertyName("only_comment")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool OnlyComment { get; set; }
+
+    [JsonPropertyName("my_edit_time")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkTimeRangeOptions? MyModificationDate { get; set; }
+
+    [JsonPropertyName("my_comment_time")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkTimeRangeOptions? MyCommentDate { get; set; }
+
+    [JsonPropertyName("original_creator_ids")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Creators { get; set; }
+}
+
+/// <summary>
+/// The doc search options of wiki.
+/// </summary>
+[Description("The doc search options of wiki.")]
+public class LarkWikiDocSearchOptions
+{
+    /// <summary>
+    /// Gets or sets the query string (keyword) to search.
+    /// </summary>
+    [JsonPropertyName("query")]
+    public string Query { get; set; }
+
+    /// <summary>
+    /// Gets or sets the doc filter.
+    /// </summary>
+    [JsonPropertyName("doc_filter")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkWikiDocSearchFilter? DocFilter { get; set; }
+
+    /// <summary>
+    /// Gets or sets the wiki filter.
+    /// </summary>
+    [JsonPropertyName("wiki_filter")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkWikiDocSearchFilter? WikiFilter { get; set; }
+
+    /// <summary>
+    /// Gets or sets the additional token for next page.
+    /// </summary>
+    [JsonPropertyName("page_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string PageToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    [JsonPropertyName("page_size")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? PageSize { get; set; }
 }
 
 public class LarkWikiDocMarkdownOptions : LarkResourceRequestOptions

@@ -7,7 +7,10 @@ namespace LarkSuite;
 
 internal static partial class LarkUrls
 {
+    public const string AddDocCommentEvent = "drive.notice.comment_add_v1";
+
     public const string SearchWiki = "https://open.feishu.cn/open-apis/wiki/v2/nodes/search";
+    public const string SearchDocWiki = "https://open.feishu.cn/open-apis/search/v2/doc_wiki/search";
     public const string WikiSpaces = "https://open.feishu.cn/open-apis/wiki/v2/spaces";
     public const string WikiSpaceInfo = "https://open.feishu.cn/open-apis/wiki/v2/spaces/{0}";
     public const string WikiSpaceNodes = "https://open.feishu.cn/open-apis/wiki/v2/spaces/{0}/nodes";
