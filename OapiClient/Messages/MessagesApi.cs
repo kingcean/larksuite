@@ -452,6 +452,29 @@ public partial class LarkApi
         => PostAsync<LarkMessageGroupInfo>(LarkUrls.ToUrl(LarkUrls.MessageGroup, options), JsonObjectNode.ConvertFrom(body), cancellationToken);
 
     /// <summary>
+    /// Updates a message group.
+    /// </summary>
+    /// <param name="id">The chat identifier.</param>
+    /// <param name="delta">The delta of the message group update.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group update request.</returns>
+    public Task<LarkResponseBody> UpdateMessageGroupAsync(string id, JsonObjectNode delta, CancellationToken cancellationToken = default)
+        => PutAsync(string.Concat(LarkUrls.MessageGroup, id), delta, cancellationToken);
+
+    /// <summary>
+    /// Updates a message group.
+    /// </summary>
+    /// <param name="id">The chat identifier.</param>
+    /// <param name="name">The new name of the message group.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The response body of the message group update request.</returns>
+    public Task<LarkResponseBody> RenameMessageGroupAsync(string id, string name, CancellationToken cancellationToken = default)
+        => PutAsync(string.Concat(LarkUrls.MessageGroup, id), new JsonObjectNode
+        {
+            { "name", name }
+        }, cancellationToken);
+
+    /// <summary>
     /// Gets a specific message group.
     /// </summary>
     /// <param name="id">The chat identifier.</param>

@@ -248,69 +248,183 @@ public class LarkDocsFilter : IJsonObjectHost
     /// </summary>
     public CriteriaBooleanOperator Conjunction { get; set; }
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="isEmpty">true if the property should be empty; otherwise, false, should not be empty.</param>
     public void Add(string name, bool isEmpty)
         => list.Add(new LarkDocsFilterCondition(name, isEmpty));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string? op, string? value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, BasicCompareOperator op, string value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, DbCompareOperator op, string value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string? op, List<string> value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string op, bool value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, bool equals, bool value)
     => list.Add(new LarkDocsFilterCondition(name, equals, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string op, int value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, BasicCompareOperator op, int value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string op, long value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, BasicCompareOperator op, long value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string op, double value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, BasicCompareOperator op, double value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string op, DateTime value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, BasicCompareOperator op, DateTime value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, string op, LarkIdNameInfo value)
         => list.Add(new LarkDocsFilterCondition(name, op, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="name">The property key.</param>
+    /// <param name="op">The operator.</param>
+    /// <param name="value">The value to compare.</param>
     public void Add(string name, bool equals, LarkIdNameInfo value)
     => list.Add(new LarkDocsFilterCondition(name, equals, value));
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="item">The filter condition to add.</param>
     public void Add(LarkDocsFilterCondition item)
     {
         if (item is null) return;
         list.Add(item);
     }
 
+    /// <summary>
+    /// Adds a filter.
+    /// </summary>
+    /// <param name="item">The filter to add.</param>
     public void Add(LarkDocsFilter item)
     {
         if (item is null) return;
         children.Add(item);
     }
 
+    /// <summary>
+    /// Adds a set of sub-filter.
+    /// </summary>
+    /// <param name="conjunction">The conjunction.</param>
+    /// <param name="conditions">The sub-filters.</param>
     public void Add(CriteriaBooleanOperator conjunction, params IEnumerable<LarkDocsFilterCondition> conditions)
         => children.Add(new LarkDocsFilter(conjunction, conditions));
 
