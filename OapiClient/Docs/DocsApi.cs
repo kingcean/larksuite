@@ -1156,10 +1156,12 @@ public partial class LarkApi
     {
         if (string.IsNullOrWhiteSpace(markdown)) return new(true, "The markdown is empty.");
         var blocksTask = ConvertDocsBlocksAsync("markdown", markdown, null, cancellationToken);
+        if (string.IsNullOrWhiteSpace(nodeToken)) return new(true, "The node token is empty.");
         var nodeInfo = await GetWikiNodeAsync(nodeToken, cancellationToken);
         var blocks = await blocksTask;
-        if (string.IsNullOrWhiteSpace(nodeInfo?.Data?.DocToken) || nodeInfo.IsError)
-            return new(true, nodeInfo?.Message);
+        var id = nodeInfo?.Data?.DocToken;
+        if (string.IsNullOrWhiteSpace(id) || nodeInfo!.IsError)
+            id = LarkUrls.GetId(nodeToken)!;
         if (blocks?.Data is null || blocks.IsError)
             return new(true, blocks?.Message);
         var ids = blocks.Data.TopBlockIds;
@@ -1175,7 +1177,7 @@ public partial class LarkApi
             }
         }
 
-        var resp = await AddDocsBlocksAsync(nodeInfo.Data.DocToken, nodeInfo.Data.DocToken, ids, blockIndex, content, cancellationToken);
+        var resp = await AddDocsBlocksAsync(id, id, ids, blockIndex, content, cancellationToken);
         return resp;
     }
 
@@ -1188,6 +1190,29 @@ public partial class LarkApi
     /// <returns>The block insertion response, or an error response if conversion or node lookup fails.</returns>
     public Task<LarkResponseBody> UpdateDocsAsync(string nodeToken, string markdown, CancellationToken cancellationToken = default)
         => UpdateDocsAsync(nodeToken, markdown, null, -1, cancellationToken);
+
+    public async Task<LarkResponseBody> UpdateDocsAsync(string docToken, string blockId, LarkDocsBlockUpdateRequestOptions options, JsonObjectNode modification, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(docToken)) return new(true, "The document identifier (doc token) should not be empty.");
+        if (modification is null) return new(true, "The block modification should not be null.");
+        var url = string.Concat(LarkUrls.ToUrl(LarkUrls.DocsBlocks, options, docToken), blockId);
+        var http = CreateJsonHttpClient();
+        var resp = await http.SendJsonAsync(HttpMethod.Patch, url, modification, cancellationToken);
+        return new(resp);
+    }
+
+    public async Task<LarkResponseBody> UpdateDocsAsync(string docToken, LarkDocsBlockUpdateRequestOptions options, List<JsonObjectNode> modification, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(docToken)) return new(true, "The document identifier (doc token) should not be empty.");
+        if (modification is null) return new(true, "The block modification should not be null.");
+        var url = LarkUrls.ToUrl(LarkUrls.UpdateDocsBlocks, options, docToken);
+        var http = CreateJsonHttpClient();
+        var resp = await http.SendJsonAsync(HttpMethod.Patch, url, new JsonObjectNode
+        {
+            { "requests", modification }
+        }, cancellationToken);
+        return new(resp);
+    }
 
     /// <summary>
     /// Deletes a range of child blocks from a document block.

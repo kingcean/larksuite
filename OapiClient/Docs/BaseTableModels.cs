@@ -309,6 +309,21 @@ public class LarkDocsBaseTableFieldInfo : IIdPropertyModel, INamePropertyModel
     [JsonPropertyName("property")]
     public JsonObjectNode Properties { get; set; }
 
+    public List<string>? GetOptions()
+    {
+        var options = Properties?.TryGetObjectListValue("options", true);
+        if (options is null) return null;
+        var result = new List<string>();
+        foreach (var option in options)
+        {
+            if (option is null) continue;
+            var s = option.TryGetStringValue("name");
+            if (!string.IsNullOrWhiteSpace(s)) result.Add(s);
+        }
+
+        return result;
+    }
+
     /// <inheritdoc />
     public override string ToString()
         => $"{Name ?? "?"} (Type = {FieldType} / {UIType}{(IsHidden ? " / Hidden" : string.Empty)})";
@@ -546,6 +561,8 @@ public class LarkDocsBaseTableRecord : IIdPropertyModel
 
                 var s = itemJson.TryGetStringValue("text");
                 if (string.IsNullOrWhiteSpace(s)) continue;
+                if (s.EndsWith("\r\n")) s = s[..^2];
+                else if (s.EndsWith('\n')) s = s[..^1];
                 strings.Add(s);
             }
 

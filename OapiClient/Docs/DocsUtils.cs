@@ -39,6 +39,13 @@ public static partial class LarkApiUtils
                     if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.");
                     var refIds = new LarkContentBlockResourceIds();
                     var tree = doc.Data.ToTree(null, refIds);
+                    var linkDoc = await GetMeetingMinutesAsync(larkApi, tree, cancellationToken);
+                    if (linkDoc is not null)
+                    {
+                        tree.Resources ??= new();
+                        tree.Resources.LinkDoc = linkDoc;
+                    }
+
                     if (refIds.Users.Count > 0) await larkApi.GetUserInfoAsync(refIds.Users, tree, cancellationToken);
                     if (refIds.Whiteboards.Count > 0) await larkApi.GetDocsWhiteboardNodesAsync(refIds.Whiteboards, tree, null, cancellationToken).CountAsync(cancellationToken);
                     return new LarkDocContent<LarkContentBlockTree>(token, info.Data.Name, info.Data.DocToken, "docx", tree);
@@ -842,6 +849,46 @@ public static partial class LarkApiUtils
     public static Task<bool> IsAddDocCommentAsync(LarkEventMessageArgs args, Func<LarkEventMessageArgs, Task>? callback)
         => IsAsync(args, LarkUrls.AddDocCommentEvent, callback);
 
+    public static async Task<LarkContentBlockTree?> GetMeetingMinutesAsync(LarkApi? larkApi, LarkContentBlockTree tree, CancellationToken cancellationToken = default)
+    {
+        if (tree?.Children is null) return null;
+        larkApi ??= LarkApi.DefaultInstance;
+        var first = tree.Content?.FirstOrDefault()?.Text;
+        if (string.IsNullOrEmpty(first) || !first.StartsWith("智能纪要：")) return null;
+        var start = false;
+        string? url = null;
+        foreach (var block in tree.Children)
+        {
+            var text = block.Content?.FirstOrDefault()?.Text;
+            if (text == "相关链接")
+            {
+                start = true;
+                continue;
+            }
+
+            if (!start || text != "文字记录") continue;
+            var link = block.Children?.FirstOrDefault()?.Content?.FirstOrDefault();
+            if (string.IsNullOrEmpty(link?.Text) || link.Information is not LarkContentBlockLinkReference link2) continue;
+            url = link2.Url;
+            break;
+        }
+
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        var resp = await larkApi.GetDocsBlocksAsync(url, true, cancellationToken);
+        tree = resp.Data.ToTree();
+        if (tree?.Children is null) return null;
+        return tree;
+    }
+
+    public static async Task<LarkContentBlockTree?> GetMeetingMinutesAsync(LarkApi? larkApi, string? token, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return null;
+        larkApi ??= LarkApi.DefaultInstance;
+        var resp = await larkApi.GetDocsBlocksAsync(token, true, cancellationToken);
+        var tree = resp.Data.ToTree();
+        return await GetMeetingMinutesAsync(larkApi, tree, cancellationToken) ?? tree;
+    }
+
     internal static LarkDocWhiteboardNodeInfo SimplifyWhiteboard(JsonObjectNode json)
     {
         if (json is null) return new();
@@ -926,6 +973,13 @@ public static partial class LarkApiUtils
                     if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.");
                     var refIds = new LarkContentBlockResourceIds();
                     var tree = doc.Data.ToTree(null, refIds);
+                    var linkDoc = await GetMeetingMinutesAsync(larkApi, tree, cancellationToken);
+                    if (linkDoc is not null)
+                    {
+                        tree.Resources ??= new();
+                        tree.Resources.LinkDoc = linkDoc;
+                    }
+
                     if (refIds.Users.Count > 0) await larkApi.GetUserInfoAsync(refIds.Users, tree, cancellationToken);
                     if (refIds.Whiteboards.Count > 0) await larkApi.GetDocsWhiteboardNodesAsync(refIds.Whiteboards, tree, null, cancellationToken).CountAsync(cancellationToken);
                     return new LarkDocContent<LarkContentBlockTree>(null, tree.Content?.FirstOrDefault()?.Text, token, "docx", tree);

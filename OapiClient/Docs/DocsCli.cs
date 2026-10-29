@@ -65,6 +65,11 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 case "3":
                     await SearchWikiAsync(cancellationToken);
                     break;
+                case "meeting minutes":
+                case "meeting":
+                case "minutes":
+                    await WriteMeetingMinutesAsync(cancellationToken);
+                    break;
                 default:
                     console.WriteLine(ConsoleColor.Red, "Not supported.");
                     console.WriteLine();
@@ -467,6 +472,25 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         {
             console.WriteLine("This is an online file.");
         }
+    }
+
+    private async Task WriteMeetingMinutesAsync(CancellationToken cancellationToken = default)
+    {
+        var console = CurrentConsole;
+        console.WriteLine(ConsoleColor.Magenta, Description);
+        console.WriteLine();
+        console.Write("Please input the docs token:  ");
+        var line = console.ReadLine();
+        if (string.IsNullOrWhiteSpace(line)) return;
+        var tree = await LarkApiUtils.GetMeetingMinutesAsync(null, line, cancellationToken);
+        if (tree is null)
+        {
+            LarkCliUtils.WriteEmpty(console);
+            return;
+        }
+
+        LarkCliUtils.WriteLine(console, tree);
+        console.WriteLine();
     }
 }
 

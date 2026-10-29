@@ -53,6 +53,14 @@ public class LarkContentBlockResourcesInfo
     [Description("The whiteboards referenced in the content. The key is the user identifier, the value is the data.")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public Dictionary<string, LarkDocWhiteboardInstanceInfo>? Whiteboards { get; set; }
+
+    /// <summary>
+    /// Gets or sets the additional doc linked.
+    /// </summary>
+    [JsonPropertyName("linkDoc")]
+    [Description("The additional doc linked in the content.")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public LarkContentBlockTree? LinkDoc { get; set; }
 }
 
 public class LarkContentBlockResourceIds

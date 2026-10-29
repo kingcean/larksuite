@@ -1,9 +1,14 @@
 ﻿using LarkSuite.Docs;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Trivial.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.OapiModels;
 
@@ -99,7 +104,88 @@ public static class LarkMessageCardHelper
         return lines.Count;
     }
 
-    public static JsonObjectNode CreateButton(string buttonType, string text, string url, string? iconToken = null)
+    public static JsonObjectNode CreatePersonList(IEnumerable<string> users, string? size, bool showAvatar, bool showName)
+    {
+        var persons = new List<JsonObjectNode>();
+        if (users is not null)
+        {
+            foreach (var userId in users)
+            {
+                if (string.IsNullOrWhiteSpace(userId)) continue;
+                persons.Add(new()
+                {
+                    { "id", userId }
+                });
+            }
+        }
+
+        return new()
+        {
+            { "tag", "person_list" },
+            { "persons", persons },
+            { "size", size ?? "small" },
+            { "show_avatar", showAvatar },
+            { "show_name", showName },
+        };
+    }
+
+    public static JsonObjectNode CreatePersonList(IEnumerable<string> users, string? size = null)
+        => CreatePersonList(users, size, true, true);
+
+    public static JsonObjectNode CreatePersonList(IEnumerable<LarkDocsAccessUserInfo> users, string? size, bool showAvatar, bool showName)
+    {
+        var persons = new List<JsonObjectNode>();
+        if (users is not null)
+        {
+            foreach (var person in users)
+            {
+                var userId = person?.Id;
+                if (string.IsNullOrWhiteSpace(userId)) continue;
+                persons.Add(new()
+                {
+                    { "id", userId }
+                });
+            }
+        }
+
+        return new()
+        {
+            { "tag", "person_list" },
+            { "persons", persons },
+            { "size", size ?? "small" },
+            { "show_avatar", showAvatar },
+            { "show_name", showName },
+        };
+    }
+
+    public static JsonObjectNode CreatePersonList(IEnumerable<LarkDocsAccessUserInfo> users, string? size = null)
+        => CreatePersonList(users, size, true, true);
+
+    public static void AddPersonList(IList<JsonObjectNode> blocks, IEnumerable<string> users, string? size, bool showAvatar, bool showName)
+    {
+        var json = CreatePersonList(users, size, showAvatar, showName);
+        blocks.Add(json);
+    }
+
+    public static void AddPersonList(IList<JsonObjectNode> blocks, IEnumerable<string> users, string? size = null)
+    {
+        var json = CreatePersonList(users, size, true, true);
+        blocks.Add(json);
+    }
+
+    public static void AddPersonList(IList<JsonObjectNode> blocks, IEnumerable<LarkDocsAccessUserInfo> users, string? size, bool showAvatar, bool showName)
+    {
+        var json = CreatePersonList(users, size, showAvatar, showName);
+        blocks.Add(json);
+    }
+
+    public static void AddPersonList(IList<JsonObjectNode> blocks, IEnumerable<LarkDocsAccessUserInfo> users, string? size = null)
+    {
+        var json = CreatePersonList(users, size, true, true);
+        blocks.Add(json);
+    }
+
+    public static JsonObjectNode CreateButton(string buttonType, string text, string url, string? iconToken = null, string? iconColor = null)
     {
         var json = new JsonObjectNode
         {
@@ -114,7 +200,7 @@ public static class LarkMessageCardHelper
             { "width", "default" },
             { "size", "medium" },
         };
-        if (!string.IsNullOrWhiteSpace(iconToken)) AddStandardIcon(json, iconToken);
+        if (!string.IsNullOrWhiteSpace(iconToken)) AddStandardIcon(json, iconToken, iconColor);
         if (!string.IsNullOrWhiteSpace(url)) json.SetValue("behaviors", new JsonArrayNode
         {
             new JsonObjectNode
@@ -127,17 +213,7 @@ public static class LarkMessageCardHelper
     }
 
     public static JsonObjectNode CreateButton(LarkMessageCardButtonType buttonType, string text, string url, string? iconToken = null)
-        => CreateButton(buttonType switch
-        {
-            LarkMessageCardButtonType.Default => "default",
-            LarkMessageCardButtonType.Primary => "primary",
-            LarkMessageCardButtonType.Danger => "danger",
-            LarkMessageCardButtonType.PrimaryFilled => "primary_filled",
-            LarkMessageCardButtonType.DangerFilled => "danger_filled",
-            LarkMessageCardButtonType.PrimaryText => "primary_text",
-            LarkMessageCardButtonType.DangerText => "danger_text",
-            _ => "default"
-        }, text, url, iconToken);
+        => CreateButton(ToString(buttonType), text, url, iconToken);
 
     public static void AddButton(IList<JsonObjectNode> blocks, string buttonType, string text, string url, string? iconToken = null)
     {
@@ -363,6 +439,116 @@ public static class LarkMessageCardHelper
         blocks.Add(CreateColumnSet(columns));
     }
 
+    public static IEnumerable<JsonObjectNode> Create(IEnumerable<BaseSimpleLarkMessageBlock?> blocks)
+    {
+        if (blocks is null) yield break;
+        foreach (var block in blocks)
+        {
+            if (block is null)
+            {
+                yield return CreateSeparator();
+                continue;
+            }
+
+            var blockType = block.BlockType?.Trim();
+            if (string.IsNullOrEmpty(block.BlockType)) continue;
+            switch (blockType!.ToLowerInvariant())
+            {
+                case "hr":
+                case "separator":
+                    {
+                        yield return CreateSeparator();
+                        break;
+                    }
+                case "text":
+                case "txt":
+                case "plain":
+                    {
+                        if (block is SimpleLarkTextMessageBlock textBlock)
+                        {
+                            var text = CreateText(textBlock.Text, textBlock.FontSize, textBlock.Icon, textBlock.IconColor, textBlock.Align);
+                            if (!string.IsNullOrWhiteSpace(textBlock.Color)) text.SetValue("text_color", textBlock.Color); 
+                            yield return text;
+                        }
+                        else if (block is BaseSimpleLarkTextMessageBlock textBlock2)
+                        {
+                            yield return CreateText(textBlock2.Text, null, textBlock2.Icon);
+                        }
+
+                        break;
+                    }
+                case "markdown":
+                case "md":
+                    {
+                        if (block is not BaseSimpleLarkTextMessageBlock textBlock) break;
+                        var md = new JsonObjectNode()
+                        {
+                            { "tag", "markdown" },
+                            { "content", textBlock.Text },
+                        };
+                        AddStandardIcon(md, textBlock.Icon, textBlock.IconColor);
+                        yield return md;
+                        break;
+                    }
+                case "bullet":
+                case "list":
+                    {
+                        if (block is not SimpleLarkListMessageBlock bullet) break;
+                        var lines = CreateBulletLines(bullet.Lines)!;
+                        AddStandardIcon(lines, bullet.Icon, bullet.IconColor);
+                        yield return lines;
+                        break;
+                    }
+                case "button":
+                    {
+                        if (block is not SimpleLarkButtonMessageBlock button) break;
+                        yield return CreateButton(button.BlockType, button.Text, button.Url, button.Icon, button.IconColor);
+                        break;
+                    }
+                case "buttons":
+                    {
+                        if (block is not SimpleLarkButtonsMessageBlock buttonsBlock) break;
+                        var buttons = new List<JsonObjectNode>();
+                        foreach (var button in buttonsBlock.Items)
+                        {
+                            if (button is null) continue;
+                            buttons.Add(CreateColumn("auto", [
+                                CreateButton(button.BlockType, button.Text, button.Url, button.Icon, button.IconColor)
+                            ]));
+                        }
+
+                        if (buttons.Count > 0)
+                        {
+                            buttons.Add(CreateColumn(1, true));
+                            yield return CreateColumnSet(buttons);
+                        }
+                        else if (buttonsBlock.Empty is not null)
+                        {
+                            var empty = CreateText(buttonsBlock.Empty.Text, buttonsBlock.Empty.FontSize, buttonsBlock.Empty.Icon, buttonsBlock.Empty.IconColor, buttonsBlock.Empty.Align);
+                            if (!string.IsNullOrWhiteSpace(buttonsBlock.Empty.Color)) empty.SetValue("text_color", buttonsBlock.Empty.Color);
+                            yield return empty;
+                        }
+
+                        break;
+                    }
+            }
+        }
+    }
+
+    public static int AddRange(IList<JsonObjectNode> blocks, IEnumerable<BaseSimpleLarkMessageBlock?> add)
+    {
+        var i = 0;
+        if (add is null) return i;
+        var list = Create(add);
+        foreach (var block in list)
+        {
+            blocks.Add(block);
+            i++;
+        }
+
+        return i;
+    }
+
     public static T? Deserialize<T>(string answer)
     {
         if (answer is null) return default;
@@ -393,5 +579,293 @@ public static class LarkMessageCardHelper
         }
 
         return default;
+    }
+
+    public static List<BaseSimpleLarkMessageBlock?> ToSimpleBlock(IEnumerable<JsonObjectNode> blocks)
+    {
+        var list = new List<BaseSimpleLarkMessageBlock?>();
+        if (blocks is null) return list;
+        foreach (var block in blocks)
+        {
+            if (block is null)
+            {
+                list.Add(null);
+                continue;
+            }
+
+            var blockType = (block.TryGetStringTrimmedValue("blockType", true) ?? block.TryGetStringTrimmedValue("block_type", true))?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(blockType)) continue;
+            var icon = block.TryGetStringTrimmedValue("icon", true);
+            var iconColor = block.TryGetStringTrimmedValue("iconColor", true) ?? block.TryGetStringTrimmedValue("icon_color", true);
+            switch (blockType)
+            {
+                case "hr":
+                case "separator":
+                    {
+                        list.Add(null);
+                        break;
+                    }
+                case "text":
+                case "plain":
+                case "txt":
+                    {
+                        list.Add(new SimpleLarkTextMessageBlock(block.TryGetStringValue("text"))
+                        {
+                            FontSize = block.TryGetStringTrimmedValue("fontSize", true) ?? block.TryGetStringTrimmedValue("font_size", true),
+                            Color = block.TryGetStringTrimmedValue("color", true),
+                            Icon = icon,
+                            IconColor = iconColor,
+                            Align = block.TryGetStringTrimmedValue("align", true)
+                        });
+                        break;
+                    }
+                case "md":
+                case "markdown":
+                    {
+                        list.Add(new SimpleLarkMarkdownMessageBlock(block.TryGetStringValue("text"))
+                        {
+                            Icon = icon,
+                            IconColor = iconColor
+                        });
+                        break;
+                    }
+                case "bullet":
+                case "list":
+                    {
+                        var lines = block.TryGetStringListValue("lines", true);
+                        list.Add(new SimpleLarkListMessageBlock(lines)
+                        {
+                            Icon = icon,
+                            IconColor = iconColor
+                        });
+                        break;
+                    }
+                case "button":
+                    {
+                        var text = block.TryGetStringTrimmedValue("text");
+                        var url = block.TryGetStringTrimmedValue("url");
+                        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(url)) continue;
+                        var buttonTypeStr = block.TryGetStringValue("buttonType") ?? block.TryGetStringValue("button_type") ?? "default";
+                        list.Add(new SimpleLarkButtonMessageBlock(text, url, ToButtonType(buttonTypeStr))
+                        {
+                            Icon = icon,
+                            IconColor = iconColor,
+                        });
+                        break;
+                    }
+                case "buttons":
+                    {
+                        var items = block.TryGetObjectListValue("items", true) ?? block.TryGetObjectListValue("buttons", true);
+                        var arr = new List<SimpleLarkButtonMessageBlock>();
+                        if (items is not null)
+                        {
+                            foreach (var button in items)
+                            {
+                                var text = button.TryGetStringTrimmedValue("text");
+                                var url = button.TryGetStringTrimmedValue("url");
+                                if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(url)) continue;
+                                var buttonTypeStr = button.TryGetStringValue("buttonType") ?? button.TryGetStringValue("button_type") ?? "default";
+                                arr.Add(new SimpleLarkButtonMessageBlock(text, url, ToButtonType(buttonTypeStr))
+                                {
+                                    Icon = icon,
+                                    IconColor = iconColor,
+                                });
+                            }
+                        }
+
+                        var empty = block.TryGetObjectValue("empty");
+                        list.Add(new SimpleLarkButtonsMessageBlock
+                        {
+                            Items = arr,
+                            Icon = icon,
+                            IconColor = iconColor,
+                            Empty = empty is null ? null : new(empty.TryGetStringValue("text"))
+                            {
+                                FontSize = empty.TryGetStringTrimmedValue("fontSize", true) ?? empty.TryGetStringTrimmedValue("font_size", true),
+                                Color = empty.TryGetStringTrimmedValue("color", true),
+                                Icon = empty.TryGetStringTrimmedValue("icon", true),
+                                IconColor = empty.TryGetStringTrimmedValue("iconColor", true) ?? empty.TryGetStringTrimmedValue("icon_color", true),
+                                Align = empty.TryGetStringTrimmedValue("align", true),
+                            },
+                        });
+                        break;
+                    }
+            }
+        }
+
+        return list;
+    }
+
+    internal static string ToString(LarkMessageCardButtonType type)
+        => type switch
+        {
+            LarkMessageCardButtonType.Default => "default",
+            LarkMessageCardButtonType.Primary => "primary",
+            LarkMessageCardButtonType.Danger => "danger",
+            LarkMessageCardButtonType.PrimaryFilled => "primary_filled",
+            LarkMessageCardButtonType.DangerFilled => "danger_filled",
+            LarkMessageCardButtonType.PrimaryText => "primary_text",
+            LarkMessageCardButtonType.DangerText => "danger_text",
+            _ => "default"
+        };
+
+    internal static LarkMessageCardButtonType ToButtonType(string s)
+        => s is null ? LarkMessageCardButtonType.Default : s.Trim().ToLowerInvariant().Replace("-", string.Empty).Replace("_", string.Empty) switch
+        {
+            "primary" or "1" => LarkMessageCardButtonType.Primary,
+            "danger" or "2" => LarkMessageCardButtonType.Danger,
+            "primaryfilled" or "3" => LarkMessageCardButtonType.PrimaryFilled,
+            "dangerfilled" or "4" => LarkMessageCardButtonType.DangerFilled,
+            "primarytext" or "5" => LarkMessageCardButtonType.PrimaryText,
+            "dangertext" or "6" => LarkMessageCardButtonType.DangerText,
+            _ => LarkMessageCardButtonType.Default
+        };
+}
+
+public abstract class BaseSimpleLarkMessageBlock
+{
+    [JsonPropertyName("blockType")]
+    public abstract string BlockType { get; }
+
+    [JsonPropertyName("icon")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Icon { get; set; }
+
+    [JsonPropertyName("iconColor")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? IconColor { get; set; }
+}
+
+public abstract class BaseSimpleLarkTextMessageBlock : BaseSimpleLarkMessageBlock
+{
+    public BaseSimpleLarkTextMessageBlock()
+    {
+    }
+
+    public BaseSimpleLarkTextMessageBlock(string text)
+    {
+        Text = text;
+    }
+
+    [JsonPropertyName("text")]
+    public string Text { get; set; }
+}
+
+public class SimpleLarkTextMessageBlock : BaseSimpleLarkTextMessageBlock
+{
+    public SimpleLarkTextMessageBlock()
+        : base()
+    {
+    }
+
+    public SimpleLarkTextMessageBlock(string text)
+        : base(text)
+    {
+    }
+
+    public override string BlockType => "text";
+
+    [JsonPropertyName("color")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Color { get; set; }
+
+    [JsonPropertyName("fontSize")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? FontSize { get; set; }
+
+    [JsonPropertyName("align")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Align { get; set; }
+}
+
+public class SimpleLarkMarkdownMessageBlock : BaseSimpleLarkTextMessageBlock
+{
+    public SimpleLarkMarkdownMessageBlock()
+        : base()
+    {
+    }
+
+    public SimpleLarkMarkdownMessageBlock(string text)
+        : base(text)
+    {
+    }
+
+    public override string BlockType => "markdown";
+}
+
+public class SimpleLarkButtonMessageBlock : BaseSimpleLarkTextMessageBlock
+{
+    public SimpleLarkButtonMessageBlock()
+        : base()
+    {
+    }
+
+    public SimpleLarkButtonMessageBlock(string text, string url, LarkMessageCardButtonType type = LarkMessageCardButtonType.Primary)
+        : base(text)
+    {
+        Url = url;
+        ButtonType = type;
+    }
+
+    public override string BlockType => "button";
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    [JsonPropertyName("buttonType")]
+    [JsonConverter(typeof(LarkMessageCardButtonTypeJsonConverter))]
+    public LarkMessageCardButtonType ButtonType { get; set; }
+}
+
+public class SimpleLarkButtonsMessageBlock : BaseSimpleLarkMessageBlock
+{
+    public override string BlockType => "buttons";
+
+    [JsonPropertyName("items")]
+    public List<SimpleLarkButtonMessageBlock> Items { get; set; }
+
+    [JsonPropertyName("empty")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SimpleLarkTextMessageBlock? Empty { get; set; }
+}
+
+public class SimpleLarkListMessageBlock : BaseSimpleLarkMessageBlock
+{
+    public SimpleLarkListMessageBlock()
+    {
+        Lines = [];
+    }
+
+    public SimpleLarkListMessageBlock(List<string> lines)
+    {
+        Lines = lines ?? [];
+    }
+
+    public override string BlockType => "bullet";
+
+    public List<string> Lines { get; set; }
+}
+
+public class LarkMessageCardButtonTypeJsonConverter : System.Text.Json.Serialization.JsonConverter<LarkMessageCardButtonType>
+{
+    public override LarkMessageCardButtonType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        switch (reader.TokenType)
+        {
+            case JsonTokenType.String:
+                return LarkMessageCardHelper.ToButtonType(reader.GetString());
+            case JsonTokenType.Null:
+                return LarkMessageCardButtonType.Default;
+            case JsonTokenType.Number:
+                var i = reader.GetInt32();
+                return (LarkMessageCardButtonType)i;
+            default:
+                throw new JsonException($"Unexpected token parsing LarkMessageCardButtonType. Expected String or Null, got {reader.TokenType}.");
+        }
+    }
+    public override void Write(Utf8JsonWriter writer, LarkMessageCardButtonType value, JsonSerializerOptions options)
+    {
+        var str = LarkMessageCardHelper.ToString(value);
+        writer.WriteStringValue(str);
     }
 }

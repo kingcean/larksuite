@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Text;
 using System.Text.Json.Serialization;
 using Trivial.Collection;
@@ -676,5 +677,19 @@ public class LarkDocsDocTokenRequest : LarkUserIdTypeRequestOptions
     {
         base.OnQueryDataFill(q);
         q.SetIfNotEmpty("obj_type", DocType);
+    }
+}
+
+public class LarkDocsBlockUpdateRequestOptions : LarkUserIdTypeRequestOptions
+{
+    public int? Rev { get; set; }
+
+    public string ClientToken { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q.SetIfNotEmpty("client_token", ClientToken);
+        if (Rev.HasValue) q.Add("document_revision_id", Rev.Value);
     }
 }
