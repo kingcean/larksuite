@@ -8,7 +8,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Text;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.OapiModels;
 

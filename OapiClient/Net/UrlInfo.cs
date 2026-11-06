@@ -4,7 +4,6 @@ using System.Text;
 using Trivial.Net;
 using Trivial.Text;
 using Trivial.Web;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LarkSuite.OapiModels;
 

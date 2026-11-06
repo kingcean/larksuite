@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Net;
 using Trivial.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LarkSuite.OapiModels;
 

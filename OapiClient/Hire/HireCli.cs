@@ -11,7 +11,6 @@ using Trivial.CommandLine;
 using Trivial.Data;
 using Trivial.Text;
 using Trivial.Web;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.CommandLine;
 
