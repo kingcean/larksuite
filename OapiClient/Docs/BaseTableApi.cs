@@ -438,7 +438,14 @@ public partial class LarkApi
         return new(resp, "records");
     }
 
-    public async Task<LarkResponseBody<LarkDocsSheetsInfo>> GetDocsSheetsInfo(string id, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Gets the information of a Lark Sheets instance.
+    /// </summary>
+    /// <param name="id">The sheets identifier (doc token).</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The sheets info.</returns>
+    [Description("Gets the information of a Lark Sheets instance.")]
+    public async Task<LarkResponseBody<LarkDocsSheetsInfo>> GetDocsSheetsInfo([Description("The sheets identifier (doc token).")] string id, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(id)) return new(true, "The sheets identifier (doc token) should not be empty.");
         id = LarkUrls.GetId(id)!;
@@ -449,4 +456,20 @@ public partial class LarkApi
         info.Data.Sheets = list.Data;
         return info;
     }
+
+    /// <summary>
+    /// Gets the values of a range of cells in a Lark Sheets instance.
+    /// </summary>
+    /// <param name="id">The sheets identifier (doc token).</param>
+    /// <param name="range">The range of cells to retrieve. The format is `{Table-Name}!{Start-Column}{Start-Row}:{End-Column}{End-Row}`, e.g. First!A1:B2 (Column `A` Row `1` to Column `B` Row 2 in Table `First`).</param>
+    /// <param name="options">The optional range request options.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The range values.</returns>
+
+    [Description("Gets the values of a range of cells in a Lark Sheets instance.")]
+    public Task<LarkResponseBody<LarkDocsSheetsRangeResponse>> GetDocsSheetsCells(
+        [Description("The sheets identifier (doc token).")] string id,
+        [Description("The range of cells to retrieve. The format is `{Table-Name}!{Start-Column}{Start-Row}:{End-Column}{End-Row}`, e.g. First!A1:B2 (Column `A` Row `1` to Column `B` Row 2 in Table `First`).")] string range,
+        [Description("The optional range request options.")] LarkDocsSheetsRangeRequest? options, CancellationToken cancellationToken = default)
+        => GetAsync<LarkDocsSheetsRangeResponse>(LarkUrls.ToUrl(LarkUrls.DocsSheetsCells, options, id, range), cancellationToken);
 }

@@ -871,3 +871,39 @@ public class LarkDocsSheetMergeOptions
     [JsonPropertyName("end_column_index")]
     public int EndColumnIndex { get; set; }
 }
+
+public class LarkDocsSheetsRangeResponse
+{
+    [JsonPropertyName("revision")]
+    public int Revision { get; set; }
+
+    [JsonPropertyName("spreadsheetToken")]
+    public string Id { get; set; }
+
+    [JsonPropertyName("valueRange")]
+    public LarkDocsSheetsRangeValues Value { get; set; }
+
+    [JsonIgnore]
+    public string Range => Value?.Range;
+
+    [JsonIgnore]
+    public string MajorDimension => Value?.MajorDimension;
+
+    [JsonIgnore]
+    public List<JsonArrayNode> Cells => Value?.Cells;
+}
+
+public class LarkDocsSheetsRangeValues
+{
+    [JsonPropertyName("majorDimension")]
+    public string MajorDimension { get; set; }
+
+    [JsonPropertyName("range")]
+    public string Range { get; set; }
+
+    [JsonPropertyName("revision")]
+    public int Revision { get; set; }
+
+    [JsonPropertyName("values")]
+    public List<JsonArrayNode> Cells { get; set; }
+}

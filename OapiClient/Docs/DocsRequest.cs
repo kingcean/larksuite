@@ -693,3 +693,18 @@ public class LarkDocsBlockUpdateRequestOptions : LarkUserIdTypeRequestOptions
         if (Rev.HasValue) q.Add("document_revision_id", Rev.Value);
     }
 }
+
+public class LarkDocsSheetsRangeRequest : LarkUserIdTypeRequestOptions
+{
+    public string ValueRenderOption { get; set; }
+
+    public string DateTimeRenderOption { get; set; }
+
+    protected override void OnQueryDataFill(QueryData q)
+    {
+        base.OnQueryDataFill(q);
+        q.SetIfNotEmpty("valueRenderOption", ValueRenderOption);
+        q.SetIfNotEmpty("dateTimeRenderOption", DateTimeRenderOption);
+    }
+}
+

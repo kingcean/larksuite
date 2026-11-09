@@ -58,4 +58,5 @@ internal static partial class LarkUrls
     public const string DocsWhiteboardImage = "https://open.feishu.cn/open-apis/board/v1/whiteboards/{0}/download_as_image";
     public const string DocsSheets = "https://open.feishu.cn/open-apis/sheets/v3/spreadsheets/{0}/";
     public const string DocsSheetsQuery = "https://open.feishu.cn/open-apis/sheets/v3/spreadsheets/{0}/sheets/query";
+    public const string DocsSheetsCells = "https://open.feishu.cn/open-apis/sheets/v2/spreadsheets/{0}/values/{1}";
 }
