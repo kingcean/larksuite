@@ -84,6 +84,12 @@ public static partial class LarkApiUtils
 
                     return new LarkDocContent<LarkDocsBaseTableFullInfo>(info.Data, new(table.Data, tableList));
                 }
+            case "sheets":
+                {
+                    var sheetsInfo = await larkApi.GetDocsSheetsInfo(info.Data.DocToken, cancellationToken);
+                    if (sheetsInfo?.Data is null || sheetsInfo.IsError) return ErrorLarkDocContent(token, sheetsInfo?.Message ?? "Get sheets info failed.");
+                    return new LarkDocContent<LarkDocsSheetsInfo>(info.Data, sheetsInfo.Data);
+                }
             default:
                 return new LarkDocContent<LarkDocContentError>(info.Data, new("Unsupported format."));
         }
@@ -970,7 +976,7 @@ public static partial class LarkApiUtils
             case "docs":
                 {
                     var doc = await larkApi.GetDocsBlocksAsync(token, true, cancellationToken);
-                    if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.");
+                    if (doc?.Data is null || doc.IsError) return ErrorLarkDocContent(token, doc?.Message ?? "Get doc content failed.", true);
                     var refIds = new LarkContentBlockResourceIds();
                     var tree = doc.Data.ToTree(null, refIds);
                     var linkDoc = await GetMeetingMinutesAsync(larkApi, tree, cancellationToken);
@@ -983,6 +989,12 @@ public static partial class LarkApiUtils
                     if (refIds.Users.Count > 0) await larkApi.GetUserInfoAsync(refIds.Users, tree, cancellationToken);
                     if (refIds.Whiteboards.Count > 0) await larkApi.GetDocsWhiteboardNodesAsync(refIds.Whiteboards, tree, null, cancellationToken).CountAsync(cancellationToken);
                     return new LarkDocContent<LarkContentBlockTree>(null, tree.Content?.FirstOrDefault()?.Text, token, "docx", tree);
+                }
+            case "sheets":
+                {
+                    var sheetsInfo = await larkApi.GetDocsSheetsInfo(token, cancellationToken);
+                    if (sheetsInfo?.Data is null || sheetsInfo.IsError) return ErrorLarkDocContent(token, sheetsInfo?.Message ?? "Get sheets info failed.", true);
+                    return new LarkDocContent<LarkDocsSheetsInfo>(null, sheetsInfo.Data);
                 }
             case "file":
                 {
@@ -1012,6 +1024,6 @@ public static partial class LarkApiUtils
         return new LarkDocContent<TResult>(node, convert(body.Data));
     }
 
-    internal static LarkDocContent<LarkDocContentError> ErrorLarkDocContent(string? nodeToken, string message)
-        => new(nodeToken, null, null, "error", new(message));
+    internal static LarkDocContent<LarkDocContentError> ErrorLarkDocContent(string? nodeToken, string message, bool isDocToken = false)
+        => isDocToken ? new(null, null, nodeToken, "error", new(message)) : new(nodeToken, null, null, "error", new(message));
 }

@@ -721,3 +721,153 @@ public class LarkDocsBaseTableRecordDeletionInfo
     public override string ToString()
         => HasDeleted ? $"{Id ?? "?"} (Deleted)" : (Id ?? string.Empty);
 }
+
+public class LarkDocsSheetsInfo
+{
+    /// <summary>
+    /// Gets or sets the title.
+    /// </summary>
+    [Description("The title.")]
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the owner identifier.
+    /// </summary>
+    [Description("The owner identifier.")]
+    [JsonPropertyName("owner_id")]
+    public string OwnerId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the doc/file token.
+    /// </summary>
+    [Description("The doc/file token.")]
+    [JsonPropertyName("token")]
+    public string DocToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the URL.
+    /// </summary>
+    [Description("The URL.")]
+    [JsonPropertyName("url")]
+    public string Url { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sheets. It may be null if no request to load.
+    /// </summary>
+    [Description("The sheets.")]
+    [JsonPropertyName("sheets")]
+    public List<LarkDocsSheetItemInfo>? Sheets { get; set; }
+}
+
+public class LarkDocsSheetItemInfo : IIdPropertyModel
+{
+    /// <summary>
+    /// Gets or sets the sheet identifier.
+    /// </summary>
+    [Description("The sheet identifier.")]
+    [JsonPropertyName("sheet_id")]
+    public string Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the title.
+    /// </summary>
+    [Description("The title.")]
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sheet index.
+    /// </summary>
+    [Description("The sheet index.")]
+    [JsonPropertyName("index")]
+    public int Index { get; set; }
+
+    /// <summary>
+    /// Gets or sets the doc/file token.
+    /// </summary>
+    [Description("The doc/file token.")]
+    [JsonPropertyName("token")]
+    public string DocToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the sheet is hidden.
+    /// </summary>
+    [Description("A value indicating whether the sheet is hidden.")]
+    [JsonPropertyName("hidden")]
+    public bool IsHidden { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sheet resource type.
+    /// <list type="bullet">
+    /// <item>sheet</item>
+    /// <item>bitable</item>
+    /// <item>#UNSUPPORTED_TYPE</item>
+    /// </list>
+    /// </summary>
+    [Description("The sheet resource type.")]
+    [JsonPropertyName("resource_type")]
+    public string ResourceType { get; set; }
+
+    [JsonPropertyName("grid_properties")]
+    public LarkDocsSheetGridPropertyOptions? GridProperties { get; set; }
+
+    [JsonPropertyName("merges")]
+    public List<LarkDocsSheetMergeOptions>? Merges { get; set; }
+
+    public override string ToString()
+    {
+        var sb = new StringBuilder(Title ?? "?");
+        if (!string.IsNullOrWhiteSpace(Id))
+        {
+            sb.Append(" (");
+            sb.Append(Id);
+            sb.Append(')');
+        }
+
+        if (Index >= 0)
+        {
+            sb.Append(" #");
+            sb.Append(Index);
+        }
+
+        if (IsHidden) sb.Append(" | Hidden");
+        if (!string.IsNullOrWhiteSpace(ResourceType) && ResourceType != "sheet")
+        {
+            sb.Append(" | ");
+            sb.Append(ResourceType);
+        }
+
+        return sb.ToString();
+    }
+}
+
+public class LarkDocsSheetGridPropertyOptions
+{
+    [JsonPropertyName("frozen_row_count")]
+    public int FrozenRowCount { get; set; }
+
+    [JsonPropertyName("frozen_column_count")]
+    public int FrozenColumnCount { get; set; }
+
+    [JsonPropertyName("row_count")]
+    public int RowCount { get; set; }
+
+    [JsonPropertyName("column_count")]
+    public int ColumnCount { get; set; }
+}
+
+public class LarkDocsSheetMergeOptions
+{
+    [JsonPropertyName("start_row_index")]
+    public int StartRowIndex { get; set; }
+
+    [JsonPropertyName("end_row_index")]
+    public int EndRowIndex { get; set; }
+
+    [JsonPropertyName("start_column_index")]
+    public int StartColumnIndex { get; set; }
+
+    [JsonPropertyName("end_column_index")]
+    public int EndColumnIndex { get; set; }
+}

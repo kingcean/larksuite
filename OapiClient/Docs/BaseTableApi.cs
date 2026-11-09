@@ -437,4 +437,16 @@ public partial class LarkApi
         }, cancellationToken);
         return new(resp, "records");
     }
+
+    public async Task<LarkResponseBody<LarkDocsSheetsInfo>> GetDocsSheetsInfo(string id, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return new(true, "The sheets identifier (doc token) should not be empty.");
+        id = LarkUrls.GetId(id)!;
+        var task = GetAsync<List<LarkDocsSheetItemInfo>>(LarkUrls.ToUrl(LarkUrls.DocsSheetsQuery, id), "sheets", cancellationToken);
+        var info = await GetAsync<LarkDocsSheetsInfo>(LarkUrls.ToUrl(LarkUrls.DocsSheets, id), "spreadsheet", cancellationToken);
+        var list = await task;
+        if (info?.Data is null || info.IsError || list?.Data is null || list.IsError) return info;
+        info.Data.Sheets = list.Data;
+        return info;
+    }
 }

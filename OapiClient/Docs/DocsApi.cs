@@ -1282,7 +1282,7 @@ public partial class LarkApi
     {
         if (string.IsNullOrWhiteSpace(token)) return LarkApiUtils.ErrorLarkDocContent(null, "The node token is null.");
         token = LarkUrls.GetId(token, out var kind)!;
-        if (kind == "docx" || kind == "file") return await LarkApiUtils.GetDocsNodeContentAsync(this, kind, token, cancellationToken);
+        if (kind == "docx" || kind == "file" || kind == "sheets") return await LarkApiUtils.GetDocsNodeContentAsync(this, kind, token, cancellationToken);
         if (kind == "okr")
         {
             var okrCycleId = CommandLine.LarkOkrCommandVerb.GetCycleId(token);

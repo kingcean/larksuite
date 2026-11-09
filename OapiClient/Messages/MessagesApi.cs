@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Trivial.Net;
@@ -305,7 +306,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>An asynchronous sequence of sending results.</returns>
     /// <remarks>Blank and duplicate user identifiers are skipped.</remarks>
-    public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<string> userOpenIds, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<string> userOpenIds, LarkMessageJsonCardRequest req, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var ids = new List<string>();
         foreach (var userId in userOpenIds)
@@ -326,7 +327,7 @@ public partial class LarkApi
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>An asynchronous sequence of sending results.</returns>
     /// <remarks>Users with blank or duplicate identifiers are skipped.</remarks>
-    public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<LarkIdNameInfo> users, LarkMessageJsonCardRequest req, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<LarkMessageSendResult> SendMessageAsync(IEnumerable<LarkIdNameInfo> users, LarkMessageJsonCardRequest req, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var ids = new List<string>();
         foreach (var user in users)
