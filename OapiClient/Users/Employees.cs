@@ -18,8 +18,8 @@ namespace LarkSuite.CommandLine;
 
 public partial class LarkUsersCommandVerb : BaseCommandVerb
 {
-    private static List<string> employeeCoreFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.race", "person_info.nationality_id_v2", "person_info.native_region", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "employment_status", "employment_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2"];
-    private static List<string> employeeLimitFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.race", "person_info.nationality_id_v2", "person_info.native_region", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "employment_status", "employment_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "department.department_name", "department.id", "department.id_v2", "custom_fields"];
+    private static List<string> employeeCoreFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.race", "person_info.nationality_id_v2", "person_info.native_region", "person_info.marital_status", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "employment_status", "employment_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "reason_for_offboarding", "department.department_name", "department.id", "department.id_v2"];
+    private static List<string> employeeLimitFields = ["person_info.email_address", "person_info.gender", "person_info.legal_name", "person_info.phone_number", "person_info.preferred_name", "person_info.preferred_english_full_name", "person_info.preferred_local_full_name", "person_info.person_id", "person_info.date_of_birth", "person_info.race", "person_info.nationality_id_v2", "person_info.native_region", "person_info.marital_status", "person_info.talent_id", "avatar_url", "work_location_id", "employee_number", "job.id", "job.name", "job.job_title", "job_level.level_order", "job_level.name", "job_level.id", "compensation_type", "employment_status", "employment_type", "pay_group_id", "expiration_date", "effective_date", "contract_start_date", "contract_end_date", "contract_expected_end_date", "regular_employee_start_date", "reason_for_offboarding", "department.department_name", "department.id", "department.id_v2", "custom_fields"];
 
     public static async Task<LarkResponsePagingBody> ListEmployeesAsync(LarkApi? larkApi, DateTime effectiveStartDate, bool withCustomFields = false, CancellationToken cancellationToken = default)
     {
@@ -42,7 +42,20 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         var resp = await larkApi.SearchEmployeesAsync(q, withCustomFields ? employeeLimitFields : employeeCoreFields, cancellationToken);
         if (resp is null) return new(true, "No response.");
         if (resp.Data is null || resp.IsError) return resp;
-        await LarkApiUtils.LoadAllPagesAsync(resp, 50, larkApi.SearchEmployeesAsync, cancellationToken).CountAsync(cancellationToken);
+        if (resp.Data.Count == 0)
+        {
+            resp = await larkApi.SearchEmployeesAsync(new LarkEmployeeSearchRequest()
+            {
+                Fields = withCustomFields ? employeeLimitFields : employeeCoreFields,
+                Keyword = q,
+                EmploymentStatus = "terminated",
+            }, new(50), cancellationToken);
+        }
+        else if (resp.Data.Count >= 50)
+        {
+            await LarkApiUtils.LoadAllPagesAsync(resp, 50, larkApi.SearchEmployeesAsync, cancellationToken).CountAsync(cancellationToken);
+        }
+
         return resp;
     }
 
@@ -283,6 +296,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                 Phone = info.TryGetStringTrimmedValue("phone_number", true),
                 Birthday = info.TryGetStringTrimmedValue("date_of_birth", true),
                 Gender = gender,
+                Ethnicity = info.TryGetObjectValue("race")?.TryGetStringValue("enum_name"),
             },
             Job = new()
             {
@@ -343,6 +357,23 @@ public static partial class LarkCliUtils
         console ??= StyleConsole.Default;
         console.WriteLine(BoldText(), employee.Name ?? "?");
         console.WriteLine(ConsoleColor.Yellow, employee.Id ?? "?");
+        if (employee.Employment?.Status == "terminated")
+        {
+            console.Append(ConsoleColor.Red, "Terminated");
+            var lastday = employee.Employment.ContractEndDate?.Trim();
+            if (!string.IsNullOrEmpty(lastday))
+            {
+                if (lastday.EndsWith(" 00:00:00", StringComparison.OrdinalIgnoreCase)) lastday = lastday[..^9].TrimEnd();
+                if (!string.IsNullOrEmpty(lastday))
+                {
+                    console.Append(" (");
+                    console.Append(lastday);
+                    console.Append(')');
+                }
+            }
+
+            console.WriteLine();
+        }
 
         var jobInfo = employee.Job;
         if (jobInfo is not null)
@@ -365,6 +396,7 @@ public static partial class LarkCliUtils
             WritePropertyLineIfNotEmpty(console, "Phone", info.Phone);
             WritePropertyLineIfNotEmpty(console, "Birthday", info.Birthday);
             WritePropertyLineIfNotEmpty(console, "Gender", LarkApiUtils.ToString(info.Gender));
+            WritePropertyLineIfNotEmpty(console, "Ethnicity", info.Ethnicity);
         }
     }
 }

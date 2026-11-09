@@ -63,6 +63,10 @@ public class LarkEmployeePersonalInfo
     [JsonPropertyName("gender")]
     public LarkGender Gender { get; set; } = LarkGender.Unknown;
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("ethnicity")]
+    public string? Ethnicity { get; set; }
+
     /// <summary>
     /// Returns a string that represents the current object.
     /// </summary>
