@@ -65,7 +65,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         var resp = await GetDepartmentAsync(larkApi, id, false, cancellationToken);
         if (resp is null)
         {
-            console.WriteLine(ConsoleColor.Red, "Not found.");
+            LarkCliUtils.WriteNotFound(console);
             return null;
         }
 
@@ -207,13 +207,13 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         }
 
         LarkCliUtils.WritePropertyLine(console, "ID", info.TryGetStringTrimmedValue("id", true) ?? id);
-        LarkCliUtils.WritePropertyLine(console, "Name", GetDepartmentName(info));
+        LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "名称" : "Name", GetDepartmentName(info));
         var activeState = info.TryGetBooleanValue("active");
-        if (activeState.HasValue) LarkCliUtils.WritePropertyLine(console, "State", activeState.Value ? "Active" : "Inactive");
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Code", info.TryGetStringValue("code"));
-        if (info.TryGetBooleanValue("is_root") == true) LarkCliUtils.WritePropertyLine(console, "Level", "Root");
-        LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Description", GetDepartmentDescription(info));
-        if (containParentId) LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Parent ID", info.TryGetStringTrimmedValue("parent_department_id", true));
+        if (activeState.HasValue) LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "状态" : "State", activeState.Value ? "Active" : "Inactive");
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "代号" : "Code", info.TryGetStringValue("code"));
+        if (info.TryGetBooleanValue("is_root") == true) LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "级别" : "Level", "Root");
+        LarkCliUtils.WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "描述" : "Description", GetDepartmentDescription(info));
+        if (containParentId) LarkCliUtils.WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "父部门 ID" : "Parent ID", info.TryGetStringTrimmedValue("parent_department_id", true));
         return info;
     }
 
@@ -237,26 +237,26 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             }
             else
             {
-                LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Description", desc);
+                LarkCliUtils.WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "描述" : "Description", desc);
             }
         }
 
         var activeState = department.TryGetBooleanValue("active");
-        if (activeState.HasValue) LarkCliUtils.WritePropertyLine(console, "State", activeState.Value ? "Active" : "Inactive");
-        LarkCliUtils.WritePropertyLine(console, "Code", department.TryGetStringValue("code"));
-        if (department.TryGetBooleanValue("is_root") == true) LarkCliUtils.WritePropertyLine(console, "Level", "Root");
+        if (activeState.HasValue) LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "状态" : "State", activeState.Value ? "Active" : "Inactive");
+        LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "代号" : "Code", department.TryGetStringValue("code"));
+        if (department.TryGetBooleanValue("is_root") == true) LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "级别" : "Level", "Root");
 
         if (half)
         {
-            LarkCliUtils.WritePropertyLineIfNotEmpty(console, "Cost center", department.TryGetStringValue("cost_center_id"));
+            LarkCliUtils.WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "成本中心" : "Cost center", department.TryGetStringValue("cost_center_id"));
             return;
         }
 
         console.WriteLine();
         console.WriteLine(LarkCliUtils.ItalicText(), "Related IDs");
         var parent = department.TryGetStringTrimmedValue("parent_department_id", true);
-        LarkCliUtils.WritePropertyLine(console, "Manager", department.TryGetStringValue("manager"));
-        LarkCliUtils.WritePropertyLine(console, "Parent", parent);
-        LarkCliUtils.WritePropertyLine(console, "Cost center", department.TryGetStringValue("cost_center_id"));
+        LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "经理" : "Manager", department.TryGetStringValue("manager"));
+        LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "父部门" : "Parent", parent);
+        LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "成本中心" : "Cost center", department.TryGetStringValue("cost_center_id"));
     }
 }

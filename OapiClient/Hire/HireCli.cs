@@ -125,7 +125,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                     return;
                 }
 
-                console.WriteLine("Not supported command.");
+                LarkCliUtils.WriteNotSupportedCommand(console);
                 console.WriteLine();
                 return;
             }
@@ -139,7 +139,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
             var method = GetType().GetMethod($"Process{selectionKey.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
             if (method is null || method.IsStatic)
             {
-                console.WriteLine("Not supported command.");
+                LarkCliUtils.WriteNotSupportedCommand(console);
                 console.WriteLine();
                 return;
             }
@@ -183,8 +183,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                     }
                     else
                     {
-                        console.Append(ConsoleColor.Red, "Error");
-                        console.WriteLine(" \tParse date failed.");
+                        LarkCliUtils.WriteError(console, "Parse date failed.");
                         console.WriteLine();
                     }
 
@@ -195,7 +194,7 @@ public class LarkHireCommandVerb : BaseCommandVerb
                 await GetTalentInterviewAsync(cancellationToken);
                 break;
             default:
-                console.WriteLine("Not supported command.");
+                LarkCliUtils.WriteNotSupportedCommand(console);
                 console.WriteLine();
                 break;
         }
@@ -673,13 +672,13 @@ public static partial class LarkCliUtils
             if (phone is not null)
             {
                 var phoneRegion = basic.PhoneNumberRegionCode;
-                WritePropertyLine(console, "Phone", phoneRegion is null ? phone : $"+{phoneRegion} {phone}");
+                WritePropertyLine(console, LarkApiUtils.UseChinese ? "电话" : "Phone", phoneRegion is null ? phone : $"+{phoneRegion} {phone}");
             }
 
             WritePropertyLine(console, "Email", basic.Email);
-            WritePropertyLine(console, "Gender", basic.Gender.ToString());
+            WritePropertyLine(console, LarkApiUtils.UseChinese ? "性别" : "Gender", basic.Gender.ToString());
             var birthday = basic.Birthday;
-            if (birthday.HasValue) WritePropertyLine(console, "Birthday", birthday.Value.Date.ToShortDateString());
+            if (birthday.HasValue) WritePropertyLine(console, LarkApiUtils.UseChinese ? "生日" : "Birthday", birthday.Value.Date.ToShortDateString());
             console.WriteLine();
         }
 

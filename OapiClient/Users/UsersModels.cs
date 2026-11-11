@@ -161,7 +161,7 @@ public class LarkEmployeeResolveRequest : LarkUserIdTypeRequestOptions
         idType ??= string.Empty;
         Fields = fields;
         if (ids is null) return;
-        var col = ids.WhereNotNullOrWhiteSpace().Distinct().ToList();
+        var col = ids.WhereNotNullNorWhiteSpace().Distinct().ToList();
         if (col.Count < 1) return;
         switch (idType.Trim().ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty).Replace("-", string.Empty))
         {
@@ -535,7 +535,7 @@ public class LarkCompanyDepartmentResolveRequest : BaseLarkCompanyDepartmentReso
     {
         Fields = fields;
         if (ids is null) return;
-        var col = ids.WhereNotNullOrWhiteSpace().Distinct().ToList();
+        var col = ids.WhereNotNullNorWhiteSpace().Distinct().ToList();
         if (col.Count < 1) return;
         if (areNames) Names = col;
         else Ids = col;

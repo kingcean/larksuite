@@ -44,14 +44,14 @@ public class LarkMessageGroupCommandVerb : BaseCommandVerb
             if (string.IsNullOrWhiteSpace(select.Value) || LarkCliUtils.IsToExit(select.Value)) return;
             if (select.Value.Contains(' '))
             {
-                console.WriteLine(ConsoleColor.Red, "Not found.");
+                LarkCliUtils.WriteNotFound(console);
                 return;
             }
 
             var chat = await api.GetMessageHistoryAsync(select.Value, 50, cancellationToken);
             if (chat?.Data is null || chat.IsError)
             {
-                console.WriteLine(ConsoleColor.Red, "Not found.");
+                LarkCliUtils.WriteNotFound(console);
                 return;
             }
 

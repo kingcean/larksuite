@@ -149,14 +149,14 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 var info = await lark.GetWikiSpaceInfoAsync(spaceId, cancellationToken);
                 if (string.IsNullOrWhiteSpace(info?.Data?.Id))
                 {
-                    console.WriteLine(ConsoleColor.Red, "Not found.");
+                    LarkCliUtils.WriteNotFound(console);
                     spaceId = LarkCliUtils.ReadId(console, "Docs\\Space", list)!;
                     if (LarkCliUtils.IsToExit(spaceId) || spaceId == "." || spaceId == "..") return;
                     cancellationToken.ThrowIfCancellationRequested();
                     info = await lark.GetWikiSpaceInfoAsync(spaceId, cancellationToken);
                     if (info?.Data is null)
                     {
-                        console.WriteLine(ConsoleColor.Red, "Not found.");
+                        LarkCliUtils.WriteNotFound(console);
                         continue;
                     }
                 }
@@ -222,7 +222,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                         var select = await lark.GetWikiNodeAsync(sub!, cancellationToken);
                         if (string.IsNullOrWhiteSpace(select?.Data?.NodeToken))
                         {
-                            console.WriteLine(ConsoleColor.Red, "Not found");
+                            LarkCliUtils.WriteNotFound(console);
                             break;
                         }
 
@@ -240,8 +240,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         var console = CurrentConsole;
         if (string.IsNullOrWhiteSpace(node?.DocToken))
         {
-            console.Append(ConsoleColor.Red, "Error");
-            console.WriteLine(node is null ? " \tNo node given." : "Unknown type.");
+            LarkCliUtils.WriteError(console, node is null ? "No node given." : "Unknown type.");
             return;
         }
 
@@ -267,7 +266,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
 
         if (!pressKey) return;
         console.Append(ConsoleColor.DarkGray, "--- * THE END * ---");
-        console.Write("  (Press any key to continue...)  ");
+        console.Write(LarkApiUtils.UseChinese ? "  (按任意键继续…)  " : "  (Press any key to continue…)  ");
         console.ReadKey(true);
         console.Clear(StyleConsole.RelativeAreas.Line);
         console.BackspaceToBeginning();
@@ -543,12 +542,12 @@ public static partial class LarkCliUtils
         }
         else
         {
-            WritePropertyLine(console, "Desc", space.Description);
+            WritePropertyLine(console, LarkApiUtils.UseChinese ? "描述" : "Desc", space.Description);
         }
 
-        WritePropertyLine(console, "Type", space.SpaceType);
-        WritePropertyLine(console, "Share", space.ShareState);
-        WritePropertyLine(console, "Visibility", space.Visibility);
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "类型" : "Type", space.SpaceType);
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "共享" : "Share", space.ShareState);
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "可见性" : "Visibility", space.Visibility);
     }
 
     public static void WriteLine(this StyleConsole console, LarkDocsNodeInfo node)
@@ -562,14 +561,14 @@ public static partial class LarkCliUtils
         console.WriteLine();
         console.WriteLine(ItalicText(), "Node information");
         console.WriteLine(ConsoleColor.Yellow, node.NodeToken);
-        WritePropertyLine(console, "Type", node.NodeType);
-        WritePropertyLine(console, "Creation", node.NodeCreationTime.ToString("D"));
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "类型" : "Type", node.NodeType);
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "创建时间" : "Creation", node.NodeCreationTime.ToString("D"));
         console.WriteLine();
         console.WriteLine(ItalicText(), "Doc information");
         console.WriteLine(ConsoleColor.Yellow, node.DocToken);
-        WritePropertyLine(console, "Type", node.DocType);
-        WritePropertyLine(console, "Creation", node.DocCreationTime.ToString("D"));
-        WritePropertyLine(console, "Modification", node.DocLastModificationTime.ToString("D"));
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "类型" : "Type", node.DocType);
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "创建时间" : "Creation", node.DocCreationTime.ToString("D"));
+        WritePropertyLine(console, LarkApiUtils.UseChinese ? "修改时间" : "Modification", node.DocLastModificationTime.ToString("D"));
     }
 
     public static void WriteLine(this StyleConsole console, LarkContentBlockTree tree)

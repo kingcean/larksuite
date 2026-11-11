@@ -34,16 +34,14 @@ public class LarkOkrCommandVerb : BaseCommandVerb
         id = GetCycleId(id);
         if (id is null)
         {
-            console.Append(ConsoleColor.Red, "Error.");
-            console.WriteLine(" \tFailed to get the cycle ID.");
+            LarkCliUtils.WriteError(console, "Failed to get the cycle ID.");
             return;
         }
 
         var okr = await larkApi.GetOkrsAsync(id, cancellationToken);
         if (okr is null)
         {
-            console.Append(ConsoleColor.Red, "Error.");
-            console.WriteLine(" \tFailed to get the OKR.");
+            LarkCliUtils.WriteError(console, "Failed to get the OKR.");
             return;
         }
 

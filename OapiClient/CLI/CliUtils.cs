@@ -242,7 +242,7 @@ public static partial class LarkCliUtils
             NeedTrim = true,
         });
         if (!string.IsNullOrEmpty(s)) return s;
-        console.Write("Use default value ");
+        console.Write(LarkApiUtils.UseChinese ? "使用默认值 " : "Use default value ");
         console.WriteLine(ConsoleColor.Yellow, fallback);
         return fallback;
     }
@@ -289,17 +289,38 @@ public static partial class LarkCliUtils
     }
 
     internal static void WriteEmpty(StyleConsole console)
-        => (console ?? StyleConsole.Default).WriteLine(ConsoleColor.Red, "Empty");
+        => (console ?? StyleConsole.Default).WriteLine(ConsoleColor.Red, LarkApiUtils.UseChinese ? "空" : "Empty");
 
     internal static bool WriteEmpty(StyleConsole console, LarkResponsePagingBody? resp)
     {
         if (resp is not null && !resp.IsError && resp.Count > 0) return false;
         console ??= StyleConsole.Default;
-        console.Append(ConsoleColor.Red, "Empty. \t");
+        console.Append(ConsoleColor.Red, LarkApiUtils.UseChinese ? "空。\t" : "Empty. \t");
         if (resp is not null && !resp.IsMessageEmpty()) console.WriteLine(resp.Message);
         else console.WriteLine();
         return true;
     }
+
+    internal static void WriteError(StyleConsole? console, string? message = null)
+    {
+        console ??= StyleConsole.Default;
+        var error = LarkApiUtils.UseChinese ? "错误" : "Error";
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            console.WriteLine(ConsoleColor.Red, error);
+            return;
+        }
+
+        console.Append(ConsoleColor.Red, error);
+        console.Append(" \t");
+        console.WriteLine(message);
+    }
+
+    internal static void WriteNotFound(StyleConsole? console)
+        => (console ?? StyleConsole.Default).WriteLine(ConsoleColor.Red, LarkApiUtils.UseChinese ? "未找到" : "Not found");
+
+    internal static void WriteNotSupportedCommand(StyleConsole? console)
+        => (console ?? StyleConsole.Default).WriteLine(ConsoleColor.Red, LarkApiUtils.UseChinese ? "不支持的命令" : "Not supported command");
 
     internal static void WriteOrderedLine(StyleConsole console, IList<SelectionItem<string>> selection, bool revert = false)
     {

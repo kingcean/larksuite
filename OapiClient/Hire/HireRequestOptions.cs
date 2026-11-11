@@ -32,8 +32,8 @@ public class LarkInterviewOptions : BaseQueryRequestInfo
     {
         q.SetIfNotEmpty("interview_id", Id);
         q.SetIfNotEmpty("application_id", ApplicationId);
-        if (Start.HasValue) q["start_time"] = Trivial.Web.WebFormat.ParseDate(Start.Value).ToString();
-        if (End.HasValue) q["end_time"] = Trivial.Web.WebFormat.ParseDate(End.Value).ToString();
+        if (Start.HasValue) q["start_time"] = WebFormat.ParseDate(Start.Value).ToString();
+        if (End.HasValue) q["end_time"] = WebFormat.ParseDate(End.Value).ToString();
     }
 }
 

@@ -3,6 +3,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Trivial.Console" Version="10.0.0-preview6" />
+    <PackageVersion Include="Trivial.Console" Version="10.0.0-preview7" />
   </ItemGroup>
 </Project>

@@ -75,7 +75,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
             var method = GetType().GetMethod($"Process{command.ToSpecificCaseInvariant(Cases.Capitalize)}Async", [typeof(CancellationToken)]);
             if (method is null || method.IsStatic)
             {
-                console.WriteLine("Not supported command.");
+                LarkCliUtils.WriteNotSupportedCommand(console);
                 console.WriteLine();
                 return;
             }
@@ -132,7 +132,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
                 }
             default:
                 {
-                    console.WriteLine("Not supported command.");
+                    LarkCliUtils.WriteNotSupportedCommand(console);
                     console.WriteLine();
                     break;
                 }
