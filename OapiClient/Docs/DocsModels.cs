@@ -70,7 +70,7 @@ public class LarkDocsNodeInfo : INamePropertyModel
     public bool HasChild { get; set; }
 
     [JsonPropertyName("node_create_time")]
-    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
     public DateTime NodeCreationTime { get; set; }
 
     [JsonPropertyName("node_token")]
@@ -86,11 +86,11 @@ public class LarkDocsNodeInfo : INamePropertyModel
     public string SpaceId { get; set; }
 
     [JsonPropertyName("obj_create_time")]
-    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
     public DateTime DocCreationTime { get; set; }
 
     [JsonPropertyName("obj_edit_time")]
-    [JsonConverter(typeof(JsonJavaScriptTicksConverter))]
+    [JsonConverter(typeof(JsonUnixTimestampConverter))]
     public DateTime DocLastModificationTime { get; set; }
 
     [JsonPropertyName("obj_token")]

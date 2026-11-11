@@ -116,7 +116,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
 
         if (selection.Count < 1)
         {
-            console.WriteLine(ConsoleColor.Red, "No employee found.");
+            console.WriteLine(ConsoleColor.Red, LarkApiUtils.UseChinese ? "未找到员工。" : "No employee found.");
             return null;
         }
 
@@ -379,7 +379,7 @@ public static partial class LarkCliUtils
         if (jobInfo is not null)
         {
             console.WriteLine();
-            console.WriteLine(ItalicText(), "Job Info");
+            console.WriteLine(ItalicText(), LarkApiUtils.UseChinese ? "职位信息" : "Job Info");
             WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "部门" : "Department", jobInfo.Department?.Name, jobInfo.Department?.Id);
             WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "职位" : "Title", jobInfo.Title, jobInfo.JobId);
             WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "级别" : "Level", jobInfo.Level?.Name, jobInfo.Level?.Id);
@@ -389,7 +389,7 @@ public static partial class LarkCliUtils
         if (info is not null)
         {
             console.WriteLine();
-            console.WriteLine(ItalicText(), "Contact and Basic Info");
+            console.WriteLine(ItalicText(), LarkApiUtils.UseChinese ? "联系和基本信息" : "Contact and Basic Info");
             var legalName = info.LegalName;
             if (legalName is not null && legalName != employee.Name) WritePropertyLineIfNotEmpty(console, LarkApiUtils.UseChinese ? "姓名" : "Name", legalName);
             WritePropertyLineIfNotEmpty(console, "Email", info.Email);

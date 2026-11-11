@@ -71,7 +71,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                     await WriteMeetingMinutesAsync(cancellationToken);
                     break;
                 default:
-                    console.WriteLine(ConsoleColor.Red, "Not supported.");
+                    LarkCliUtils.WriteNotSupportedCommand(console);
                     console.WriteLine();
                     break;
             }
@@ -185,11 +185,11 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 var items = nodes.Data.ToSelectionStringItems().ToList();
                 if (items.Count < 1)
                 {
-                    console.WriteLine("No child node");
+                    console.WriteLine(LarkApiUtils.UseChinese ? "没有子节点" : "No child node");
                 }
                 else
                 {
-                    console.WriteLine(LarkCliUtils.ItalicText(), "Child nodes");
+                    console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "子节点" : "Child nodes");
                     LarkCliUtils.WriteOrderedLine(console, items, true);
                     console.WriteLine();
                     console.WriteLine("Please type the index or node token to get the child details;");
@@ -260,7 +260,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 break;
             default:
                 pressKey = false;
-                LarkCliUtils.WritePropertyLine(console, "Doc Type", node.DocType);
+                LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "文档类型" : "Doc Type", node.DocType);
                 break;
         }
 
@@ -366,7 +366,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         }
         else
         {
-            console.WriteLine(LarkCliUtils.ItalicText(), "Fields");
+            console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "字段" : "Fields");
             foreach (var field in fields.Data)
             {
                 console.Append(ConsoleColor.Blue, "· ");
@@ -385,7 +385,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
         }
         else
         {
-            console.WriteLine(LarkCliUtils.ItalicText(), "Views");
+            console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "视图" : "Views");
             foreach (var view in views.Data)
             {
                 console.Append(ConsoleColor.Blue, "· ");
@@ -399,7 +399,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             console.WriteLine();
         }
 
-        console.WriteLine(LarkCliUtils.ItalicText(), "Records");
+        console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "记录" : "Records");
         var records = await lark.ReadBaseTableAsync(token, id, new LarkPageTokenInfo(100), cancellationToken);
         if (records?.Data is null || records.IsError || records.Data.Count < 1)
         {
@@ -436,7 +436,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             var file = await lark.ReadDocsTextFileAsync(node, cancellationToken);
             if (file?.Data is null || file.IsError)
             {
-                console.WriteLine("Load file failed.");
+                console.WriteLine(LarkApiUtils.UseChinese ? "加载文件失败。" : "Load file failed.");
                 if (!string.IsNullOrWhiteSpace(file?.Message)) console.WriteLine(file.Message);
             }
             else if (string.IsNullOrWhiteSpace(file.Data.Value))
@@ -453,7 +453,7 @@ public class LarkDocsCommandVerb : BaseCommandVerb
             var file = await lark.ReadDocsTextFileAsync(node, cancellationToken);
             if (file?.Data is null || file.IsError)
             {
-                console.WriteLine("Load file failed.");
+                console.WriteLine(LarkApiUtils.UseChinese ? "加载文件失败。" : "Load file failed.");
                 if (!string.IsNullOrWhiteSpace(file?.Message)) console.WriteLine(file.Message);
             }
             else if (string.IsNullOrWhiteSpace(file.Data.Value))
@@ -559,12 +559,12 @@ public static partial class LarkCliUtils
         if (!string.IsNullOrWhiteSpace(node.Url))
             console.WriteLine(node.Url);
         console.WriteLine();
-        console.WriteLine(ItalicText(), "Node information");
+        console.WriteLine(ItalicText(), LarkApiUtils.UseChinese ? "节点信息" : "Node information");
         console.WriteLine(ConsoleColor.Yellow, node.NodeToken);
         WritePropertyLine(console, LarkApiUtils.UseChinese ? "类型" : "Type", node.NodeType);
         WritePropertyLine(console, LarkApiUtils.UseChinese ? "创建时间" : "Creation", node.NodeCreationTime.ToString("D"));
         console.WriteLine();
-        console.WriteLine(ItalicText(), "Doc information");
+        console.WriteLine(ItalicText(), LarkApiUtils.UseChinese ? "文档信息" : "Doc information");
         console.WriteLine(ConsoleColor.Yellow, node.DocToken);
         WritePropertyLine(console, LarkApiUtils.UseChinese ? "类型" : "Type", node.DocType);
         WritePropertyLine(console, LarkApiUtils.UseChinese ? "创建时间" : "Creation", node.DocCreationTime.ToString("D"));

@@ -85,14 +85,14 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         if (parentId is not null)
         {
             console.WriteLine();
-            console.WriteLine(LarkCliUtils.ItalicText(), "Parent Department");
+            console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "上级部门" : "Parent Department");
             var parentPathTask = larkApi.GetCompanyDepartmentsParentAsync([parentId], cancellationToken);
             await WriteDepartmentInPropertiesAsync(console, larkApi, parentId, false, cancellationToken);
             var parentPath = (await parentPathTask)?.Data?.Get(parentId);
             if (parentPath?.Parents is not null && parentPath.Parents.Count > 0)
             {
                 console.WriteLine();
-                console.WriteLine(LarkCliUtils.ItalicText(), "Higher-Level Department");
+                console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "更上级部门" : "Higher-Level Department");
                 var i = 1;
                 foreach (var p in parentPath.Parents)
                 {
@@ -114,7 +114,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         if (children.Data.Count > 0)
         {
             console.WriteLine();
-            console.WriteLine(LarkCliUtils.ItalicText(), "Subordinate Departments");
+            console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "下级部门" : "Subordinate Departments");
             WriteDepartments(console, children.Data);
         }
 
@@ -122,7 +122,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         if (employees.Data is not null && employees.Data.Count > 0)
         {
             console.WriteLine();
-            console.WriteLine(LarkCliUtils.ItalicText(), "Members");
+            console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "成员" : "Members");
             WriteEmployees(console, employees.Data);
             console.WriteLine(ConsoleColor.DarkGray, "* Includeing only members of this department, excluding ones of its sub-departments.");
         }
@@ -226,7 +226,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         var id = department.TryGetStringTrimmedValue("id", true);
         console.WriteLine(ConsoleColor.Yellow, id ?? "?");
         console.WriteLine();
-        console.WriteLine(LarkCliUtils.ItalicText(), "Properties");
+        console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "属性" : "Properties");
         var desc = GetDepartmentDescription(department)?.Trim();
         if (!string.IsNullOrEmpty(desc))
         {
@@ -253,7 +253,7 @@ public partial class LarkUsersCommandVerb : BaseCommandVerb
         }
 
         console.WriteLine();
-        console.WriteLine(LarkCliUtils.ItalicText(), "Related IDs");
+        console.WriteLine(LarkCliUtils.ItalicText(), LarkApiUtils.UseChinese ? "相关 ID" : "Related IDs");
         var parent = department.TryGetStringTrimmedValue("parent_department_id", true);
         LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "经理" : "Manager", department.TryGetStringValue("manager"));
         LarkCliUtils.WritePropertyLine(console, LarkApiUtils.UseChinese ? "父部门" : "Parent", parent);

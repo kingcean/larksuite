@@ -41,12 +41,18 @@ public static partial class LarkCliUtils
         {
             if (!loadAll)
             {
-                console.Write("Load next page? [Y]es, [N]o or [A]ll. ");
+                console.Append(LarkApiUtils.UseChinese ? "加载下一页？请选择：确定[" : "Load next page? [Y]es, [N]o or [A]ll. ");
+                console.Append("Y");
+                console.Append(LarkApiUtils.UseChinese ? "]、取消[" : "]es, [");
+                console.Append("N");
+                console.Append(LarkApiUtils.UseChinese ? "] 或全部[" : "]o or [");
+                console.Append("A");
+                console.Write(LarkApiUtils.UseChinese ? "]。" : "]ll. ");
                 var c = DefaultConsole.ReadKey();
                 if (c.Key == ConsoleKey.N || c.Key == ConsoleKey.Q || c.Key == ConsoleKey.Escape || c.Key == ConsoleKey.BrowserStop)
                 {
                     console.WriteLine();
-                    console.WriteLine("Aborted to list rest.");
+                    console.WriteLine(LarkApiUtils.UseChinese ? "已中止列出其余内容。" : "Aborted to list rest.");
                     return resp;
                 }
                 if (c.Key == ConsoleKey.Y || c.Key == ConsoleKey.C || c.Key == ConsoleKey.Enter || c.Key == ConsoleKey.Spacebar)
@@ -67,7 +73,7 @@ public static partial class LarkCliUtils
                     if (c.Key == ConsoleKey.N || c.Key == ConsoleKey.Q || c.Key == ConsoleKey.Escape || c.Key == ConsoleKey.BrowserStop)
                     {
                         console.WriteLine();
-                        console.WriteLine("Aborted to list rest.");
+                        console.WriteLine(LarkApiUtils.UseChinese ? "已中止列出其余内容。" : "Aborted to list rest.");
                         return resp;
                     }
                     if (c.Key == ConsoleKey.Y || c.Key == ConsoleKey.C || c.Key == ConsoleKey.Enter || c.Key == ConsoleKey.Spacebar)
@@ -84,7 +90,7 @@ public static partial class LarkCliUtils
                     else
                     {
                         console.WriteLine();
-                        console.WriteLine("Aborted to list rest.");
+                        console.WriteLine(LarkApiUtils.UseChinese ? "已中止列出其余内容。" : "Aborted to list rest.");
                         return resp;
                     }
                 }
