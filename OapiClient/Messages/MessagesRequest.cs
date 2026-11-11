@@ -667,8 +667,18 @@ public class BaseLarkMessageGroupMemberRequest : BaseQueryRequestInfo
 
 public class LarkMessageGroupMemberAddRequest : BaseLarkMessageGroupMemberRequest
 {
+    /// <summary>
+    /// Gets or sets the code of error handling.
+    /// <list type="bullet">
+    /// <item>0: Returns failure if the given ID is invalid but the rest will succeed.</item>
+    /// <item>1: Returns succeeded with error details for failure IDs.</item>
+    /// <item>2: Returns failure if the given ID is invalid and abort the operation (no one added).</item>
+    /// <item>null: Same as 0.</item>
+    /// </list>
+    /// </summary>
     public int? ErrorHandlingMode { get; set; }
 
+    /// <inheritdoc />
     protected override void OnQueryDataFill(QueryData q)
     {
         base.OnQueryDataFill(q);

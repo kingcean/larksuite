@@ -15,6 +15,31 @@ namespace LarkSuite.OapiModels;
 /// </summary>
 public static partial class LarkApiUtils
 {
+    public static IEnumerable<LarkIdNameInfo> ToIdNameList(IEnumerable<LarkDocsAccessUserInfo> users)
+    {
+        if (users is null) yield break;
+        foreach (var user in users)
+        {
+            if (string.IsNullOrWhiteSpace(user?.Id)) continue;
+            var info = new LarkIdNameInfo
+            {
+                Id = user.Id,
+            };
+            info.SetName(user.EnglishName, user.Name);
+            yield return info;
+        }
+    }
+
+    public static IEnumerable<string> ToIds(IEnumerable<LarkIdNameInfo> col)
+    {
+        if (col is null) yield break;
+        foreach (var item in col)
+        {
+            if (string.IsNullOrWhiteSpace(item?.Id)) continue;
+            yield return item.Id;
+        }
+    }
+
     public static LarkEventMessageArgs? ToEventMessage(JsonObjectNode json)
     {
         if (json is null) return null;

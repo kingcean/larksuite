@@ -501,6 +501,12 @@ public partial class LarkApi
             { "id_list", userIds }
         }, cancellationToken);
 
+    public Task<LarkResponseBody> AddMessageGroupManagerAsync(string id, LarkMessageGroupMemberAddRequest? options, IEnumerable<string> userIds, CancellationToken cancellationToken = default)
+        => PostAsync(LarkUrls.ToUrl(LarkUrls.MessageGroupManager, options, id), new()
+        {
+            { "manager_ids", userIds }
+        }, cancellationToken);
+
     public Task ListMessageFavorLinksAsync(string id, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.ListMessageFavorLink, id), cancellationToken);
 

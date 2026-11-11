@@ -45,11 +45,24 @@ public class LarkIdNameInfo : IIdPropertyModel
     public JsonObjectNode Name { get; set; }
 
     /// <summary>
+    /// Sets name.
+    /// </summary>
+    /// <param name="nameInEnglish">English name.</param>
+    /// <param name="nameInChinese">Simplified Chinese name.</param>
+    public void SetName(string? nameInEnglish, string? nameInChinese)
+    {
+        var json = new JsonObjectNode();
+        json.SetValueIfNotEmpty("en_us", nameInEnglish);
+        json.SetValueIfNotEmpty("zh_cn", nameInChinese);
+        Name = json;
+    }
+
+    /// <summary>
     /// Gets name.
     /// </summary>
     /// <returns>The name.</returns>
     public string GetName()
-        => LarkApiUtils.GetName(Name);
+        => LarkApiUtils.GetName(Name)!;
 
     /// <inhertidoc />
     public override string ToString()

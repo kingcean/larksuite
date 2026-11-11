@@ -412,7 +412,7 @@ public static class LarkMessageCardHelper
         blocks.Add(CreateColumn(width, isWeighted, text));
     }
 
-    public static JsonObjectNode CreateColumnSet(string? horizontalAlign, IEnumerable<JsonObjectNode>? columns = null)
+    public static JsonObjectNode CreateColumnSet(string? horizontalAlign, IEnumerable<JsonObjectNode>? columns = null, string? flex = null)
     {
         var json = new JsonObjectNode
         {
@@ -420,22 +420,27 @@ public static class LarkMessageCardHelper
         };
         json.SetValueIfNotEmpty("horizontal_align", horizontalAlign);
         if (columns is not null) json.SetValue("columns", columns);
+        if (!string.IsNullOrWhiteSpace(flex)) json.SetValue("flex_mode", flex);
         return json;
     }
 
-    public static JsonObjectNode CreateColumnSet(IEnumerable<JsonObjectNode>? columns = null)
-        => CreateColumnSet(null, columns);
+    public static JsonObjectNode CreateColumnSet(IEnumerable<JsonObjectNode>? columns = null, string? flex = null)
+        => CreateColumnSet(null, columns, flex);
 
-    public static void AddColumnSet(IList<JsonObjectNode> blocks, string? horizontalAlign, IEnumerable<JsonObjectNode>? columns = null)
+    public static JsonObjectNode? AddColumnSet(IList<JsonObjectNode> blocks, string? horizontalAlign, IEnumerable<JsonObjectNode>? columns = null, string? flex = null)
     {
-        if (blocks is null) return;
-        blocks.Add(CreateColumnSet(horizontalAlign, columns));
+        if (blocks is null) return null;
+        var json = CreateColumnSet(horizontalAlign, columns, flex);
+        blocks.Add(json);
+        return json;
     }
 
-    public static void AddColumnSet(IList<JsonObjectNode> blocks, IEnumerable<JsonObjectNode>? columns = null)
+    public static JsonObjectNode? AddColumnSet(IList<JsonObjectNode> blocks, IEnumerable<JsonObjectNode>? columns = null, string? flex = null)
     {
-        if (blocks is null) return;
-        blocks.Add(CreateColumnSet(columns));
+        if (blocks is null) return null;
+        var json = CreateColumnSet(columns, flex);
+        blocks.Add(json);
+        return json;
     }
 
     public static IEnumerable<JsonObjectNode> Create(IEnumerable<BaseSimpleLarkMessageBlock?> blocks)
