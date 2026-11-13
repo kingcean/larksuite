@@ -102,11 +102,13 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
+            ErrorCode = "resp-none",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            Message = response.Message ?? "No response data.",
+            ErrorCode = response.IsError ? "status-error" : "data-null",
+            Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data);
     }
@@ -121,11 +123,13 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
+            ErrorCode = "resp-none",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            Message = response.Message ?? "No response data.",
+            ErrorCode = response.IsError ? "status-error" : "data-null",
+            Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data);
     }
@@ -139,11 +143,13 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
+            ErrorCode = "resp-none",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            Message = response.Message ?? "No response data.",
+            ErrorCode = response.IsError ? "status-error" : "data-null",
+            Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data)
         {
@@ -161,17 +167,99 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
+            ErrorCode = "resp-none",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            Message = response.Message ?? "No response data.",
+            ErrorCode = response.IsError ? "status-error" : "data-null",
+            Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data)
         {
             TotalCount = response.TotalCount,
         };
     }
+
+    /// <summary>
+    /// Converts the response to a data result if there is an error.
+    /// </summary>
+    /// <param name="response">The response to convert.</param>
+    /// <param name="error">The error data result.</param>
+    /// <returns>true if error; otherwise, false.</returns>
+    public static bool GetResultIfError<T>(this LarkResponseBody? response, out DataResult<T>? error)
+    {
+        if (response is null)
+        {
+            error = new()
+            {
+                ErrorCode = "resp-none",
+                Message = "No response.",
+            };
+            return true;
+        }
+        
+        if (response.Data is null || response.IsError)
+        {
+            error = new()
+            {
+                ErrorCode = response.IsError ? "status-error" : "data-null",
+                Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
+            };
+            return true;
+        }
+        
+        error = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Converts the response to a data result if there is an error.
+    /// </summary>
+    /// <param name="response">The response to convert.</param>
+    /// <returns>The data result.</returns>
+    public static DataResult<T>? GetResultIfError<T>(this LarkResponseBody? response)
+        => GetResultIfError<T>(response, out var error) ? error : null;
+
+    /// <summary>
+    /// Converts the response to a data result if there is an error.
+    /// </summary>
+    /// <param name="response">The response to convert.</param>
+    /// <param name="error">The error data result.</param>
+    /// <returns>true if error; otherwise, false.</returns>
+    public static bool GetResultIfError<T>(this LarkResponsePagingBody? response, out CollectionResult<T>? error)
+    {
+        if (response is null)
+        {
+            error = new()
+            {
+                ErrorCode = "resp-none",
+                Message = "No response.",
+            };
+            return true;
+        }
+
+        if (response.Data is null || response.IsError)
+        {
+            error = new()
+            {
+                ErrorCode = response.IsError ? "status-error" : "data-null",
+                Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
+            };
+            return true;
+        }
+
+        error = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Converts the response to a data result if there is an error.
+    /// </summary>
+    /// <param name="response">The response to convert.</param>
+    /// <returns>The data result.</returns>
+    public static CollectionResult<T>? GetResultIfError<T>(this LarkResponsePagingBody? response)
+        => GetResultIfError<T>(response, out var error) ? error : null;
 
     /// <summary>
     /// Loads all rest pages.

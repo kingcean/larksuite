@@ -434,11 +434,13 @@ public static partial class LarkApiUtils
         var records = await larkApi.ReadBaseTableAsync(baseId, tableId, cancellationToken);
         if (records is null) return new()
         {
+            ErrorCode = "resp-none",
             Message = "Error: No response."
         };
         if (records.Data is null || records.IsError) return new()
         {
-            Message = records.Message ?? "Error: No data."
+            ErrorCode = records.IsError ? "status-error" : "data-null",
+            Message = records.Message ?? (records.Code > 0 ? $"Error code {records.Code}." : "Error: No data.")
         };
         if (all)
         {
@@ -468,11 +470,13 @@ public static partial class LarkApiUtils
     {
         if (resp is null) return new()
         {
+            ErrorCode = "resp-none",
             Message = "Error: No response.",
         };
         if (resp.Data is null || resp.IsError) return new()
         {
-            Message = resp.Message ?? "Error: No data.",
+            ErrorCode = resp.IsError ? "status-error" : "data-null",
+            Message = resp.Message ?? (resp.Code > 0 ? $"Error code {resp.Code}." : "Error: No data."),
         };
         var col = new List<T>();
         if (converter is null)
