@@ -59,7 +59,7 @@ public class LarkTenantTokenInfo : TokenInfo
     public LarkTenantTokenInfo(LarkTenantToken token)
     {
         if (token is null) return;
-        TokenType = BearerTokenType;
+        TokenType = TokenPropertyKeys.BearerTokenType;
         AccessToken = token.Value;
         ExpiredAfter = token.Expired;
         OriginalToken = token;
