@@ -651,3 +651,21 @@ public class LarkMessageFavorLinkInfo : IJsonObjectHost, INamePropertyModel
         return json;
     }
 }
+
+public class LarkIdsOperationResult
+{
+    [JsonPropertyName("invalid_id_list")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? Invalid { get; set; }
+
+    [JsonPropertyName("not_existed_id_list")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? NonExist { get; set; }
+
+    [JsonPropertyName("pending_approval_id_list")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? PendingApproval { get; set; }
+
+    public override string ToString()
+        => $"Invalid {Invalid?.Count ?? 0} & NonExist {NonExist?.Count ?? 0} & PendingApproval {PendingApproval?.Count ?? 0}";
+}

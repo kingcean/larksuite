@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Trivial.Data;
 using Trivial.Maths;
 using Trivial.Net;
+using Trivial.Security;
 using Trivial.Text;
 using Trivial.Web;
 
@@ -102,12 +103,12 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
-            ErrorCode = "resp-none",
+            ErrorCode = "no_response",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            ErrorCode = response.IsError ? "status-error" : "data-null",
+            ErrorCode = response.IsError ? $"lark_error_{response.Code}" : "no_response_data",
             Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data);
@@ -123,12 +124,12 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
-            ErrorCode = "resp-none",
+            ErrorCode = "no_response",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            ErrorCode = response.IsError ? "status-error" : "data-null",
+            ErrorCode = response.IsError ? $"lark_error_{response.Code}" : "no_response_data",
             Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data);
@@ -143,12 +144,12 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
-            ErrorCode = "resp-none",
+            ErrorCode = "no_response",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            ErrorCode = response.IsError ? "status-error" : "data-null",
+            ErrorCode = response.IsError ? $"lark_error_{response.Code}" : "no_response_data",
             Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data)
@@ -167,12 +168,12 @@ public static partial class LarkApiUtils
     {
         if (response is null) return new()
         {
-            ErrorCode = "resp-none",
+            ErrorCode = "no_response",
             Message = "No response.",
         };
         if (response.Data is null || response.IsError) return new()
         {
-            ErrorCode = response.IsError ? "status-error" : "data-null",
+            ErrorCode = response.IsError ? $"lark_error_{response.Code}" : "no_response_data",
             Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
         };
         return new(response.Data)
@@ -193,7 +194,7 @@ public static partial class LarkApiUtils
         {
             error = new()
             {
-                ErrorCode = "resp-none",
+                ErrorCode = "no_response",
                 Message = "No response.",
             };
             return true;
@@ -203,7 +204,7 @@ public static partial class LarkApiUtils
         {
             error = new()
             {
-                ErrorCode = response.IsError ? "status-error" : "data-null",
+                ErrorCode = response.IsError ? $"lark_error_{response.Code}" : "no_response_data",
                 Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
             };
             return true;
@@ -233,7 +234,7 @@ public static partial class LarkApiUtils
         {
             error = new()
             {
-                ErrorCode = "resp-none",
+                ErrorCode = "no_response",
                 Message = "No response.",
             };
             return true;
@@ -243,7 +244,7 @@ public static partial class LarkApiUtils
         {
             error = new()
             {
-                ErrorCode = response.IsError ? "status-error" : "data-null",
+                ErrorCode = response.IsError ? $"lark_error_{response.Code}" : "no_response_data",
                 Message = response.Message ?? (response.Code > 0 ? $"Error code {response.Code}." : "No response data."),
             };
             return true;

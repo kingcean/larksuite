@@ -1,5 +1,6 @@
 ﻿using LarkSuite.OapiModels;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -495,8 +496,8 @@ public partial class LarkApi
     public Task<IReadOnlyList<JsonObjectNode>> GetMessageGroupUsersAsync(LarkResponsePagingBody resp, int? pageSize, CancellationToken cancellationToken = default)
         => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.MessageGroupMembers, (resp.Query as LarkMessageGroupMemberListRequest).Id), resp, pageSize, cancellationToken);
 
-    public Task<LarkResponseBody> AddMessageGroupUsersAsync(string id, LarkMessageGroupMemberAddRequest? options, IEnumerable<string> userIds, CancellationToken cancellationToken = default)
-        => PostAsync(LarkUrls.ToUrl(LarkUrls.MessageGroupMembers, options, id), new()
+    public Task<LarkResponseBody<LarkIdsOperationResult>> AddMessageGroupUsersAsync(string id, LarkMessageGroupMemberAddRequest? options, IEnumerable<string> userIds, CancellationToken cancellationToken = default)
+        => PostAsync<LarkIdsOperationResult>(LarkUrls.ToUrl(LarkUrls.MessageGroupMembers, options, id), new()
         {
             { "id_list", userIds }
         }, cancellationToken);
@@ -506,6 +507,16 @@ public partial class LarkApi
         {
             { "manager_ids", userIds }
         }, cancellationToken);
+
+    public async Task<LarkResponseBody<LarkIdsOperationResult>> DeleteMessageGroupUsersAsync(string id, BaseLarkMessageGroupMemberRequest? options, IEnumerable<string> userIds, CancellationToken cancellationToken = default)
+    {
+        var http = CreateJsonHttpClient();
+        var resp = await http.SendJsonAsync(HttpMethod.Delete, LarkUrls.ToUrl(LarkUrls.MessageGroupManager, options), new JsonObjectNode
+        {
+            { "id_list", userIds }
+        }, cancellationToken);
+        return new(resp);
+    }
 
     public Task ListMessageFavorLinksAsync(string id, CancellationToken cancellationToken = default)
         => GetAsync(LarkUrls.ToUrl(LarkUrls.ListMessageFavorLink, id), cancellationToken);
