@@ -8,6 +8,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>Lark.OapiClient</AssemblyName>
     <AssemblyTitle>Lark SDK via OpenAPI</AssemblyTitle>
+    <ApplicationIcon>Logo.ico</ApplicationIcon>
+    <PackageIcon>logo.png</PackageIcon>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
@@ -15,6 +17,10 @@
 
   <ItemGroup>
     <PackageReference Include="Trivial.Console" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Materials\logo.png" Pack="true" PackagePath="logo.png" />
   </ItemGroup>
 
 </Project>
