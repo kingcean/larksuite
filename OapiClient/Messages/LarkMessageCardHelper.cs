@@ -1,4 +1,5 @@
 ﻿using LarkSuite.Docs;
+using Microsoft.VisualBasic.FileIO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -8,6 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Trivial.Text;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace LarkSuite.OapiModels;
 
@@ -54,10 +56,37 @@ public static class LarkMessageCardHelper
         return json;
     }
 
+    public static JsonObjectNode? CreateText(BaseSimpleLarkTextMessageBlock? block)
+    {
+        if (block is SimpleLarkTextMessageBlock textBlock)
+        {
+            var text = CreateText(textBlock.Text, textBlock.FontSize, textBlock.Icon, textBlock.IconColor, textBlock.Align);
+            if (!string.IsNullOrWhiteSpace(textBlock.Color)) text.SetValue("text_color", textBlock.Color);
+            return text;
+        }
+
+        return block is null ? null : CreateText(block.Text, null, block.Icon);
+    }
+
     public static void AddText(IList<JsonObjectNode> blocks, string text, string? size = null, string? iconToken = null, string? iconColor = null, string? align = null)
     {
         var json = CreateText(text, size, iconToken, iconColor, align);
         blocks.Add(json);
+    }
+
+    public static void AddText(IList<JsonObjectNode> blocks, BaseSimpleLarkTextMessageBlock? block)
+    {
+        var json = CreateText(block);
+        if (json is not null) blocks.Add(json);
+    }
+
+    public static void AddText(IList<JsonObjectNode> blocks, IEnumerable<BaseSimpleLarkTextMessageBlock?> block)
+    {
+        foreach (var item in block)
+        {
+            var json = CreateText(item);
+            if (json is not null) blocks.Add(json);
+        }
     }
 
     public static void AddStandardIcon(JsonObjectNode json, string? token, string? color = null)
@@ -157,6 +186,13 @@ public static class LarkMessageCardHelper
         };
     }
 
+    public static JsonObjectNode CreatePersonList(IEnumerable<LarkDocsAccessUserInfo> users, string? size, bool showAvatar, bool showName, string? iconToken, string? iconColor = null)
+    {
+        var block = CreatePersonList(users, size, showAvatar, showName);
+        AddStandardIcon(block, iconToken, iconColor);
+        return block;
+    }
+
     public static JsonObjectNode CreatePersonList(IEnumerable<LarkDocsAccessUserInfo> users, string? size = null)
         => CreatePersonList(users, size, true, true);
 
@@ -181,6 +217,12 @@ public static class LarkMessageCardHelper
     public static void AddPersonList(IList<JsonObjectNode> blocks, IEnumerable<LarkDocsAccessUserInfo> users, string? size = null)
     {
         var json = CreatePersonList(users, size, true, true);
+        blocks.Add(json);
+    }
+
+    public static void AddPersonList(IList<JsonObjectNode> blocks, IEnumerable<LarkDocsAccessUserInfo> users, string? size, bool showAvatar, bool showName, string? iconToken, string? iconColor = null)
+    {
+        var json = CreatePersonList(users, size, showAvatar, showName, iconToken, iconColor);
         blocks.Add(json);
     }
 
@@ -211,8 +253,56 @@ public static class LarkMessageCardHelper
         return json;
     }
 
+    public static JsonObjectNode? CreateButton(SimpleLarkButtonMessageBlock? block)
+        => block is null ? null : CreateButton(block.BlockType, block.Text, block.Url, block.Icon, block.IconColor);
+
     public static JsonObjectNode CreateButton(LarkMessageCardButtonType buttonType, string text, string url, string? iconToken = null)
         => CreateButton(ToString(buttonType), text, url, iconToken);
+
+    public static JsonObjectNode? CreateButton(SimpleLarkButtonsMessageBlock? block)
+    {
+        if (block is null) return null;
+        var buttons = new List<JsonObjectNode>();
+        foreach (var button in block.Items)
+        {
+            if (button is null) continue;
+            buttons.Add(CreateColumn("auto", [
+                CreateButton(button.BlockType, button.Text, button.Url, button.Icon, button.IconColor)
+            ]));
+        }
+
+        var more = block.More;
+        if (more is not null && more.Count > 0)
+        {
+            var options = new List<JsonObjectNode>();
+            foreach (var button in more)
+            {
+                if (button?.Title is null) continue;
+                options.Add(CreateOverflowButtonOption(button.Title, button.Url));
+            }
+            if (options.Count > 0) buttons.Add(CreateColumn("auto", [new JsonObjectNode()
+            {
+                { "tag", "overflow" },
+                { "width", block.MoreWidth ?? "default" },
+                { "options", options },
+            }]));
+        }
+
+        if (buttons.Count > 0)
+        {
+            buttons.Add(CreateColumn(1, true));
+            return CreateColumnSet(buttons);
+        }
+
+        if (block.Empty is not null)
+        {
+            var empty = CreateText(block.Empty.Text, block.Empty.FontSize, block.Empty.Icon, block.Empty.IconColor, block.Empty.Align);
+            if (!string.IsNullOrWhiteSpace(block.Empty.Color)) empty.SetValue("text_color", block.Empty.Color);
+            return empty;
+        }
+
+        return null;
+    }
 
     public static void AddButton(IList<JsonObjectNode> blocks, string buttonType, string text, string url, string? iconToken = null)
     {
@@ -226,8 +316,20 @@ public static class LarkMessageCardHelper
         blocks.Add(json);
     }
 
+    public static void AddButton(IList<JsonObjectNode> blocks, SimpleLarkButtonMessageBlock block)
+    {
+        var json = CreateButton(block);
+        if (json is not null) blocks.Add(json);
+    }
+
+    public static void AddButton(IList<JsonObjectNode> blocks, SimpleLarkButtonsMessageBlock block)
+    {
+        var json = CreateButton(block);
+        if (json is not null) blocks.Add(json);
+    }
+
     public static JsonObjectNode CreateOverflowButton(string? width = null, IEnumerable<JsonObjectNode>? options = null)
-        => new ()
+        => new()
         {
             { "tag", "overflow" },
             { "width", width ?? "default" },
@@ -511,28 +613,8 @@ public static class LarkMessageCardHelper
                     }
                 case "buttons":
                     {
-                        if (block is not SimpleLarkButtonsMessageBlock buttonsBlock) break;
-                        var buttons = new List<JsonObjectNode>();
-                        foreach (var button in buttonsBlock.Items)
-                        {
-                            if (button is null) continue;
-                            buttons.Add(CreateColumn("auto", [
-                                CreateButton(button.BlockType, button.Text, button.Url, button.Icon, button.IconColor)
-                            ]));
-                        }
-
-                        if (buttons.Count > 0)
-                        {
-                            buttons.Add(CreateColumn(1, true));
-                            yield return CreateColumnSet(buttons);
-                        }
-                        else if (buttonsBlock.Empty is not null)
-                        {
-                            var empty = CreateText(buttonsBlock.Empty.Text, buttonsBlock.Empty.FontSize, buttonsBlock.Empty.Icon, buttonsBlock.Empty.IconColor, buttonsBlock.Empty.Align);
-                            if (!string.IsNullOrWhiteSpace(buttonsBlock.Empty.Color)) empty.SetValue("text_color", buttonsBlock.Empty.Color);
-                            yield return empty;
-                        }
-
+                        var buttons = CreateButton(block as SimpleLarkButtonsMessageBlock);
+                        if (buttons is not null) yield return buttons;
                         break;
                     }
             }
@@ -827,6 +909,14 @@ public class SimpleLarkButtonsMessageBlock : BaseSimpleLarkMessageBlock
 
     [JsonPropertyName("items")]
     public List<SimpleLarkButtonMessageBlock> Items { get; set; }
+
+    [JsonPropertyName("more")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<LarkDocsItemInfo>? More { get; set; }
+
+    [JsonPropertyName("moreWidth")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MoreWidth { get; set; }
 
     [JsonPropertyName("empty")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

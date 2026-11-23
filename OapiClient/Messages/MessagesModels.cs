@@ -358,6 +358,19 @@ public class BaseLarkMessageGroupInfo : IIdPropertyModel
     public string? TenantKey { get; set; }
 
     /// <summary>
+    /// Gets or sets the chat mode.
+    /// <list type="bullet">
+    /// <item>group</item>
+    /// <item>topic</item>
+    /// <item>p2p</item>
+    /// </list>
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("chat_mode")]
+    [Description("The chat mode: `group`, `topic` and `p2p`.")]
+    public string? ChatMode { get; set; }
+
+    /// <summary>
     /// Gets or sets the permission for hide member count setting.
     /// <list type="bullet">
     /// <item>normal</item>

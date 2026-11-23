@@ -82,6 +82,20 @@ public static partial class LarkApiUtils
         return null;
     }
 
+    public static List<string> ToList(string source, char separator = ';')
+    {
+        var list = new List<string>();
+        if (string.IsNullOrWhiteSpace(source)) return list;
+        var items = source.Split(separator);
+        foreach (var item in items)
+        {
+            var s = item.Trim();
+            if (!string.IsNullOrEmpty(s)) list.Add(s);
+        }
+
+        return list;
+    }
+
     /// <summary>
     /// Sets the default instance of Lark API.
     /// </summary>
