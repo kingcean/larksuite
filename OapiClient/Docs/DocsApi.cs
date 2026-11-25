@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
+using Trivial.Data;
 using Trivial.Net;
 using Trivial.Security;
 using Trivial.Text;
@@ -199,9 +200,10 @@ public partial class LarkApi
     [Description("List the top level nodes of the wiki space.")]
     public async Task<LarkResponsePagingBody> GetWikiSpaceNodesAsync([Description("The wiki space identifier.")] string id, [Description("A value indicating whether load all items instead of the first page of list.")] bool loadAll, CancellationToken cancellationToken = default)
     {
+        var paging = new LarkPageTokenInfo(50);
         if (!loadAll) return await GetWikiSpaceNodesAsync(id, cancellationToken);
-        var resp = await GetWikiSpaceNodesAsync(id, new LarkPageTokenInfo(50), cancellationToken);
-        await LarkApiUtils.LoadAllPagesAsync(resp, 50, GetWikiSpaceNodesAsync, cancellationToken).CountAsync(cancellationToken);
+        var resp = await GetWikiSpaceNodesAsync(id, paging, cancellationToken);
+        await LarkApiUtils.LoadAllPagesAsync(resp, paging.Size, GetWikiSpaceNodesAsync, cancellationToken).Take(500).CountAsync(cancellationToken);
         return resp;
     }
 
@@ -218,6 +220,20 @@ public partial class LarkApi
         if (!loadAll) return await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
         var resp = await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
         await LarkApiUtils.LoadAllPagesAsync(resp, paging.Size, GetWikiSpaceNodesAsync, cancellationToken).CountAsync(cancellationToken);
+        return resp;
+    }
+
+    /// <summary>
+    /// Lists nodes in a wiki space, optionally loading all pages.
+    /// </summary>
+    /// <param name="options">The wiki space identifier and optional parent node token.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The wiki nodes matching the request options.</returns>
+    public async Task<LarkResponsePagingBody<LarkDocsNodeInfo>> GetWikiSpaceNodesAsync(LarkWikiNodesRequestOptions options, CancellationToken cancellationToken = default)
+    {
+        var paging = new LarkPageTokenInfo(50);
+        var resp = await GetWikiSpaceNodesAsync(options, paging, cancellationToken);
+        await LarkApiUtils.LoadAllPagesAsync(resp, paging.Size, GetWikiSpaceNodesAsync, cancellationToken).Take(500).CountAsync(cancellationToken);
         return resp;
     }
 
@@ -1307,6 +1323,246 @@ public partial class LarkApi
 
         return await LarkApiUtils.GetDocsNodeContentAsync(this, info, cancellationToken);
     }
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="token">The node token.</param>
+    /// <param name="cache">The data cache.</param>
+    /// <param name="skipChildContentLoading">true if skip the content loading of children; otherwise, false.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The doc content.</returns>
+    public async Task<LarkDocsNodeTree> GetDocsNodeTreeAsync(string token, DataCacheCollection<LarkDocContent>? cache, bool skipChildContentLoading = false, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return new()
+        {
+            ErrorCode = TokenPropertyKeys.ErrorCodes.InvalidRequest,
+            Content = new LarkDocContentError("The node token is null.")
+        };
+        token = LarkUrls.GetId(token, out var kind)!;
+        var info = await GetWikiNodeAsync(token, cancellationToken);
+        if (info is null) return new()
+        {
+            ErrorCode = "no-response",
+            Content = new LarkDocContentError("No response.")
+        };
+        if (string.IsNullOrWhiteSpace(info.Data?.NodeToken) || info.IsError) return new()
+        {
+            ErrorCode = $"lark-error-{info.Code}",
+            Content = new LarkDocContentError(info.Message ?? "Get node failed.")
+        };
+        if (!info.Data.HasChild) return new LarkDocsNodeTree
+        {
+            Node = info.Data,
+            Content = await LarkApiUtils.GetDocsNodeContentAsync(this, info, cache, cancellationToken),
+        };
+        var childrenTask = GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions
+        {
+            SpaceId = info.Data.SpaceId,
+            ParentNodeToken = token,
+        }, cancellationToken);
+        var result = new LarkDocsNodeTree
+        {
+            Node = info.Data,
+            Content = await LarkApiUtils.GetDocsNodeContentAsync(this, info, cache, cancellationToken),
+        };
+        var children = await childrenTask;
+        if (children?.Data is null || children.IsError)
+        {
+            result.HasMoreChildren = true;
+            return result;
+        }
+
+        result.HasMoreChildren = children.HasNextPage;
+        result.Children = [];
+        if (children.Data.Count < 7)
+        {
+            foreach (var child in children.Data)
+            {
+                if (string.IsNullOrWhiteSpace(child?.NodeToken)) continue;
+                var childTree = new LarkDocsNodeTree()
+                {
+                    Node = child,
+                };
+                if (child.HasChild)
+                {
+                    var subChildrenTask = GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions
+                    {
+                        SpaceId = child.SpaceId ?? info.Data.SpaceId,
+                        ParentNodeToken = child.NodeToken,
+                    }, cancellationToken);
+                    if (cache is null || !cache.TryGet(child.NodeToken, out var childContent) || childContent is null)
+                    {
+                        if (skipChildContentLoading)
+                        {
+                            childContent = null;
+                        }
+                        else
+                        {
+                            childContent = await LarkApiUtils.GetDocsNodeContentAsync(this, child.DocType, child.DocToken, cancellationToken);
+                            cache?.Add(child.NodeToken, childContent);
+                        }
+                    }
+
+                    childTree.Content = childContent;
+                    var subChildren = await subChildrenTask;
+                    if (subChildren?.Data is null || subChildren.IsError)
+                    {
+                        childTree.HasMoreChildren = true;
+                    }
+                    else
+                    {
+                        childTree.Children = [];
+                        childTree.HasMoreChildren = subChildren.HasNextPage;
+                        foreach (var subChild in subChildren.Data)
+                        {
+                            if (string.IsNullOrWhiteSpace(subChild?.NodeToken)) continue;
+                            var subChildTree = new LarkDocsNodeTree()
+                            {
+                                Node = subChild,
+                                HasMoreChildren = subChild.HasChild,
+                            };
+                            childTree.Children.Add(subChildTree);
+                        }
+                    }
+                }
+                else
+                {
+                    if (cache is null || !cache.TryGet(child.NodeToken, out var childContent) || childContent is null)
+                    {
+                        if (skipChildContentLoading)
+                        {
+                            childContent = null;
+                        }
+                        else
+                        {
+                            childContent = await LarkApiUtils.GetDocsNodeContentAsync(this, child.DocType, child.DocToken, cancellationToken);
+                            cache?.Add(child.NodeToken, childContent);
+                        }
+                    }
+
+                    childTree.Content = childContent;
+                }
+
+                result.Children.Add(childTree);
+            }
+        }
+        else
+        {
+            foreach (var child in children.Data)
+            {
+                if (string.IsNullOrWhiteSpace(child?.NodeToken)) continue;
+                var childTree = new LarkDocsNodeTree()
+                {
+                    Node = child,
+                    HasMoreChildren = child.HasChild,
+                };
+                result.Children.Add(childTree);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="token">The node token.</param>
+    /// <param name="skipChildContentLoading">true if skip the content loading of children; otherwise, false.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The doc content.</returns>
+    public Task<LarkDocsNodeTree> GetDocsNodeTreeAsync(string token, bool skipChildContentLoading, CancellationToken cancellationToken = default)
+        => GetDocsNodeTreeAsync(token, null, skipChildContentLoading, cancellationToken);
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="token">The node token.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The doc content.</returns>
+    public Task<LarkDocsNodeTree> GetDocsNodeTreeAsync(string token, CancellationToken cancellationToken = default)
+        => GetDocsNodeTreeAsync(token, null, false, cancellationToken);
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="nodes">The nodes to load.</param>
+    /// <param name="cache">The data cache.</param>
+    /// <param name="skipChildContentLoading">true if skip the content loading of children; otherwise, false.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The count to load.</returns>
+    public async Task<int> GetDocsNodeTreeAsync(IEnumerable<LarkDocsNodeTree> nodes, DataCacheCollection<LarkDocContent>? cache, bool skipChildContentLoading = false, CancellationToken cancellationToken = default)
+    {
+        var i = 0;
+        foreach (var node in nodes)
+        {
+            var token = node?.Node?.NodeToken;
+            if (string.IsNullOrWhiteSpace(token) || !node!.Node!.HasChild) continue;
+            var childrenTask = GetWikiSpaceNodesAsync(new LarkWikiNodesRequestOptions
+            {
+                SpaceId = node.Node.SpaceId,
+                ParentNodeToken = token,
+            }, cancellationToken);
+            if (node.Content is null)
+            {
+                if (cache is null || !cache.TryGet(node.NodeToken, out var childContent) || childContent is null)
+                {
+                    if (skipChildContentLoading)
+                    {
+                        childContent = null;
+                    }
+                    else
+                    {
+                        childContent = await LarkApiUtils.GetDocsNodeContentAsync(this, node.Node.DocType, node.Node.DocToken, cancellationToken);
+                        cache?.Add(node.NodeToken, childContent);
+                    }
+                }
+
+                node.Content = childContent;
+            }
+
+            var children = await childrenTask;
+            if (children?.Data is null || children.IsError)
+            {
+                node.HasMoreChildren = true;
+                continue;
+            }
+
+            node.HasMoreChildren = children.HasNextPage;
+            node.Children = [];
+            foreach (var subChild in children.Data)
+            {
+                if (string.IsNullOrWhiteSpace(subChild?.NodeToken)) continue;
+                var subChildTree = new LarkDocsNodeTree()
+                {
+                    Node = subChild,
+                    HasMoreChildren = subChild.HasChild,
+                };
+                node.Children.Add(subChildTree);
+            }
+        }
+
+        return i;
+    }
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="nodes">The nodes to load.</param>
+    /// <param name="skipChildContentLoading">true if skip the content loading of children; otherwise, false.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The count to load.</returns>
+    public Task<int> GetDocsNodeTreeAsync(IEnumerable<LarkDocsNodeTree> nodes, bool skipChildContentLoading, CancellationToken cancellationToken = default)
+        => GetDocsNodeTreeAsync(nodes, null, skipChildContentLoading, cancellationToken);
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="nodes">The nodes to load.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The count to load.</returns>
+    public Task<int> GetDocsNodeTreeAsync(IEnumerable<LarkDocsNodeTree> nodes, CancellationToken cancellationToken = default)
+        => GetDocsNodeTreeAsync(nodes, null, false, cancellationToken);
 
     /// <summary>
     /// Creates a version of a document.

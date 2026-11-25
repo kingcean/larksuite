@@ -226,9 +226,9 @@ public static partial class LarkCliUtils
         foreach (var user in response.Data)
         {
             console.Append(ConsoleColor.Blue, "· ");
-            var nickname = user.TryGetStringValue("nickname");
-            var name = user.TryGetStringValue("name");
-            var enName = user.TryGetStringValue("en_name");
+            var nickname = user.Nickname;
+            var name = user.Name;
+            var enName = user.EnglishName;
             if (string.IsNullOrWhiteSpace(nickname) || nickname == name)
             {
                 console.Append(name);
@@ -245,7 +245,7 @@ public static partial class LarkCliUtils
             }
 
             console.Append(" \t");
-            console.WriteLine(ConsoleColor.DarkGray, user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true));
+            console.WriteLine(ConsoleColor.DarkGray, user.GetId());
         }
     }
 

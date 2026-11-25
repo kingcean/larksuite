@@ -316,8 +316,8 @@ public class LarkDocsCommandVerb : BaseCommandVerb
                 foreach (var user in users!.Data!)
                 {
                     if (user is null) continue;
-                    var userId = user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true);
-                    var userName = user.TryGetStringValue("name");
+                    var userId = user.GetId();
+                    var userName = user.Name ?? user.EnglishName ?? user.Nickname;
                     if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userName)) continue;
                     console.WriteLine($"· {userId} \t{userName}");
                 }

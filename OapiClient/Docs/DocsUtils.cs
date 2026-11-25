@@ -23,11 +23,11 @@ public static partial class LarkApiUtils
     /// <param name="info">The doc node response.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The doc content.</returns>
-    public static async Task<LarkDocContent> GetDocsNodeContentAsync(this LarkApi larkApi, LarkResponseBody<LarkDocsNodeInfo> info, CancellationToken cancellationToken = default)
+    public static async Task<LarkDocContent> GetDocsNodeContentAsync(this LarkApi larkApi, LarkResponseBody<LarkDocsNodeInfo>? info, CancellationToken cancellationToken = default)
     {
         if (info is null) return ErrorLarkDocContent(null, "The doc node should not be null.");
-        var token = info.Data?.NodeToken;
-        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(info.Data!.DocType) || info.IsError) return ErrorLarkDocContent(token, info.Message ?? "Get node failed.");
+        var token = info?.Data?.NodeToken;
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(info!.Data!.DocType) || info.IsError) return ErrorLarkDocContent(token, info.Message ?? "Get node failed.");
         larkApi ??= LarkApi.DefaultInstance;
         switch (info.Data.DocType)
         {
@@ -93,6 +93,24 @@ public static partial class LarkApiUtils
             default:
                 return new LarkDocContent<LarkDocContentError>(info.Data, new("Unsupported format."));
         }
+    }
+
+    /// <summary>
+    /// Reads the content of the specific online doc.
+    /// </summary>
+    /// <param name="larkApi">The Lark API instance.</param>
+    /// <param name="info">The doc node response.</param>
+    /// <param name="cache">The data cache.</param>
+    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
+    /// <returns>The doc content.</returns>
+    public static async Task<LarkDocContent> GetDocsNodeContentAsync(this LarkApi larkApi, LarkResponseBody<LarkDocsNodeInfo> info, DataCacheCollection<LarkDocContent>? cache, CancellationToken cancellationToken = default)
+    {
+        var token = info?.Data?.NodeToken;
+        var hasArgs = cache is not null && !string.IsNullOrWhiteSpace(token);
+        if (hasArgs && cache!.TryGet(token, out var content) && content is not null) return content;
+        var result = await GetDocsNodeContentAsync(larkApi, info, cancellationToken);
+        if (hasArgs) cache!.Add(token, result);
+        return result;
     }
 
     /// <summary>
@@ -705,7 +723,7 @@ public static partial class LarkApiUtils
         }
     }
 
-    public static IReadOnlyList<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?> users, IList<string> ids)
+    public static IReadOnlyList<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?>? users, IList<string> ids)
     {
         if (users is null) return [];
         var list = new List<string>();
@@ -720,7 +738,7 @@ public static partial class LarkApiUtils
         return list;
     }
 
-    public static IReadOnlyList<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?> users, IList<LarkDocsAccessUserInfo> ids)
+    public static IReadOnlyList<string> ToIds(IEnumerable<LarkDocsAccessUserInfo?>? users, IList<LarkDocsAccessUserInfo> ids)
     {
         if (users is null) return [];
         var list = new List<string>();

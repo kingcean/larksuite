@@ -89,7 +89,7 @@ public class LarkMessageGroupCommandVerb : BaseCommandVerb
         else
         {
             var users = await api.GetUserInfoAsync([select.Data.OwnerId], cancellationToken);
-            var userName = users.Data?.FirstOrDefault()?.TryGetStringTrimmedValue("name");
+            var userName = users.Data?.FirstOrDefault()?.Name;
             LarkCliUtils.WritePropertyLine(console, "Owner", string.IsNullOrWhiteSpace(userName) ? "?" : userName, select.Data.OwnerId);
         }
 

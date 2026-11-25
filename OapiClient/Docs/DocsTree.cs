@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Security;
 using System.Text;
 using System.Text.Json;
@@ -518,4 +519,61 @@ public class LarkDocWhiteboardNodeInfo : IIdPropertyModel
 
     public override string ToString()
         => $"[{ShapeType ?? "?"}] {Text} ({Id}) {(Connector is not null ? "with connector" : "without connector")}";
+}
+
+public class LarkDocsNodeTree
+{
+    [JsonPropertyName("node")]
+    [Description("The current node information.")]
+    public LarkDocsNodeInfo? Node { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("children")]
+    [Description("The child nodes.")]
+    public List<LarkDocsNodeTree>? Children { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("hasMoreChildren")]
+    [Description("Indicates whether there are more child nodes.")]
+    public bool HasMoreChildren { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonPropertyName("errorCode")]
+    [Description("The error code.")]
+    public string? ErrorCode { get; set; }
+
+    /// <summary>
+    /// Gets the content.
+    /// </summary>
+    [JsonPropertyName("content")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [Description("The content.")]
+    public object? Content { get; set; }
+
+    [JsonIgnore]
+    public bool HasContentLoaded => Content is not null;
+
+    [JsonIgnore]
+    public string? Name => Node?.Name;
+
+    [JsonIgnore]
+    public string? NodeToken => Node?.NodeToken;
+
+    [JsonIgnore]
+    public bool IsError => !string.IsNullOrWhiteSpace(ErrorCode) || Node is null;
+
+    public virtual Type? GetContentType()
+        => Content?.GetType();
+
+    public IEnumerable<LarkDocsNodeTree> GetSubChildren()
+    {
+        if (Children is null) yield break;
+        foreach (var child in Children)
+        {
+            if (child is not null) yield return child;
+        }
+    }
+
+    public override string ToString()
+        => Node?.ToString() ?? ErrorCode ?? "null";
 }

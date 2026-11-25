@@ -13,12 +13,12 @@ namespace LarkSuite;
 public partial class LarkApi
 {
     [Description("Get the users information.")]
-    public async Task<LarkResponseBody<List<JsonObjectNode>>> GetUserInfoAsync([Description("The user identifier list to get information.")] IEnumerable<string> ids, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<List<LarkContactUserInfo>>> GetUserInfoAsync([Description("The user identifier list to get information.")] IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         if (ids is null) return new(true, "ids should not be null or empty.");
         var col = ids.ToList();
         var paging = col.Count > 50;
-        var first = await GetAsync<List<JsonObjectNode>>(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
+        var first = await GetAsync<List<LarkContactUserInfo>>(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
         {
             UserIds = paging ? col.Take(50).ToList() : col,
         }), "items", cancellationToken);
@@ -27,7 +27,7 @@ public partial class LarkApi
         if (!paging) return first;
         for (var i = 50; i < col.Count; i += 50)
         {
-            var next = await GetAsync<List<JsonObjectNode>>(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
+            var next = await GetAsync<List<LarkContactUserInfo>>(LarkUrls.ToUrl(LarkUrls.UserInfo, new LarkUserInfoRequest()
             {
                 UserIds = col.Skip(i).Take(50).ToList(),
             }), "items", cancellationToken);
@@ -38,10 +38,10 @@ public partial class LarkApi
         return first;
     }
 
-    public Task<LarkResponsePagingBody> GetUserInfoAsync(LarkUserInfoRequest options, CancellationToken cancellationToken = default)
-        => GetItemsAsync(LarkUrls.ToUrl(LarkUrls.UserInfo, options), cancellationToken);
+    public Task<LarkResponsePagingBody<LarkContactUserInfo>> GetUserInfoAsync(LarkUserInfoRequest options, CancellationToken cancellationToken = default)
+        => GetItemsAsync<LarkContactUserInfo>(LarkUrls.ToUrl(LarkUrls.UserInfo, options), cancellationToken);
 
-    public async Task<LarkResponseBody<List<JsonObjectNode>>> GetUserInfoAsync(IEnumerable<string> ids, LarkContentBlockTree docs, CancellationToken cancellationToken = default)
+    public async Task<LarkResponseBody<List<LarkContactUserInfo>>> GetUserInfoAsync(IEnumerable<string> ids, LarkContentBlockTree docs, CancellationToken cancellationToken = default)
     {
         var users = await GetUserInfoAsync(ids, cancellationToken);
         if (users is null) return new(true, "Get users info failed.");
@@ -54,8 +54,8 @@ public partial class LarkApi
         foreach (var user in users!.Data!)
         {
             if (user is null) continue;
-            var userId = user.TryGetStringTrimmedValue("open_id", true) ?? user.TryGetStringTrimmedValue("user_id", true);
-            var userName = user.TryGetStringValue("name");
+            var userId = user.GetId();
+            var userName = user.Name ?? user.EnglishName ?? user.Nickname;
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(userName)) continue;
             docs.Resources.Users![userId] = userName;
         }
